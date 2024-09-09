@@ -24,7 +24,7 @@ const SideBar = () => {
         <div className="h-full flex flex-col">
           <div className="p-4">
             <div className="flex items-center justify-between mb-4">
-              <Link className="text-xl font-bold text-black dark:text-white" href={"/"}>aifriends</Link>
+              <Link className="text-xl font-bold text-black dark:text-white p-2" href={"/"}>aifriendhub</Link>
               <Button
                 onClick={toggleSidebar}
                 variant="ghost"

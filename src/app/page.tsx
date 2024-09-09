@@ -6,6 +6,7 @@ import { users } from "@/server/db/schema";
 import { AICharacterGrid } from "@/components/ai-character-grid";
 import { Input } from "@/components/ui/input";
 import { Search } from 'lucide-react';
+import CreateCharacterCardMarketing from "@/components/create-character-card-marketing";
 
 export const runtime = "edge";
 
@@ -41,6 +42,8 @@ export default async function Page() {
       </div>
 
       <AICharacterGrid />
+
+	  <CreateCharacterCardMarketing />
 
     </div>
   );
