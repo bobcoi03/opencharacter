@@ -7,5 +7,5 @@ export const getThemeToggler = () =>
 	dynamic(() => import("./theme-button"), {
 		ssr: false,
 		// Make sure to code a placeholder so the UI doesn't jump when the component loads
-		loading: () => <div className="w-6 h-6" />,
+		loading: () => <div className="w-2 h-2" />,
 	});

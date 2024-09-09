@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import dynamic from 'next/dynamic';
-import { AlignLeft, ChevronsLeft, Plus, Compass, Search, Users } from 'lucide-react';
+import { AlignLeft, ChevronsLeft, Plus, Compass, Search, Users, ChevronDown } from 'lucide-react';
 import Link from 'next/link';
 
 const DynamicThemeToggler = dynamic(() => import('@/lib/theme/get-theme-button').then(mod => mod.getThemeToggler()), {
@@ -25,14 +25,17 @@ const SideBar = () => {
           <div className="p-4">
             <div className="flex items-center justify-between mb-4">
               <Link className="text-xl font-bold text-black dark:text-white p-2" href={"/"}>aifriendhub</Link>
-              <Button
-                onClick={toggleSidebar}
-                variant="ghost"
-                size="icon"
-                className="p-0 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
-              >
-                <ChevronsLeft className='w-4 h-4'/>
-              </Button>
+              <div className="flex items-center space-x-2">
+                <DynamicThemeToggler />
+                <Button
+                  onClick={toggleSidebar}
+                  variant="ghost"
+                  size="icon"
+                  className="p-0 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+                >
+                  <ChevronsLeft className='w-4 h-4'/>
+                </Button>
+              </div>
             </div>
             
             <Link
@@ -68,14 +71,23 @@ const SideBar = () => {
               ))}
             </div>
           </div>
-          
-          <div className="p-4 border-t border-gray-200 dark:border-neutral-800">
-            <p className="text-xs text-gray-500 mb-2">Privacy Policy • Terms of Service</p>
-            <button className="w-full py-2 bg-gray-100 dark:bg-neutral-800 text-black dark:text-white rounded-full text-center text-sm hover:bg-gray-200 dark:hover:bg-neutral-700 transition-colors">
+          <div className="p-6 border-t border-gray-200 dark:border-neutral-800">
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-[9px] text-center text-gray-500">
+                Privacy Policy • Terms of Service
+              </p>
+            </div>
+            <button className="w-full py-3 px-4 bg-gray-100 dark:bg-neutral-800 text-black dark:text-white rounded-full text-center text-sm hover:bg-gray-200 dark:hover:bg-neutral-700 transition-colors mb-4">
               Try Pro+
             </button>
-            <div className="mt-2">
-              <DynamicThemeToggler />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold text-lg">
+                  b
+                </div>
+                <span className="text-sm text-black dark:text-white">bobcoi03</span>
+              </div>
+              <ChevronDown className="w-4 h-4 text-gray-500" />
             </div>
           </div>
         </div>

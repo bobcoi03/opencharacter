@@ -27,9 +27,9 @@ export default async function Page() {
           <input
             type="text"
             placeholder="Search for Characters"
-            className="w-full py-2 px-4 pl-10 bg-gray-100 dark:bg-neutral-800 text-black dark:text-white rounded-full text-sm"
+            className="w-full py-4 px-24 pl-10 bg-gray-100 dark:bg-neutral-800 text-black dark:text-white rounded-full text-sm"
           />
-          <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+          <Search className="absolute left-4 top-4 w-4 h-4 text-gray-400" />
         </div>
       </div>
 

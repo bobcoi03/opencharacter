@@ -7,7 +7,7 @@ import SideBar from "@/components/sidebar";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "aifriendshub",
+  title: "aifriendhub",
   description: "Discover the power of AI friendship at AIFriend.org. Connect, learn, and grow with your personal AI companion.",
   openGraph: {
     title: "aifriends - ai friends",
