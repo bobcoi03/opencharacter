@@ -41,6 +41,7 @@ next-env.d.ts
 
 # wrangler files
 .wrangler
+wrangler.toml
 .dev.vars
 
 # bun lock

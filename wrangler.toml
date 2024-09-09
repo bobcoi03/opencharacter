@@ -1,4 +1,4 @@
-name = "ai-friend-hub"
+name = "open-character"
 compatibility_date = "2024-09-03"
 compatibility_flags = [ "nodejs_compat" ]
 pages_build_output_dir = ".vercel/output/static"
@@ -10,3 +10,6 @@ mode = "smart"
 binding = "DATABASE"
 database_name = "aifriendhub-db"
 database_id = "92ab8c10-c211-4b2c-9d75-07666a958239"
+
+[env.production.vars]
+API_KEY = "8901234bfgd"
