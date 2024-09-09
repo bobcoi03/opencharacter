@@ -12,6 +12,9 @@ export const {
 	trustHost: true,
 	adapter: DrizzleAdapter(db),
 	providers: [
-		Google
+		Google({
+			clientId: process.env.GOOGLE_CLIENT_ID,
+			clientSecret: process.env.GOOGLE_CLIENT_SECRET
+		})
 	],
 });

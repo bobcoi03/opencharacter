@@ -7,19 +7,19 @@ import SideBar from "@/components/sidebar";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "aifriendhub",
-  description: "Discover the power of AI friendship at AIFriend.org. Connect, learn, and grow with your personal AI companion.",
+  title: "OpenCharacter",
+  description: "Explore the world of open AI characters at OpenCharacter.org. Connect, interact, and grow with a diverse range of AI personalities.",
   openGraph: {
-    title: "aifriends - ai friends",
-    description: "Discover the power of AI friendship at AIFriend.org. Connect, learn, and grow with your personal AI companion.",
-    url: "https://aifriend.org",
-    siteName: "AIFriend.org",
+    title: "OpenCharacter - Open AI Characters",
+    description: "Explore the world of open AI characters at OpenCharacter.org. Connect, interact, and grow with a diverse range of AI personalities.",
+    url: "https://opencharacter.org",
+    siteName: "OpenCharacter.org",
     images: [
       {
-        url: "https://aifriend.org/og-image.jpg", // Make sure to create and add this image
+        url: "https://opencharacter.org/og-image.jpg", // Make sure to create and add this image
         width: 1200,
         height: 630,
-        alt: "AIFriend.org Logo",
+        alt: "OpenCharacter.org Logo",
       },
     ],
     locale: "en_US",
@@ -27,10 +27,10 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "AIFriend.org - Your AI Companions",
-    description: "Discover the power of AI friendship at AIFriend.org. Connect, learn, and grow with your personal AI companion.",
+    title: "OpenCharacter.org - Explore Open AI Characters",
+    description: "Explore the world of open AI characters at OpenCharacter.org. Connect, interact, and grow with a diverse range of AI personalities.",
     creator: "@justwrapapi",
-    images: ["https://aifriend.org/twitter-image.jpg"], // Make sure to create and add this image
+    images: ["https://opencharacter.org/twitter-image.jpg"], // Make sure to create and add this image
   },
 };
 
