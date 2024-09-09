@@ -42,3 +42,10 @@ next-env.d.ts
 # wrangler files
 .wrangler
 .dev.vars
+
+# bun lock
+bun.lockb
+
+/.vscode/
+./.vscode
+/.vscode
