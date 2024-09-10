@@ -58,7 +58,7 @@ const MessageContent: React.FC<MessageContentProps> = ({ message, isUser, userNa
 };
 
 export default function MessageAndInput({ user, character, made_by_name }: { user: User | undefined, character: typeof characters.$inferSelect, made_by_name: string }) {
-    const [messages, setMessages] = useState<CoreMessage[]>([]);
+    const [messages, setMessages] = useState<CoreMessage[]>([ { role: "system", content: character.description }, { role: 'assistant', content: character.greeting }]);
     const [input, setInput] = useState('');
     const [selectedModel, setSelectedModel] = useState('llama3-70b-8192');
   
@@ -163,15 +163,19 @@ export default function MessageAndInput({ user, character, made_by_name }: { use
               </div>
 
               <div className="p-4 pb-32">
-                {messages.map((m, i) => (
-                  <MessageContent
-                    key={i}
-                    message={m}
-                    isUser={m.role === 'user'}
-                    userName={user?.name ?? "guest"}
-                    characterName={character.name}
-                  />
-                ))}
+                {messages.length > 1 && 
+                    <>
+                    {messages.slice(1).map((m, i) => (
+                        <MessageContent
+                            key={i}
+                            message={m}
+                            isUser={m.role === 'user'}
+                            userName={user?.name ?? "guest"}
+                            characterName={character.name}
+                        />
+                    ))}
+                    </>
+                }
               </div>
             </div>
           </div>
