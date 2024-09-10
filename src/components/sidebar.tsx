@@ -34,7 +34,7 @@ function SideBarContent() {
           <div className="h-full flex flex-col">
             <div className="p-4">
               <div className="flex items-center justify-between mb-4">
-                <Link className="text-xl font-bold text-black dark:text-white p-2" href={"/"}>OpenCharacter</Link>
+                <Link className="text-md font-bold text-black dark:text-white p-2" href={"/"}>OpenCharacter</Link>
                 <div className="flex items-center space-x-2">
                   <DynamicThemeToggler />
                   <Button

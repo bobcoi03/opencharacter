@@ -1,7 +1,6 @@
 import { integer, sqliteTable, text, primaryKey } from "drizzle-orm/sqlite-core"
-import { drizzle } from "drizzle-orm/libsql"
 import type { AdapterAccountType } from "next-auth/adapters"
-import { db } from "." 
+import { sql } from "drizzle-orm";
  
 export const users = sqliteTable("user", {
   id: text("id")
@@ -81,3 +80,26 @@ export const authenticators = sqliteTable(
     }),
   })
 )
+
+export const characters = sqliteTable("character", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  name: text("name").notNull(),
+  tagline: text("tagline").notNull(),
+  description: text("description").notNull(),
+  greeting: text("greeting").notNull(),
+  visibility: text("visibility").notNull(),
+  userId: text("userId")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  interactionCount: integer("interactionCount").notNull().default(0),
+  likeCount: integer("likeCount").notNull().default(0),
+  tags: text("tags").notNull().default("[]"),
+  createdAt: integer("createdAt", { mode: "timestamp_ms" })
+    .notNull()
+    .$defaultFn(() => sql`CURRENT_TIMESTAMP`),
+  updatedAt: integer("updatedAt", { mode: "timestamp_ms" })
+    .notNull()
+    .$defaultFn(() => sql`CURRENT_TIMESTAMP`),
+})
