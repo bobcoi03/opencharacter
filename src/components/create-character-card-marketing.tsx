@@ -3,7 +3,7 @@ import Link from 'next/link'
 
 export default function CreateCharacterCardMarketing() {
   return (
-    <div className="text-white flex items-center justify-center p-4 mt-24">
+    <div className="text-white flex items-center justify-center p-4 mt-16">
       <div className="relative w-full max-w-md">
         {/* Sound wave icons */}
         <div className="absolute left-0 top-0">
@@ -23,7 +23,7 @@ export default function CreateCharacterCardMarketing() {
         </div>
 
         {/* Overlapping images */}
-        <div className="relative w-full h-64 mb-8">
+        <div className="relative w-full h-64">
           <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20">
             <img
               src="/zeus-demo.webp"
@@ -55,13 +55,13 @@ export default function CreateCharacterCardMarketing() {
 
         {/* Main content */}
         <div className="text-center">
-          <h2 className="text-3xl font-bold mb-4">Create a Character</h2>
-          <p className="text-gray-400 mb-6">
+          <h2 className="text-2xl text-black dark:text-white">Create a Character</h2>
+          <p className="text-gray-400 mt-4 font-light text-xs">
             Not vibing with any Characters? Create one of your own! Customize things like their conversation starts, their tone, and more!
           </p>
-          <Link href={"/new"} className="bg-gray-700 text-white py-2 px-4 rounded-full flex items-center justify-center mx-auto hover:bg-gray-600 transition-colors">
+          <Link href="/new" className="mt-4 bg-gray-900 dark:bg-white dark:text-black text-white py-2 px-12 rounded-full inline-flex items-center hover:bg-gray-600 transition-colors">
             <SparklesIcon className="w-5 h-5 mr-2" />
-            Create a Character
+            Create
           </Link>
         </div>
       </div>

@@ -41,22 +41,23 @@ function SideBarContent() {
                     onClick={toggleSidebar}
                     variant="ghost"
                     size="icon"
-                    className="p-0 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+                    className="p-0 text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white"
                   >
                     <ChevronsLeft className='w-4 h-4'/>
                   </Button>
                 </div>
               </div>
-              
+
               <Link
                 href="/new"
-                className="w-full py-2 px-4 bg-gray-100 dark:bg-neutral-800 text-black dark:text-white rounded-full text-center mb-4 flex items-center justify-center text-sm hover:bg-gray-200 dark:hover:bg-neutral-700 transition-colors"
+                className="w-auto inline-flex py-2 px-4 bg-gray-100 dark:bg-neutral-800 text-black dark:text-white rounded-full text-center mb-4 items-center text-md hover:bg-gray-200 dark:hover:bg-neutral-700 transition-colors"
               >
-                <Plus className="w-4 h-4 mr-2" /> Create
+                <Plus className="w-6 h-6 mr-2" />
+                <span className='mr-4'>Create</span>
               </Link>
               
-              <button className="w-full py-2 px-4 text-left mb-4 flex items-center text-sm text-black dark:text-white">
-                <Compass className="w-4 h-4 mr-2" />
+              <button className="w-full py-2 px-4 text-left mb-4 flex items-center text-sm text-black dark:text-white hover:bg-gray-200 dark:hover:bg-neutral-700 rounded-md">
+                <Compass className="w-6 h-6 mr-2" />
                 Discover
               </button>
               
@@ -91,7 +92,7 @@ function SideBarContent() {
                     <DropdownMenuTrigger asChild>
                       <div className="flex items-center justify-between px-2 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-neutral-800 cursor-pointer">
                         <div className="flex items-center space-x-3">
-                          <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold text-lg">
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white text-xs">
                             {session.user?.name?.[0] || 'U'}
                           </div>
                           <span className="text-xs text-black dark:text-white">{session.user?.name || 'User'}</span>

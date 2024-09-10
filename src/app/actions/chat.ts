@@ -9,8 +9,9 @@ const groq = createOpenAI({
   apiKey: process.env.GROQ_API_KEY,
 });
 
-export async function continueConversation(messages: CoreMessage[]) {
-  const model = groq('llama3-8b-8192');
+export async function continueConversation(messages: CoreMessage[], model_name: string) {
+  const model = groq(model_name);
+  console.log("selected model: ", model);
 
   const result = await streamText({
     model: model,
