@@ -20,14 +20,15 @@ interface MessageContentProps {
   isUser: boolean;
   userName?: string;
   characterName: string;
+  characterAvatarUrl?: string | undefined | null;
 }
 
-const MessageContent: React.FC<MessageContentProps> = ({ message, isUser, userName, characterName }) => {
+const MessageContent: React.FC<MessageContentProps> = ({ message, isUser, userName, characterName, characterAvatarUrl }) => {
   return (
     <div className={`flex items-start mb-4 ${isUser ? 'justify-end' : 'justify-start'}`}>
       {!isUser && (
         <Image
-          src="/andy-demo.webp"
+          src={characterAvatarUrl || '/default-avatar.jpeg'}
           alt={characterName}
           width={24}
           height={24}
@@ -156,7 +157,7 @@ export default function MessageAndInput({ user, character, made_by_name }: { use
             <div id="messages-container" className="w-full max-w-2xl">
               {/* Character Information Header */}
               <div className='mx-auto pt-12 pb-6 flex flex-col gap-2 text-center items-center'>
-                <Image src="/andy-demo.webp" alt={character.name} width={64} height={64} className="rounded-full" />
+                <Image src={character.avatar_image_url ?? "/default-avatar.jpeg"} alt={character.name} width={64} height={64} className="rounded-full" />
                 <p className='font-light text-md text-black dark:text-white'>{character.name}</p>
                 <p className='font-light text-md text-slate-600 dark:text-slate-200'>{character.tagline}</p>
                 <p className='font-light text-xs text-slate-600 dark:text-slate-200'>by {made_by_name}</p>
@@ -172,6 +173,7 @@ export default function MessageAndInput({ user, character, made_by_name }: { use
                             isUser={m.role === 'user'}
                             userName={user?.name ?? "guest"}
                             characterName={character.name}
+                            characterAvatarUrl={character.avatar_image_url}
                         />
                     ))}
                     </>

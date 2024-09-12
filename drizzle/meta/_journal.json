@@ -15,6 +15,13 @@
       "when": 1725893145711,
       "tag": "0001_tired_wallow",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1726083401185,
+      "tag": "0002_broad_starhawk",
+      "breakpoints": true
     }
   ]
 }

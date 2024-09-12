@@ -1,10 +1,12 @@
+"use server"
+
 import { db } from "@/server/db";
 import { characters } from "@/server/db/schema";
 import { auth } from "@/server/auth";
 import { z } from "zod";
 import { sql } from "drizzle-orm";
+import FileStorage from "@/lib/r2_storage";
 
-export const runtime = "edge";
 
 const CreateCharacterSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -14,17 +16,29 @@ const CreateCharacterSchema = z.object({
   visibility: z.enum(["public", "private"]).optional().default("public"),
 });
 
-export async function createCharacter(formData: FormData) {
-  "use server"
-  const session = await auth();
-  console.log("Session:", JSON.stringify(session, null, 2));
+async function uploadToR2(file: File): Promise<string> {
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    const uint8Array = new Uint8Array(arrayBuffer); // Convert ArrayBuffer to Uint8Array
+    const uniqueFilename = `${Date.now()}-${file.name}`; // Generate a unique filename
+    const res = await FileStorage.put(uniqueFilename, uint8Array); // Use Uint8Array with unique filename
+    if (res.status === 200) {
+      return `https://pub-ee9c36333afb4a8abe1e26dcc310f8ec.r2.dev/${uniqueFilename}`; // Return the file URL
+    }
+  } catch (e) {
+    console.error(e);
+    throw new Error(String(e))
+  }
+  return ""
+}
 
+export async function createCharacter(formData: FormData) {
+  const session = await auth();
   if (!session || !session.user) {
     throw new Error("You must be logged in to create a character");
   }
-
+  
   const formDataObject = Object.fromEntries(formData.entries());
-  console.log("Form data:", formDataObject);
 
   const validationResult = CreateCharacterSchema.safeParse(formDataObject);
 
@@ -40,6 +54,12 @@ export async function createCharacter(formData: FormData) {
   const { name, tagline, description, greeting, visibility } = validationResult.data;
 
   try {
+    let avatarImageUrl = null;
+    const avatarFile = formData.get('avatar') as File | null;
+    if (avatarFile && avatarFile.size > 0) {
+      avatarImageUrl = await uploadToR2(avatarFile);
+    }
+
     // @ts-ignore
     const newCharacter = await db.insert(characters).values({
       name,
@@ -51,6 +71,7 @@ export async function createCharacter(formData: FormData) {
       tags: "[]", 
       interactionCount: 0,
       likeCount: 0,
+      avatar_image_url: avatarImageUrl,
       createdAt: sql`CURRENT_TIMESTAMP`,
       updatedAt: sql`CURRENT_TIMESTAMP`,
     }).returning();
@@ -58,6 +79,6 @@ export async function createCharacter(formData: FormData) {
     return { success: true, character: newCharacter[0] };
   } catch (error) {
     console.error("Error creating character:", error);
-    return { success: false, error: "Failed to create character" };
+    return { success: false, error: "Failed to create character", details: error };
   }
 }

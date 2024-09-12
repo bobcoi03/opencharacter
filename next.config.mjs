@@ -8,6 +8,17 @@ if (process.env.NODE_ENV === 'development') {
 }
 
 /** @type {import('next').NextConfig} */
-const nextConfig = {};
+const nextConfig = {
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'pub-ee9c36333afb4a8abe1e26dcc310f8ec.r2.dev',
+        port: '',
+        pathname: '/**',
+      },
+    ],
+  },
+};
 
 export default nextConfig;

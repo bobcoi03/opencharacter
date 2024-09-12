@@ -11,7 +11,6 @@ const groq = createOpenAI({
 
 export async function continueConversation(messages: CoreMessage[], model_name: string) {
   const model = groq(model_name);
-  console.log("selected model: ", model);
   const result = await streamText({
     model: model,
     messages,

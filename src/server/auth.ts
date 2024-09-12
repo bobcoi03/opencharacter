@@ -9,7 +9,6 @@ export const {
 	signOut,
 	auth,
 } = NextAuth({
-	debug: true, //dev env
 	trustHost: true,
 	adapter: DrizzleAdapter(db),
 	providers: [
