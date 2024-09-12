@@ -8,6 +8,7 @@ import { db } from '@/server/db';
 import { characters, chat_sessions, users } from '@/server/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { CoreMessage } from 'ai';
+import ShareButton from '@/components/share-button';
 
 export const runtime = 'edge';
 
@@ -64,11 +65,17 @@ export default async function ChatPage({ params }: { params: { character_id: str
         </div>
 
         <div className="flex items-center space-x-2">
+
+          <ShareButton />
+
           <button className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-neutral-800 transition-colors border border-gray-200 dark:border-neutral-700">
             <AudioLines className="text-gray-600 dark:text-gray-400" />
           </button>
           <Suspense fallback={<div className="w-10 h-10" />}>
-            <EllipsisButton />
+            <EllipsisButton 
+              character={character}
+              made_by_username={made_by_user?.name!}
+            />
           </Suspense>
         </div>
       </div>
