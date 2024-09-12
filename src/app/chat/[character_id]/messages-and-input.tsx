@@ -1,7 +1,7 @@
 'use client';
 
 import { type CoreMessage } from 'ai';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { readStreamableValue } from 'ai/rsc';
 import { continueConversation } from '@/app/actions/chat';
 import { User } from 'next-auth';
@@ -27,13 +27,15 @@ const MessageContent: React.FC<MessageContentProps> = ({ message, isUser, userNa
   return (
     <div className={`flex items-start mb-4 ${isUser ? 'justify-end' : 'justify-start'}`}>
       {!isUser && (
-        <Image
-          src={characterAvatarUrl || '/default-avatar.jpg'}
-          alt={characterName}
-          width={24}
-          height={24}
-          className="rounded-full mr-3"
-        />
+        <div className="w-6 h-6 rounded-full overflow-hidden mr-3">
+          <Image
+            src={characterAvatarUrl || '/default-avatar.jpg'}
+            alt={characterName}
+            width={24}
+            height={24}
+            className="rounded-full mr-3 w-full h-full object-cover"
+          />
+        </div>
       )}
       <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'}`}>
         <span className="text-sm text-gray-600 dark:text-gray-400 mb-1">
@@ -58,32 +60,62 @@ const MessageContent: React.FC<MessageContentProps> = ({ message, isUser, userNa
   );
 };
 
-export default function MessageAndInput({ user, character, made_by_name }: { user: User | undefined, character: typeof characters.$inferSelect, made_by_name: string }) {
-    const [messages, setMessages] = useState<CoreMessage[]>([ { role: "system", content: character.description }, { role: 'assistant', content: character.greeting }]);
+const TypingIndicator: React.FC<{ characterAvatarUrl?: string | undefined | null; characterName: string }> = ({ characterAvatarUrl, characterName }) => {
+  return (
+    <div className="flex items-start mb-4 justify-start">
+      <Image
+        src={characterAvatarUrl || '/default-avatar.jpg'}
+        alt={characterName}
+        width={24}
+        height={24}
+        className="rounded-full mr-3"
+      />
+      <div className="flex flex-col items-start">
+        <span className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+          {characterName}
+        </span>
+        <div className="p-3 rounded-2xl bg-gray-200 dark:bg-neutral-700">
+          <div className="flex space-x-1">
+            <div className="w-2 h-2 bg-gray-500 dark:bg-gray-300 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+            <div className="w-2 h-2 bg-gray-500 dark:bg-gray-300 rounded-full animate-bounce" style={{ animationDelay: '200ms' }}></div>
+            <div className="w-2 h-2 bg-gray-500 dark:bg-gray-300 rounded-full animate-bounce" style={{ animationDelay: '400ms' }}></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default function MessageAndInput({ user, character, made_by_name, messages }: { user: User | undefined, character: typeof characters.$inferSelect, made_by_name: string, messages: CoreMessage[] }) {
+    const [messagesState, setMessagesState] = useState<CoreMessage[]>(messages);
     const [input, setInput] = useState('');
     const [selectedModel, setSelectedModel] = useState('llama3-70b-8192');
+    const [isLoading, setIsLoading] = useState(false);
+    const messagesEndRef = useRef<HTMLDivElement>(null);
   
+    const scrollToBottom = () => {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    };
+
     useEffect(() => {
-      // Load the saved model from localStorage on component mount
       const savedModel = localStorage.getItem('selectedModel');
       if (savedModel) {
         setSelectedModel(savedModel);
       }
-      
-      // Scroll to bottom when messages change
-      window.scrollTo(0, document.body.scrollHeight);
-    }, [messages]);
+      scrollToBottom();
+    }, [messagesState]);
   
     const handleSubmit = async (input: string) => {
-      const newMessages: CoreMessage[] = [
-        ...messages,
+       const newMessages: CoreMessage[] = [
+        ...messagesState,
         { content: input, role: 'user' },
       ];
-      setMessages(newMessages);
+      setMessagesState(newMessages);
       setInput('');
-      const result = await continueConversation(newMessages, selectedModel);
+      setIsLoading(true);
+      const result = await continueConversation(newMessages, selectedModel, character);
       for await (const content of readStreamableValue(result)) {
-        setMessages([
+        setMessagesState([
           ...newMessages,
           {
             role: 'assistant',
@@ -91,6 +123,7 @@ export default function MessageAndInput({ user, character, made_by_name }: { use
           },
         ]);
       }
+      setIsLoading(false);
     };
 
     const models = [
@@ -101,7 +134,6 @@ export default function MessageAndInput({ user, character, made_by_name }: { use
       { id: 'llama-3.1-70b-versatile', name: 'Llama 3.1 70B (Preview)' },
       { id: 'llama-3.1-8b-instant', name: 'Llama 3.1 8B (Preview)' },
       { id: 'llama-guard-3-8b', name: 'Llama Guard 3 8B' },
-      { id: 'llava-v1.5-7b-4096-preview', name: 'LLaVA 1.5 7B' },
       { id: 'llama3-70b-8192', name: 'Meta Llama 3 70B' },
       { id: 'llama3-8b-8192', name: 'Meta Llama 3 8B' },
       { id: 'mixtral-8x7b-32768', name: 'Mixtral 8x7B' },
@@ -157,16 +189,18 @@ export default function MessageAndInput({ user, character, made_by_name }: { use
             <div id="messages-container" className="w-full max-w-2xl">
               {/* Character Information Header */}
               <div className='mx-auto pt-12 pb-6 flex flex-col gap-2 text-center items-center'>
-                <Image src={character.avatar_image_url ?? "/default-avatar.jpg"} alt={character.name} width={64} height={64} className="rounded-full" />
+                <div className="w-24 h-24 rounded-full overflow-hidden mr-3">
+                  <Image src={character.avatar_image_url ?? "/default-avatar.jpg"} alt={`${character.name}'s avatar`} width={64} height={64} className="object-cover w-full h-full" />
+                </div>
                 <p className='font-light text-md text-black dark:text-white'>{character.name}</p>
                 <p className='font-light text-md text-slate-600 dark:text-slate-200'>{character.tagline}</p>
                 <p className='font-light text-xs text-slate-600 dark:text-slate-200'>by {made_by_name}</p>
               </div>
 
               <div className="p-4 pb-32">
-                {messages.length > 1 && 
+                {messagesState.length > 1 && 
                     <>
-                    {messages.slice(1).map((m, i) => (
+                    {messagesState.slice(1).map((m, i) => (
                         <MessageContent
                             key={i}
                             message={m}
@@ -178,6 +212,13 @@ export default function MessageAndInput({ user, character, made_by_name }: { use
                     ))}
                     </>
                 }
+                {isLoading && (
+                  <TypingIndicator
+                    characterName={character.name}
+                    characterAvatarUrl={character.avatar_image_url}
+                  />
+                )}
+                <div ref={messagesEndRef} />
               </div>
             </div>
           </div>
@@ -198,7 +239,7 @@ export default function MessageAndInput({ user, character, made_by_name }: { use
                   <button 
                     type="submit" 
                     className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black dark:bg-white rounded-full p-2 z-20 transition-opacity opacity-70 hover:opacity-100 focus:opacity-100 hover:cursor-pointer"
-                    disabled={!input.trim()}
+                    disabled={!input.trim() || isLoading}
                   >
                     <svg viewBox="0 0 24 24" className="w-5 h-5 text-white dark:text-black" fill="none" stroke="currentColor">
                       <path d="M5 12h14M12 5l7 7-7 7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -231,7 +272,7 @@ export default function MessageAndInput({ user, character, made_by_name }: { use
                 </DropdownMenu>
               </form>
               <p className="text-xs text-center mt-2 text-gray-500 dark:text-gray-400 pointer-events-auto">
-                Remember: Everything Characters say is made up!
+                {!user && "Sign in to save messages"}
               </p>
             </div>
           </div>

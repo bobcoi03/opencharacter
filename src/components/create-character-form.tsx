@@ -84,7 +84,7 @@ export function CreateCharacterForm({ action }: { action: (formData: FormData) =
             </div>
 
             <div>
-              <label className="block mb-1 text-sm font-medium">Description</label>
+              <label className="block mb-1 text-sm font-medium">System Prompt</label>
               <textarea
                 name="description"
                 placeholder="How would your Character describe themselves?"

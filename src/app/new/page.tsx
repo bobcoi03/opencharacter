@@ -1,13 +1,28 @@
 import React from 'react';
-import { ArrowLeft, Pencil, Globe } from 'lucide-react';
-import Link from 'next/link';
 import { createCharacter } from '@/app/actions/character';
 import { redirect } from 'next/navigation';
 import { CreateCharacterForm } from '@/components/create-character-form';
+import { auth } from '@/server/auth';
+import Link from 'next/link';
 
 export const runtime = "edge";
 
-export default function NewCharacterPage() {
+export default async function NewCharacterPage() {
+  const session = await auth()
+
+  if (!session || !session.user) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <div className="p-8 text-center">
+          <h1 className="text-2xl font-bold mb-4 text-gray-800 dark:text-white">Sign In Required</h1>
+          <p className="text-gray-600 dark:text-gray-300 mb-6">
+            You must be signed in to create a character.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   async function handleSubmit(formData: FormData) {
     'use server'
 
@@ -16,8 +31,6 @@ export default function NewCharacterPage() {
       redirect(`/chat/${result.character.id}`);
     } else {
       console.error("Error creating character:", result.error, result.details);
-      // Here you might want to return these errors to the client
-      // For now, we'll just throw a generic error
       throw new Error(result.error || 'Failed to create character');
     }
   }

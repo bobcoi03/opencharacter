@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import dynamic from 'next/dynamic';
 import { AlignLeft, ChevronsLeft, Plus, Compass, Search, ChevronDown, User, Settings, LogOut } from 'lucide-react'
@@ -13,6 +13,7 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
   } from "@/components/ui/dropdown-menu"
+import { getConversations } from '@/app/actions';
 
 const DynamicThemeToggler = dynamic(() => import('@/lib/theme/get-theme-button').then(mod => mod.getThemeToggler()), {
   ssr: false,
@@ -21,11 +22,25 @@ const DynamicThemeToggler = dynamic(() => import('@/lib/theme/get-theme-button')
 function SideBarContent() {
     const [isOpen, setIsOpen] = useState(true)
     const { data: session, status } = useSession()
+    const [conversations, setConversations] = useState<{ id: string; character_id: string; character_name: string | null; character_avatar: string | null; last_message_timestamp: string; updated_at: string; interaction_count: number; }[] | undefined>(undefined)
   
     const toggleSidebar = () => {
       setIsOpen(!isOpen)
     }
-  
+
+    useEffect(() => {
+      async function fetchConversations() {
+        if (status === "authenticated") {
+          const result = await getConversations();
+          if (!result.error) {
+            console.log("conversations", result.conversations)
+            setConversations(result.conversations)
+          }
+        }
+      }
+      fetchConversations()
+    }, [status])
+
     return (
       <div 
         className={`${isOpen ? 'w-64 border-r' : 'w-0'} h-full bg-white dark:bg-neutral-900 transition-all duration-500 ease-in-out overflow-hidden border-gray-200 dark:border-neutral-800`}
@@ -56,10 +71,10 @@ function SideBarContent() {
                 <span className='mr-4'>Create</span>
               </Link>
               
-              <button className="w-full py-2 px-4 text-left mb-4 flex items-center text-sm text-black dark:text-white hover:bg-gray-200 dark:hover:bg-neutral-700 rounded-md">
+              <Link href={"/"} className="w-full py-2 px-4 text-left mb-4 flex items-center text-sm text-black dark:text-white hover:bg-gray-200 dark:hover:bg-neutral-700 rounded-md">
                 <Compass className="w-6 h-6 mr-2" />
                 Discover
-              </button>
+              </Link>
               
               <div className="relative">
                 <input
@@ -71,13 +86,17 @@ function SideBarContent() {
               </div>
             </div>
             
-            <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
-              <h2 className="text-xs font-semibold text-gray-500 mb-2">Today</h2>
+            <div className="flex-1 overflow-y-auto px-6 py-2 custom-scrollbar">
+              <h2 className="text-xs font-semibold text-gray-500 mb-2">Recent Conversations</h2>
               <div className="space-y-2">
-                {['Character Assistant', 'Android apps', 'AI critic', 'DecisionHelper', 'Peni Parker', 'School Bully', 'Nicki Minaj', 'Dry Texter'].map((char, index) => (
-                  <div key={index} className="flex items-center space-x-2 py-2 px-2 rounded hover:bg-gray-100 dark:hover:bg-neutral-800 cursor-pointer">
-                    <div className="w-8 h-8 bg-gray-300 dark:bg-gray-600 rounded-full"></div>
-                    <span className="text-sm text-black dark:text-white">{char}</span>
+                {conversations && conversations.map((conversation) => (
+                  <div key={conversation.id} className="flex items-center space-x-2 py-2 px-2 rounded hover:bg-gray-100 dark:hover:bg-neutral-800 cursor-pointer">
+                    <div className="w-8 h-8 bg-gray-300 dark:bg-gray-600 rounded-full overflow-hidden">
+                      {conversation.character_avatar && (
+                        <img src={conversation.character_avatar} alt={conversation.character_name || 'Character'} className="w-full h-full object-cover" />
+                      )}
+                    </div>
+                    <span className="text-sm text-black dark:text-white">{conversation.character_name || 'Unnamed Character'}</span>
                   </div>
                 ))}
               </div>

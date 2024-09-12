@@ -13,7 +13,7 @@ const AICharacterCard: React.FC<{ character: typeof characters.$inferSelect }> =
       <CardContent className="p-3 flex items-center space-x-3">
         <Avatar className="w-12 h-12 rounded-lg flex-shrink-0">
           {/* Note: You might need to add an avatar_url field to your schema if it's not present */}
-          <img src={`https://api.dicebear.com/6.x/adventurer/svg?seed=${character.name}`} alt={character.name} className="rounded-lg" />
+          <img src={character.avatar_image_url ?? "/default-avatar.jpg"} alt={character.name} className="rounded-lg" />
         </Avatar>
         <div className="flex-1 min-w-0">
           <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{character.name}</h3>
@@ -30,8 +30,8 @@ const AICharacterCard: React.FC<{ character: typeof characters.$inferSelect }> =
 
 async function getLatestCharacters() {
   return await db.query.characters.findMany({
-    orderBy: [desc(characters.createdAt)],
-    limit: 8, // Adjust this number as needed
+    orderBy: [desc(characters.interactionCount)],
+    limit: 16, // Adjust this number as needed
   });
 }
 
@@ -40,7 +40,7 @@ export async function AICharacterGrid() {
 
   return (
     <div className="space-y-6 bg-white dark:bg-neutral-900 p-6">
-      <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-gray-100">Latest Characters</h2>
+      <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-gray-100">Most Popular Characters</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {latestCharacters.map((character) => (
           <AICharacterCard key={character.id} character={character} />

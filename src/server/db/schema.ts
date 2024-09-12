@@ -1,4 +1,4 @@
-import { integer, sqliteTable, text, primaryKey } from "drizzle-orm/sqlite-core"
+import { integer, sqliteTable, text, primaryKey, index } from "drizzle-orm/sqlite-core"
 import type { AdapterAccountType } from "next-auth/adapters"
 import { sql } from "drizzle-orm";
  
@@ -104,3 +104,40 @@ export const characters = sqliteTable("character", {
     .notNull()
     .$defaultFn(() => sql`CURRENT_TIMESTAMP`),
 })
+
+// Define the structure of the messages array
+export type ChatMessage = {
+  // Define the structure of a single chat message
+  // For example:
+  id: string;
+  content: string;
+  role: 'user' | 'assistant' | 'system';
+};
+
+export type ChatMessageArray = ChatMessage[];
+
+// Update the chat_sessions table definition
+export const chat_sessions = sqliteTable("chat_session", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  user_id: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  character_id: text("character_id")
+    .notNull()
+    .references(() => characters.id, { onDelete: "cascade" }),
+  messages: text("messages", { mode: "json" }).notNull().$type<ChatMessageArray>(),  
+  interaction_count: integer("interaction_count").notNull().default(0),
+  last_message_timestamp: integer("last_message_timestamp", { mode: "timestamp_ms" })
+    .notNull()
+    .$defaultFn(() => sql`CURRENT_TIMESTAMP`),
+  created_at: integer("created_at", { mode: "timestamp_ms" })
+    .notNull()
+    .$defaultFn(() => sql`CURRENT_TIMESTAMP`),
+  updated_at: integer("updated_at", { mode: "timestamp_ms" })
+    .notNull()
+    .$defaultFn(() => sql`CURRENT_TIMESTAMP`),
+}, (table) => ({
+  userCharacterIndex: index('user_character_idx').on(table.user_id, table.character_id),
+}));
