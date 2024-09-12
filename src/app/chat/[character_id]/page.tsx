@@ -31,7 +31,7 @@ export default async function ChatPage({ params }: { params: { character_id: str
       {/* Chat Header */}
       <div className="bg-white dark:bg-neutral-900 p-4 flex items-center justify-between dark:border-neutral-700">
         <div className="flex items-center">
-          <Image src={character.avatar_image_url ?? "/default-avatar.jpeg"} alt="Dry Texter" width={40} height={40} className="rounded-full mr-3" />
+          <Image src={character.avatar_image_url ?? "/default-avatar.jpg"} alt="Dry Texter" width={40} height={40} className="rounded-full mr-3" />
           <div>
             <h2 className="font-light text-black dark:text-white">{character.name}</h2>
             <p className="text-xs font-light text-gray-600 dark:text-gray-400">by {made_by_user?.name}</p>
