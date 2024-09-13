@@ -20,10 +20,21 @@ const DynamicThemeToggler = dynamic(() => import('@/lib/theme/get-theme-button')
 });
 
 function SideBarContent() {
-    const [isOpen, setIsOpen] = useState(true)
+    const [isOpen, setIsOpen] = useState(false)
     const { data: session, status } = useSession()
     const [conversations, setConversations] = useState<{ id: string; character_id: string; character_name: string | null; character_avatar: string | null; last_message_timestamp: string; updated_at: string; interaction_count: number; }[] | undefined>(undefined)
+    const [isMobile, setIsMobile] = useState(false)
   
+    useEffect(() => {
+      const checkMobile = () => {
+        setIsMobile(window.innerWidth < 768) // 768px is the breakpoint for md
+      }
+
+      checkMobile()
+      window.addEventListener('resize', checkMobile)
+      return () => window.removeEventListener('resize', checkMobile)
+    }, [])
+
     const toggleSidebar = () => {
       setIsOpen(!isOpen)
     }
@@ -42,10 +53,24 @@ function SideBarContent() {
     }, [status])
 
     return (
-      <div 
-        className={`${isOpen ? 'w-64 border-r' : 'w-0'} h-full bg-white dark:bg-neutral-900 transition-all duration-500 ease-in-out overflow-hidden border-gray-200 dark:border-neutral-800`}
-      >
-        {isOpen ? (
+      <>
+        <Button
+          onClick={toggleSidebar}
+          variant="ghost"
+          size="icon"
+          className={`${isOpen ? 'hidden' : ''} md:hidden fixed z-50 top-4 left-4 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white`}
+        >
+          <AlignLeft className='w-6 h-6'/>
+        </Button>
+        <div 
+          className={`
+            ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+            md:translate-x-0
+            fixed md:static top-0 left-0 h-full w-64 bg-white dark:bg-neutral-900 
+            transition-transform duration-300 ease-in-out z-40
+            ${isMobile ? 'shadow-lg' : 'border-r border-gray-200 dark:border-neutral-800'}
+          `}
+        >
           <div className="h-full flex flex-col">
             <div className="p-4">
               <div className="flex items-center justify-between mb-4">
@@ -56,7 +81,7 @@ function SideBarContent() {
                     onClick={toggleSidebar}
                     variant="ghost"
                     size="icon"
-                    className="p-0 text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white"
+                    className="md:hidden p-0 text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white"
                   >
                     <ChevronsLeft className='w-4 h-4'/>
                   </Button>
@@ -86,7 +111,7 @@ function SideBarContent() {
               </div>
             </div>
             
-            <div className="flex-1 overflow-y-auto px-4 py-2 custom-scrollbar">
+            <div className="flex-1 overflow-y-auto px-6 py-2 custom-scrollbar">
               <h2 className="text-xs font-semibold text-gray-500 mb-2">Recent Conversations</h2>
               <div className="space-y-2">
                 {conversations && conversations.map((conversation) => (
@@ -152,16 +177,12 @@ function SideBarContent() {
               )}
             </div>
           </div>
-        ) : null}
-        {!isOpen && (
-          <Button
+        </div>
+        {isOpen && isMobile && (
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-50 z-30"
             onClick={toggleSidebar}
-            variant="ghost"
-            size="icon"
-            className="absolute z-50 top-4 left-4 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
-          >
-            <AlignLeft className='w-6 h-6'/>
-          </Button>
+          ></div>
         )}
         <style jsx global>{`
           .custom-scrollbar::-webkit-scrollbar {
@@ -180,9 +201,10 @@ function SideBarContent() {
             scrollbar-color: rgba(155, 155, 155, 0.5) transparent;
           }
         `}</style>
-      </div>
+      </>
     )
   }
+
 function SideBar() {
     return (
         <AuthProvider>

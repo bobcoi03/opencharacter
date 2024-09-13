@@ -40,7 +40,7 @@ export function CreateCharacterForm({ action }: { action: (formData: FormData) =
       <div className="max-w-3xl mx-auto p-4">
         <form className="space-y-4" action={action}>
           <div className="flex flex-col items-center mb-6">
-            <div className="w-32 h-32 bg-gray-200 dark:bg-gray-700 rounded-full mb-2 flex items-center justify-center overflow-hidden relative">
+            <div className="w-20 h-20 bg-gray-200 dark:bg-gray-700 rounded-full mb-2 flex items-center justify-center overflow-hidden relative">
               {previewUrl ? (
                 <img src={previewUrl} alt="Avatar preview" className="w-full h-full object-cover" />
               ) : (

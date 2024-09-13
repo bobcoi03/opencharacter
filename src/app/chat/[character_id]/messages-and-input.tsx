@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { characters } from '@/server/db/schema';
+import ReactMarkdown from 'react-markdown';
 
 interface MessageContentProps {
   message: CoreMessage;
@@ -48,7 +49,13 @@ const MessageContent: React.FC<MessageContentProps> = ({ message, isUser, userNa
               : 'bg-gray-200 dark:bg-neutral-700 text-black dark:text-white'
           }`}
         >
-          {message.content as string}
+          {isUser ? (
+            message.content as string
+          ) : (
+            <ReactMarkdown className="prose dark:prose-invert max-w-none dark:text-white text-black">
+              {message.content as string}
+            </ReactMarkdown>
+          )}
         </div>
       </div>
       {isUser && (

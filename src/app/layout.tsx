@@ -47,9 +47,9 @@ export default function RootLayout({
         <link rel="icon" href="/favicon.ico" sizes="any" />
       </head>
       <body className={`${inter.className}`}>
-        <div className="flex h-screen">
+        <div className="flex h-screen">       
           <SideBar />
-          <main className="flex-1 flex flex-col overflow-y-auto bg-white dark:bg-neutral-900 relative w-full pl-16"> {/* Added pl-16 for left padding */}
+          <main className="flex-1 flex flex-col overflow-y-auto bg-white dark:bg-neutral-900 relative w-full pt-12"> {/* Added pl-16 for left padding */}
             {children}
           </main>
         </div>

@@ -1,27 +1,26 @@
 import React from 'react';
 import Link from 'next/link';
 import { Card, CardContent } from "@/components/ui/card";
-import { Avatar } from "@/components/ui/avatar";
 import { MessageCircle } from 'lucide-react';
 import { db } from '@/server/db';
 import { characters } from '@/server/db/schema';
 import { desc } from 'drizzle-orm';
+import Image from 'next/image';
 
 const AICharacterCard: React.FC<{ character: typeof characters.$inferSelect }> = ({ character }) => (
-  <Link href={`/chat/${character.id}`} passHref className="block">
-    <Card className="w-full bg-gray-50 dark:bg-neutral-800 border-gray-200 dark:border-neutral-700 hover:bg-gray-100 dark:hover:bg-neutral-700 transition-colors">
-      <CardContent className="p-3 flex items-center space-x-3">
-        <Avatar className="w-12 h-12 rounded-lg flex-shrink-0">
-          {/* Note: You might need to add an avatar_url field to your schema if it's not present */}
-          <img src={character.avatar_image_url ?? "/default-avatar.jpg"} alt={character.name} className="rounded-lg" />
-        </Avatar>
-        <div className="flex-1 min-w-0">
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{character.name}</h3>
-          <p className="text-xs text-gray-600 dark:text-gray-400 truncate">{character.tagline}</p>
-          <div className="flex items-center text-xs text-gray-500 dark:text-gray-400 mt-4">
-            <MessageCircle className="w-2 h-2 mr-1" />
-            <span className='text-xs'>{character.interactionCount.toLocaleString()}</span>
+  <Link href={`/chat/${character.id}`} passHref className="block h-full">
+    <Card className="w-full h-full bg-gray-50 dark:bg-neutral-800 border-gray-200 dark:border-neutral-700 hover:bg-gray-100 dark:hover:bg-neutral-700 transition-colors">
+      <CardContent className="p-3 flex flex-col h-full">
+        <div className="flex items-center space-x-3 flex-grow">
+          <img src={character.avatar_image_url ?? "/default-avatar.jpg"} alt={character.name} className="w-16 h-16 object-cover rounded-lg" />
+          <div className="flex-1 min-w-0">
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{character.name}</h3>
+            <p className="text-xs text-gray-600 dark:text-gray-400 truncate">{character.tagline}</p>
           </div>
+        </div>
+        <div className="flex items-center text-xs text-gray-500 dark:text-gray-400 mt-auto pt-2">
+          <MessageCircle className="w-3 h-3 mr-1" />
+          <span>{character.interactionCount.toLocaleString()}</span>
         </div>
       </CardContent>
     </Card>

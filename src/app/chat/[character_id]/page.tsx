@@ -55,7 +55,7 @@ export default async function ChatPage({ params }: { params: { character_id: str
       {/* Chat Header */}
       <div className="bg-white dark:bg-neutral-900 p-4 flex items-center justify-between dark:border-neutral-700">
         <div className="flex items-center">
-          <div className="w-10 h-10 rounded-full overflow-hidden mr-3">
+          <div className="w-10 h-10 rounded-full overflow-hidden mr-3 ml-12">
             <Image src={character.avatar_image_url ?? "/default-avatar.jpg"} alt={`${character.name}'s avatar`} width={40} height={40} className="object-cover w-full h-full" />
           </div>
           <div>
