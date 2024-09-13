@@ -108,7 +108,7 @@ export function CreateCharacterForm({ action }: { action: (formData: FormData) =
               <label className="block mb-1 text-sm font-medium">Visibility</label>
               <div className="px-3 py-1 text-sm border border-gray-200 dark:border-gray-700 rounded-full flex items-center space-x-2 bg-white dark:bg-neutral-900">
                 <Globe size={14} />
-                <span>public</span>
+                <span>public (All characters are public for now)</span>
               </div>
             </div>
           </div>

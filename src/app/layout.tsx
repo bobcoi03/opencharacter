@@ -44,7 +44,7 @@ export default function RootLayout({
     <html lang="en">
       <head>
         <ThemeScript/>
-        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="icon" href="/favicon.svg" sizes="any" />
       </head>
       <body className={`${inter.className}`}>
         <div className="flex h-screen">       
