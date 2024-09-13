@@ -5,6 +5,7 @@ import { users } from "@/server/db/schema";
 import { AICharacterGrid } from "@/components/ai-character-grid";
 import { Search } from 'lucide-react';
 import CreateCharacterCardMarketing from "@/components/create-character-card-marketing";
+import SignInButton from "@/components/signin-button";
 
 export const runtime = "edge";
 
@@ -12,10 +13,10 @@ export default async function Page() {
   const session = await auth();
 
   return (
-    <div className="max-w-7xl mx-auto py-8 text-white w-full">
+    <div className="max-w-7xl mx-auto py-8 text-white w-full overflow-y-auto">
       <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4 px-6">
         <div className="flex items-center space-x-3">
-          {session?.user && 
+          {session?.user ?
             <div className="flex md:flex-col items-center gap-2">
               <h1 className="text-lg font-light text-black dark:text-white">Welcome!</h1>
               <div className="flex items-center gap-2">
@@ -27,6 +28,9 @@ export default async function Page() {
                 </p>
               </div> 
             </div>
+            : (
+              <SignInButton />
+            )
           }
         </div>
         <div className="relative w-full md:w-auto">

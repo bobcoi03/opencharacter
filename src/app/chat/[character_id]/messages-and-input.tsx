@@ -195,7 +195,7 @@ export default function MessageAndInput({ user, character, made_by_name, message
           <div className="flex-grow w-full flex justify-center overflow-y-auto">
             <div id="messages-container" className="w-full max-w-2xl">
               {/* Character Information Header */}
-              <div className='mx-auto pt-12 pb-6 flex flex-col gap-2 text-center items-center'>
+              <div className='mx-auto pt-12 pb-6 flex flex-col gap-2 text-center items-center overflow-hidden'>
                 <div className="w-24 h-24 rounded-full overflow-hidden mr-3">
                   <Image src={character.avatar_image_url ?? "/default-avatar.jpg"} alt={`${character.name}'s avatar`} width={64} height={64} className="object-cover w-full h-full" />
                 </div>

@@ -49,7 +49,7 @@ export default function RootLayout({
       <body className={`${inter.className}`}>
         <div className="flex h-screen">       
           <SideBar />
-          <main className="flex-1 flex flex-col overflow-y-auto bg-white dark:bg-neutral-900 relative w-full pt-12"> {/* Added pl-16 for left padding */}
+          <main className="flex-1 flex flex-col overflow-hidden bg-white dark:bg-neutral-900 relative w-full"> {/* Added pl-16 for left padding */}
             {children}
           </main>
         </div>
