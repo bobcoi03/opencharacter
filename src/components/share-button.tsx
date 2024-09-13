@@ -9,7 +9,7 @@ export default function ShareButton() {
     const url = window.location.href;
     try {
       await navigator.clipboard.writeText(url);
-      setShareMessage('URL copied!');
+      setShareMessage('Share Link Copied To Cipboard!');
       setTimeout(() => setShareMessage(''), 3000);
     } catch (err) {
       console.error('Failed to copy: ', err);
