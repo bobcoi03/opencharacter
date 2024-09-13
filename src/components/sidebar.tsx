@@ -111,12 +111,12 @@ function SideBarContent() {
               </div>
             </div>
             
-            <div className="flex-1 overflow-y-auto px-6 py-2 custom-scrollbar">
-              <h2 className="text-xs font-semibold text-gray-500 mb-2">Recent Conversations</h2>
+            <div className="flex-1 overflow-y-auto px-4 py-2 custom-scrollbar">
+              <h2 className="text-xs font-semibold text-gray-500 mb-2 px-2">Recent Conversations</h2>
               <div className="space-y-2">
                 {conversations && conversations.map((conversation) => (
-                  <Link href={`/chat/${conversation.character_id}`} key={conversation.id} className="flex items-center space-x-2 py-2 px-2 rounded hover:bg-gray-100 dark:hover:bg-neutral-800 cursor-pointer">
-                    <div className="w-8 h-8 bg-gray-300 dark:bg-gray-600 rounded-full overflow-hidden">
+                  <Link href={`/chat/${conversation.character_id}`} key={conversation.id} className="flex items-center space-x-2 py-2 px-2 rounded hover:bg-gray-200 dark:hover:bg-neutral-700 cursor-pointer">
+                    <div className="w-8 h-8 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
                       {conversation.character_avatar && (
                         <img src={conversation.character_avatar} alt={conversation.character_name || 'Character'} className="w-full h-full object-cover" />
                       )}

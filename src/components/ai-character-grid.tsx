@@ -39,7 +39,7 @@ export async function AICharacterGrid() {
 
   return (
     <div className="space-y-6 bg-white dark:bg-neutral-900 p-6">
-      <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-gray-100">Most Popular Characters</h2>
+      <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-gray-100">Most Popular</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {latestCharacters.map((character) => (
           <AICharacterCard key={character.id} character={character} />
