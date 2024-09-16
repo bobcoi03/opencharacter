@@ -3,14 +3,17 @@
 import { createStreamableValue } from 'ai/rsc';
 import { CoreMessage, streamText } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
-import { characters, chat_sessions, ChatMessage, ChatMessageArray} from '@/server/db/schema';
+import { characters, chat_sessions, ChatMessageArray} from '@/server/db/schema';
 import { db } from '@/server/db';
 import { eq, and, desc } from 'drizzle-orm';
 import { auth } from '@/server/auth';
 
 const groq = createOpenAI({
-  baseURL: 'https://api.groq.com/openai/v1',
+  baseUrl: "https://groq.helicone.ai/openai/v1",
   apiKey: process.env.GROQ_API_KEY,
+  headers: {
+    "Helicone-Auth": `Bearer ${process.env.HELICONE_API_KEY}`,
+  }
 });
 
 export async function continueConversation(messages: CoreMessage[], model_name: string, character: typeof characters.$inferSelect) {
@@ -40,6 +43,7 @@ export async function continueConversation(messages: CoreMessage[], model_name: 
     const result = await streamText({
       model: model,
       messages,
+      temperature: 1,
     });
 
     let fullResponse = '';

@@ -1,7 +1,4 @@
-import { sql } from "drizzle-orm";
 import { auth } from "@/server/auth";
-import { db } from "@/server/db";
-import { users } from "@/server/db/schema";
 import { AICharacterGrid } from "@/components/ai-character-grid";
 import { Search } from 'lucide-react';
 import CreateCharacterCardMarketing from "@/components/create-character-card-marketing";
@@ -12,6 +9,8 @@ export const runtime = "edge";
 export default async function Page() {
   const session = await auth();
 
+  console.log("userID: ", session?.user?.id)
+  
   return (
     <div className="max-w-7xl mx-auto py-8 text-white w-full overflow-y-auto">
       <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4 px-6">
