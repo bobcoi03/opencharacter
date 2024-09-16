@@ -16,8 +16,16 @@ const groq = createOpenAI({
   }
 });
 
+const openai = createOpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+  baseURL: "https://oai.helicone.ai/v1",
+  headers: {
+    "Helicone-Auth": `Bearer ${process.env.HELICONE_API_KEY}`,
+  }
+})
+
 export async function continueConversation(messages: CoreMessage[], model_name: string, character: typeof characters.$inferSelect) {
-    const model = groq(model_name);
+    const model = model_name === "gpt-4o-mini" ? openai(model_name) : groq(model_name)
     const session = await auth();
 
     // Query the current character data from the database
@@ -44,6 +52,7 @@ export async function continueConversation(messages: CoreMessage[], model_name: 
       model: model,
       messages,
       temperature: 1,
+      maxTokens: 300
     });
 
     let fullResponse = '';

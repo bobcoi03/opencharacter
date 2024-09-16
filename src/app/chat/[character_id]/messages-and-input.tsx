@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { characters } from '@/server/db/schema';
 import ReactMarkdown from 'react-markdown';
+import { getModelArray } from '@/lib/llm_models';
 
 interface MessageContentProps {
   message: CoreMessage;
@@ -96,7 +97,7 @@ const TypingIndicator: React.FC<{ characterAvatarUrl?: string | undefined | null
 export default function MessageAndInput({ user, character, made_by_name, messages }: { user: User | undefined, character: typeof characters.$inferSelect, made_by_name: string, messages: CoreMessage[] }) {
     const [messagesState, setMessagesState] = useState<CoreMessage[]>(messages);
     const [input, setInput] = useState('');
-    const [selectedModel, setSelectedModel] = useState('llama3-70b-8192');
+    const [selectedModel, setSelectedModel] = useState("gpt-4o-mini");
     const [isLoading, setIsLoading] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
   
@@ -132,19 +133,6 @@ export default function MessageAndInput({ user, character, made_by_name, message
       }
       setIsLoading(false);
     };
-
-    const models = [
-      { id: 'gemma2-9b-it', name: 'Gemma 2 9B' },
-      { id: 'gemma-7b-it', name: 'Gemma 7B' },
-      { id: 'llama3-groq-70b-8192-tool-use-preview', name: 'Llama 3 Groq 70B Tool Use (Preview)' },
-      { id: 'llama3-groq-8b-8192-tool-use-preview', name: 'Llama 3 Groq 8B Tool Use (Preview)' },
-      { id: 'llama-3.1-70b-versatile', name: 'Llama 3.1 70B (Preview)' },
-      { id: 'llama-3.1-8b-instant', name: 'Llama 3.1 8B (Preview)' },
-      { id: 'llama-guard-3-8b', name: 'Llama Guard 3 8B' },
-      { id: 'llama3-70b-8192', name: 'Meta Llama 3 70B' },
-      { id: 'llama3-8b-8192', name: 'Meta Llama 3 8B' },
-      { id: 'mixtral-8x7b-32768', name: 'Mixtral 8x7B' },
-    ];
 
     const handleModelSelect = (modelId: string) => {
       setSelectedModel(modelId);
@@ -263,7 +251,7 @@ export default function MessageAndInput({ user, character, made_by_name, message
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent>
-                    {models.map((model) => (
+                    {getModelArray().map((model) => (
                       <DropdownMenuItem
                         key={model.id}
                         onClick={() => handleModelSelect(model.id)}
