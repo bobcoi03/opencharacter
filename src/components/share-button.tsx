@@ -2,13 +2,13 @@
 
 import React, { useState } from 'react';
 
-export default function ShareButton() {
+export default function ShareButton({ url }: { url?: string}) {
   const [shareMessage, setShareMessage] = useState('');
 
   const handleShare = async () => {
-    const url = window.location.href;
+    const url_set = url ?? window.location.href;
     try {
-      await navigator.clipboard.writeText(url);
+      await navigator.clipboard.writeText(url_set);
       setShareMessage('Share Link Copied To Cipboard!');
       setTimeout(() => setShareMessage(''), 3000);
     } catch (err) {

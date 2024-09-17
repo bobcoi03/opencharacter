@@ -6,7 +6,7 @@ import { auth } from "@/server/auth";
 import { z } from "zod";
 import { sql } from "drizzle-orm";
 import FileStorage from "@/lib/r2_storage";
-
+import { eq } from "drizzle-orm";
 
 const CreateCharacterSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -80,5 +80,66 @@ export async function createCharacter(formData: FormData) {
   } catch (error) {
     console.error("Error creating character:", error);
     return { success: false, error: "Failed to create character", details: error };
+  }
+}
+
+// Create a partial schema for updates
+const UpdateCharacterSchema = CreateCharacterSchema.partial();
+
+export async function updateCharacter(characterId: string, formData: FormData) {
+  const session = await auth();
+  if (!session || !session.user) {
+    throw new Error("You must be logged in to update a character");
+  }
+  
+  const formDataObject = Object.fromEntries(formData.entries());
+
+  const validationResult = UpdateCharacterSchema.safeParse(formDataObject);
+
+  if (!validationResult.success) {
+    console.error("Validation errors:", validationResult.error.errors);
+    return { 
+      success: false, 
+      error: "Invalid form data", 
+      details: validationResult.error.errors 
+    };
+  }
+
+  const validatedData = validationResult.data;
+
+  try {
+    // Fetch the existing character to check ownership
+    const existingCharacter = await db.select().from(characters).where(eq(characters.id, characterId)).limit(1);
+
+    if (existingCharacter.length === 0) {
+      return { success: false, error: "Character not found" };
+    }
+
+    if (existingCharacter[0].userId !== session.user.id) {
+      return { success: false, error: "You don't have permission to update this character" };
+    }
+
+    let avatarImageUrl = existingCharacter[0].avatar_image_url;
+    const avatarFile = formData.get('avatar') as File | null;
+    if (avatarFile && avatarFile.size > 0) {
+      avatarImageUrl = await uploadToR2(avatarFile);
+    }
+
+    // Prepare the update object
+    const updateData: Partial<typeof characters.$inferSelect> = {
+      ...validatedData,
+      avatar_image_url: avatarImageUrl,
+      updatedAt: new Date()
+    };
+
+    const updatedCharacter = await db.update(characters)
+      .set(updateData)
+      .where(eq(characters.id, characterId))
+      .returning();
+
+    return { success: true, character: updatedCharacter[0] };
+  } catch (error) {
+    console.error("Error updating character:", error);
+    return { success: false, error: "Failed to update character", details: error };
   }
 }

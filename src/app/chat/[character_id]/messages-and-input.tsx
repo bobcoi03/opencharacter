@@ -16,6 +16,7 @@ import {
 import { characters } from '@/server/db/schema';
 import ReactMarkdown from 'react-markdown';
 import { getModelArray } from '@/lib/llm_models';
+import Link from 'next/link';
 
 interface MessageContentProps {
   message: CoreMessage;
@@ -185,7 +186,9 @@ export default function MessageAndInput({ user, character, made_by_name, message
               {/* Character Information Header */}
               <div className='mx-auto pt-12 pb-6 flex flex-col gap-2 text-center items-center overflow-hidden'>
                 <div className="w-24 h-24 rounded-full overflow-hidden mr-3">
-                  <Image src={character.avatar_image_url ?? "/default-avatar.jpg"} alt={`${character.name}'s avatar`} width={64} height={64} className="object-cover w-full h-full" />
+                  <Link href={user?.id === character.userId ? `/character/${character.id}/edit` : `/character/${character.id}/profile`} >
+                    <Image src={character.avatar_image_url ?? "/default-avatar.jpg"} alt={`${character.name}'s avatar`} width={64} height={64} className="object-cover w-full h-full" />                  
+                  </Link>
                 </div>
                 <p className='font-light text-md text-black dark:text-white'>{character.name}</p>
                 <p className='font-light text-md text-slate-600 dark:text-slate-200'>{character.tagline}</p>

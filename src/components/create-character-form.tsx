@@ -1,13 +1,20 @@
 "use client"
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ArrowLeft, Upload, Globe } from 'lucide-react';
 import Link from 'next/link';
 import { SubmitButton } from '@/app/new/submit-button';
+import { characters } from '@/server/db/schema';
 
-export function CreateCharacterForm({ action }: { action: (formData: FormData) => void }) {
+export function CreateCharacterForm({ action, character, editMode = false }: { action: (formData: FormData) => void, character?: typeof characters.$inferSelect, editMode?: boolean }) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (character) {
+      setPreviewUrl(character.avatar_image_url ?? "/default-avatar.jpg")
+    }
+  }, [character])
 
   const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB in bytes
 
@@ -30,7 +37,7 @@ export function CreateCharacterForm({ action }: { action: (formData: FormData) =
   };
 
   return (
-    <div className="w-full bg-white dark:bg-neutral-900 min-h-screen p-6">
+    <div className="w-full bg-white dark:bg-neutral-900 min-h-screen p-6 overflow-y-auto">
       <header>
         <Link href="/" className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-neutral-800 inline-block">
           <ArrowLeft size={16} />
@@ -52,7 +59,7 @@ export function CreateCharacterForm({ action }: { action: (formData: FormData) =
                 accept="image/*"
                 onChange={handleImageChange}
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                required
+                required={!editMode}
               />
             </div>
             <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Character Avatar</h2>
@@ -69,6 +76,7 @@ export function CreateCharacterForm({ action }: { action: (formData: FormData) =
                 placeholder="Character name e.g. Albert Einstein"
                 className="w-full p-2 text-sm border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-neutral-900"
                 required
+                defaultValue={character ? character.name : ""}
               />
             </div>
 
@@ -80,6 +88,7 @@ export function CreateCharacterForm({ action }: { action: (formData: FormData) =
                 placeholder="Add a short tagline of your Character"
                 className="w-full p-2 text-sm border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-neutral-900"
                 required
+                defaultValue={character ? character.tagline : ""}
               />
             </div>
 
@@ -90,6 +99,7 @@ export function CreateCharacterForm({ action }: { action: (formData: FormData) =
                 placeholder="How would your Character describe themselves?"
                 className="w-full p-2 text-sm border border-gray-200 dark:border-gray-700 rounded-md h-24 bg-white dark:bg-neutral-900"
                 required
+                defaultValue={character ? character.description : ""}
               />
             </div>
 
@@ -101,6 +111,7 @@ export function CreateCharacterForm({ action }: { action: (formData: FormData) =
                 placeholder="e.g. Hello, I am Albert. Ask me anything about my scientific contributions."
                 className="w-full p-2 text-sm border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-neutral-900"
                 required
+                defaultValue={character ? character.greeting : ""}
               />
             </div>
 
@@ -113,7 +124,7 @@ export function CreateCharacterForm({ action }: { action: (formData: FormData) =
             </div>
           </div>
 
-          <SubmitButton />
+          <SubmitButton editMode={editMode} />
         </form>
       </div>
     </div>

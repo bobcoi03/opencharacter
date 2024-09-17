@@ -4,7 +4,7 @@ import React from 'react'
 import { useFormStatus } from 'react-dom'
 import { Loader2 } from 'lucide-react'
 
-export function SubmitButton() {
+export function SubmitButton({ editMode = false } : { editMode: boolean }) {
   const { pending } = useFormStatus()
 
   return (
@@ -19,7 +19,7 @@ export function SubmitButton() {
           Creating...
         </>
       ) : (
-        'Create Character'
+        !editMode ? 'Create Character' : 'Save Changes'
       )}
     </button>
   )
