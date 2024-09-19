@@ -77,7 +77,6 @@ export function CreateCharacterForm({ action, character, editMode = false }: { a
                 placeholder="Character name e.g. Albert Einstein"
                 className="w-full p-2 text-sm border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-neutral-900"
                 required
-                value={character ? character.name : ""}
                 defaultValue={character ? character.name : ""}
               />
             </div>

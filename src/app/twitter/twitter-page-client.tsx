@@ -22,14 +22,14 @@ export default function TwitterPageClient() {
 
     return (
         <div className="flex flex-col items-center justify-center min-h-screen p-4">
-            <h1 className="text-2xl font-bold mb-8">Twitter Page</h1>
+            <h1 className="text-2xl font-bold mb-4">Create a Twitter Character</h1>
             <form onSubmit={handleSubmit} className="w-full max-w-md">
                 <div className="flex items-center space-x-2">
                     <Input
                         type="text"
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
-                        placeholder="Twitter username... (elonmusk)"
+                        placeholder="Twitter username... (e.g., elonmusk)"
                         className="flex-grow bg-neutral-200 dark:bg-neutral-800 justify-start rounded-full text-left px-4 py-4 text-sm text-black dark:text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 h-14"
                         disabled={isLoading}
                     />
@@ -51,6 +51,9 @@ export default function TwitterPageClient() {
                     </Button>
                 </div>
             </form>
+            <div className="mt-8 text-sm text-gray-600 dark:text-gray-400 max-w-md text-center">
+                <p>Our AI will analyze the Twitter profile and create a character that mimics their style and personality. You{"'"}ll be able to chat with this character and even customize it further!</p>
+            </div>
         </div>
     );
 }

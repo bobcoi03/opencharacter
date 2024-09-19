@@ -30,7 +30,7 @@ const AICharacterCard: React.FC<{ character: typeof characters.$inferSelect }> =
 async function getLatestCharacters() {
   return await db.query.characters.findMany({
     orderBy: [desc(characters.interactionCount)],
-    limit: 16, // Adjust this number as needed
+    limit: 50, // Adjust this number as needed
   });
 }
 
