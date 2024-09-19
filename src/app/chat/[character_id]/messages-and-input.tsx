@@ -210,12 +210,6 @@ export default function MessageAndInput({ user, character, made_by_name, message
                     ))}
                     </>
                 }
-                {isLoading && (
-                  <TypingIndicator
-                    characterName={character.name}
-                    characterAvatarUrl={character.avatar_image_url}
-                  />
-                )}
                 <div ref={messagesEndRef} />
               </div>
             </div>

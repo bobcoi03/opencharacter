@@ -19,7 +19,11 @@ export const models: Models = {
     'llama3-70b-8192': { id: 'llama3-70b-8192', name: 'Meta Llama 3 70B' },
     'llama3-8b-8192': { id: 'llama3-8b-8192', name: 'Meta Llama 3 8B' },
     'mixtral-8x7b-32768': { id: 'mixtral-8x7b-32768', name: 'Mixtral 8x7B' },
-    'gpt-4o-mini': { id: 'gpt-4o-mini', name: 'gpt-4o-mini' }
+    'gpt-4o-mini': { id: 'gpt-4o-mini', name: 'gpt-4o-mini' },
+    "lzlv-70b": {id: "lizpreciatior/lzlv-70b-fp16-hf", name: "lzlv 70b"},
+    "DeepSeek V2.5": {id: "deepseek/deepseek-chat", name: "DeepSeek V2.5"},
+    "anthropic/claude-3.5-sonnet": {id: "anthropic/claude-3.5-sonnet", name: "anthropic/claude-3.5-sonnet"},
+    'gryphe/mythomax-l2-13b': { id: 'gryphe/mythomax-l2-13b', name: 'Gryphe Mythomax L2 13B' },
 };
   
 // Helper function to get an array of model IDs

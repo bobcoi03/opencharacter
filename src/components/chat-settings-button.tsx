@@ -1,13 +1,13 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Ellipsis } from 'lucide-react';
+import { Ellipsis, Share, Flag, Edit } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import Image from 'next/image';
 import { Button } from "@/components/ui/button";
-import { Share, Flag } from 'lucide-react';
 import { characters } from '@/server/db/schema';
 import { format } from 'date-fns';
+import Link from 'next/link';
 
 export default function EllipsisButton({ character, made_by_username }: { character: typeof characters.$inferSelect, made_by_username: string }) {
   const [shareMessage, setShareMessage] = useState('');
@@ -33,8 +33,18 @@ export default function EllipsisButton({ character, made_by_username }: { charac
       </SheetTrigger>
       <SheetContent className="w-80 bg-white dark:bg-neutral-800 border-l border-gray-200 dark:border-neutral-700 overflow-y-auto">
         <div className="p-4">
-          <div className="flex items-center mb-4">
-            <Image src={character.avatar_image_url ?? "/default-avatar.jpg"} alt={character.name} width={64} height={64} className="rounded-full mr-4" />
+          <div className="flex items-center mb-4 gap-4">
+            <div className="w-16 h-16 overflow-hidden rounded-full">
+              <div className="w-full h-full relative">
+                <Image 
+                  src={character.avatar_image_url ?? "/default-avatar.jpg"} 
+                  alt={character.name} 
+                  layout="fill"
+                  objectFit="cover"
+                  className="rounded-full"
+                />
+              </div>
+            </div>
             <div>
               <h2 className="font-bold text-xl text-black dark:text-white">{character.name}</h2>
               <p className="text-xs text-gray-600 dark:text-gray-400">By {made_by_username}</p>
@@ -48,6 +58,11 @@ export default function EllipsisButton({ character, made_by_username }: { charac
             <Button variant="ghost" size="icon" className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-neutral-700">
               <Flag className="w-5 h-5 text-gray-600 dark:text-gray-400" />
             </Button>
+            <Link href={`/character/${character.id}/edit`} passHref>
+              <Button variant="ghost" size="icon" className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-neutral-700">
+                <Edit className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+              </Button>
+            </Link>
           </div>
           {shareMessage && (
             <p className="text-sm text-green-500 mb-4">{shareMessage}</p>
