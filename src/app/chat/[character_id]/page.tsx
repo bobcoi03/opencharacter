@@ -163,8 +163,10 @@ export default async function ChatPage({ params }: { params: { character_id: str
       
       // Modify the profile image URL to use 400x400 size
       const profileImageUrl = twitterUser.profileImage.replace('_normal.', '_400x400.');
-      const resolvedDescription = await convertTwitterUrls(twitterUser.description);
-      
+      let resolvedDescription = ""
+      if (twitterUser.description) {
+        resolvedDescription = await convertTwitterUrls(twitterUser.description);
+      }
       // Create a new character in the database
       character = await db.insert(characters).values({
         id: params.character_id,
