@@ -98,7 +98,7 @@ const TypingIndicator: React.FC<{ characterAvatarUrl?: string | undefined | null
 export default function MessageAndInput({ user, character, made_by_name, messages }: { user: User | undefined, character: typeof characters.$inferSelect, made_by_name: string, messages: CoreMessage[] }) {
     const [messagesState, setMessagesState] = useState<CoreMessage[]>(messages);
     const [input, setInput] = useState('');
-    const [selectedModel, setSelectedModel] = useState("gpt-4o-mini");
+    const [selectedModel, setSelectedModel] = useState("deepseek/deepseek-chat");
     const [isLoading, setIsLoading] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
   
