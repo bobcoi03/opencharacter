@@ -55,9 +55,6 @@ export async function continueConversation(messages: CoreMessage[], model_name: 
     case 'deepseek/deepseek-chat':
       model = openrouter(model_name);
       break;
-    case 'anthropic/claude-3.5-sonnet':
-      model = openrouter(model_name);
-      break;
     case 'gryphe/mythomax-l2-13b':
       model = openrouter(model_name);
       break;

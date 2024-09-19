@@ -1,0 +1,1 @@
+ALTER TABLE `character` ADD `banner_image_url` text;

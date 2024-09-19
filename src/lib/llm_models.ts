@@ -22,7 +22,6 @@ export const models: Models = {
     'gpt-4o-mini': { id: 'gpt-4o-mini', name: 'gpt-4o-mini' },
     "lzlv-70b": {id: "lizpreciatior/lzlv-70b-fp16-hf", name: "lzlv 70b"},
     "DeepSeek V2.5": {id: "deepseek/deepseek-chat", name: "DeepSeek V2.5"},
-    "anthropic/claude-3.5-sonnet": {id: "anthropic/claude-3.5-sonnet", name: "anthropic/claude-3.5-sonnet"},
     'gryphe/mythomax-l2-13b': { id: 'gryphe/mythomax-l2-13b', name: 'Gryphe Mythomax L2 13B' },
 };
   

@@ -2,8 +2,9 @@
 
 import React, { useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import dynamic from 'next/dynamic';
-import { AlignLeft, ChevronsLeft, Plus, Compass, Search, ChevronDown, User, Settings, LogOut } from 'lucide-react'
+import { AlignLeft, ChevronsLeft, Plus, Compass, Search, ChevronDown, User, Settings, LogOut, Twitter, FileText } from 'lucide-react'
 import Link from 'next/link';
 import AuthProvider from './auth-provider';
 import { useSession, signIn, signOut } from 'next-auth/react';
@@ -88,13 +89,36 @@ function SideBarContent() {
                 </div>
               </div>
 
-              <Link
-                href="/new"
-                className="w-auto inline-flex py-2 px-4 bg-gray-100 dark:bg-neutral-800 text-black dark:text-white rounded-full text-center mb-4 items-center text-md hover:bg-gray-200 dark:hover:bg-neutral-700 transition-colors"
-              >
-                <Plus className="w-6 h-6 mr-2" />
-                <span className='mr-4'>Create</span>
-              </Link>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button className="w-auto inline-flex py-2 px-4 bg-gray-100 dark:bg-neutral-800 text-black dark:text-white rounded-full text-center mb-4 items-center text-md hover:bg-gray-200 dark:hover:bg-neutral-700 transition-colors">
+                    <Plus className="w-6 h-6 mr-2" />
+                    <span className='mr-4'>Create</span>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent 
+                  className="w-48 p-0 bg-white dark:bg-neutral-900"
+                  side='right'
+                  align='start'
+                >
+                  <Link href="/new" passHref>
+                    <Button
+                      className="bg-neutral-100 dark:bg-neutral-800 w-full justify-start rounded-none text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-neutral-200 dark:hover:bg-neutral-700"
+                    >
+                      <FileText className="w-4 h-4 mr-2" />
+                      From Scratch
+                    </Button>
+                  </Link>
+                  <Link href="/twitter" passHref>
+                    <Button
+                      className="bg-neutral-100 dark:bg-neutral-800 w-full justify-start rounded-none text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-neutral-200 dark:hover:bg-neutral-700"
+                    >
+                      <Twitter className="w-4 h-4 mr-2" />
+                      Twitter Profile
+                    </Button>
+                  </Link>
+                </PopoverContent>
+              </Popover>
               
               <Link href={"/"} className="w-full py-2 px-4 text-left mb-4 flex items-center text-sm text-black dark:text-white hover:bg-gray-200 dark:hover:bg-neutral-700 rounded-md">
                 <Compass className="w-6 h-6 mr-2" />

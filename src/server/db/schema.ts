@@ -97,6 +97,7 @@ export const characters = sqliteTable("character", {
   likeCount: integer("likeCount").notNull().default(0),
   tags: text("tags").notNull().default("[]"),
   avatar_image_url: text("avatar_image_url"),
+  banner_image_url: text("banner_image_url"),
   createdAt: integer("createdAt", { mode: "timestamp_ms" })
     .notNull()
     .$defaultFn(() => sql`CURRENT_TIMESTAMP`),

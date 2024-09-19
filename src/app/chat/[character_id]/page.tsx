@@ -13,9 +13,75 @@ import Link from 'next/link';
 
 export const runtime = 'edge';
 
-function TWITTER_CHARACTER_PROMPT(fullName: string, description: string, followerCount: number, recentTweets: string, followingCount: number) {
+// Function to resolve t.co URLs by following redirects
+async function resolveTwitterUrl(shortUrl: string): Promise<string> {
+  try {
+    const response = await fetch(shortUrl, { 
+      method: 'HEAD',
+      redirect: 'manual'
+    });
+    
+    if (response.status === 301 || response.status === 302) {
+      const location = response.headers.get('location');
+      if (location) {
+        return location;
+      }
+    }
+    // If no redirect, return the original URL
+    return shortUrl;
+  } catch (error) {
+    console.error(`Error resolving URL ${shortUrl}:`, error);
+    return shortUrl; // Return original URL if resolution fails
+  }
+}
+
+// Function to convert Twitter-style URLs to real Markdown links
+async function convertTwitterUrls(text: string): Promise<string> {
+  // Regular expression to match Twitter-style URLs
+  const twitterUrlRegex = /https?:\/\/t\.co\/\w+/g;
+  
+  // Find all matches
+  const matches = text.match(twitterUrlRegex) || [];
+  
+  // Resolve all URLs concurrently
+  const resolvedUrls = await Promise.all(matches.map(resolveTwitterUrl));
+  
+  // Create a map of short URLs to resolved URLs
+  const urlMap = Object.fromEntries(matches.map((shortUrl, index) => [shortUrl, resolvedUrls[index]]));
+  
+  // Replace each match with a Markdown link
+  return text.replace(twitterUrlRegex, (match) => {
+    const resolvedUrl = urlMap[match];
+    return `[${resolvedUrl}](${resolvedUrl})`;
+  });
+}
+
+async function TWITTER_CHARACTER_PROMPT(fullName: string, description: string, followerCount: number, recentTweets: string, followingCount: number) {
+  // Function to convert Twitter-style URLs to real Markdown links
+  async function convertTwitterUrls(text: string): Promise<string> {
+    // Regular expression to match Twitter-style URLs
+    const twitterUrlRegex = /https?:\/\/t\.co\/\w+/g;
+    
+    // Find all matches
+    const matches = text.match(twitterUrlRegex) || [];
+    
+    // Resolve all URLs concurrently
+    const resolvedUrls = await Promise.all(matches.map(resolveTwitterUrl));
+    
+    // Create a map of short URLs to resolved URLs
+    const urlMap = Object.fromEntries(matches.map((shortUrl, index) => [shortUrl, resolvedUrls[index]]));
+    
+    // Replace each match with a Markdown link
+    return text.replace(twitterUrlRegex, (match) => {
+      const resolvedUrl = urlMap[match];
+      return `[${match}](${resolvedUrl})`;
+    });
+  }
+  // Convert URLs in recent tweets
+  const convertedTweets = await convertTwitterUrls(recentTweets);
+
   return `
-You are an AI emulating the Twitter user ${fullName}. Respond to messages as if you are this person, based on the following information and guidelines:
+You are an AI designed to roleplay the Twitter user ${fullName}. Respond to messages as if you are this person, based on the following information and guidelines:
 
 User Profile:
 - Name: ${fullName}
@@ -54,15 +120,14 @@ Current Events and Trends:
 - For new trends, approach them through the lens of the user's established interests and opinions.
 
 Recent Tweets (for context and style reference):
-${recentTweets}
+${convertedTweets}
 
 Remember, you are roleplaying as ${fullName}. Maintain this persona consistently throughout the conversation, using the provided information to inform your responses while staying true to the user's online personality.
 
 Additional Guidelines:
-- When including links, render them in Markdown format. DONOT INCLUDE FAKE OR EXAMPLE LINKS
+- When including links, use the full, resolved URLs as shown in the recent tweets.
 - Handle personal information and controversial topics with the same level of discretion as demonstrated in the user's public tweets.
 - Engage with Twitter-specific features (e.g., Spaces, Lists) in a manner consistent with the user's observed behavior.
-- 
 `;
 }
 
@@ -98,16 +163,17 @@ export default async function ChatPage({ params }: { params: { character_id: str
       
       // Modify the profile image URL to use 400x400 size
       const profileImageUrl = twitterUser.profileImage.replace('_normal.', '_400x400.');
+      const resolvedDescription = await convertTwitterUrls(twitterUser.description);
       
       // Create a new character in the database
       character = await db.insert(characters).values({
         id: params.character_id,
         name: twitterUser.fullName,
-        tagline: twitterUser.description,
-        description: TWITTER_CHARACTER_PROMPT(twitterUser.fullName, twitterUser.description, twitterUser.followersCount, tweetContent, twitterUser.followingsCount),
+        tagline: resolvedDescription,
+        description: await TWITTER_CHARACTER_PROMPT(twitterUser.fullName, twitterUser.description, twitterUser.followersCount, tweetContent, twitterUser.followingsCount),
         greeting: `Hello! I'm ${twitterUser.fullName}`,
         visibility: 'public',
-        userId: process.env.NEXT_PUBLIC_DEFAULT_USER_ID!, // Use 'system' if no user is logged in
+        userId: session?.user?.id!,
         avatar_image_url: profileImageUrl, // Use the modified URL
       }).returning().get();
     } else {

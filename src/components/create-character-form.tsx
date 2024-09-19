@@ -9,6 +9,7 @@ import { characters } from '@/server/db/schema';
 export function CreateCharacterForm({ action, character, editMode = false }: { action: (formData: FormData) => void, character?: typeof characters.$inferSelect, editMode?: boolean }) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
+  const [descriptionCharCount, setDescriptionCharCount] = useState<number>(character?.description.length ?? 0);
 
   useEffect(() => {
     if (character) {
@@ -76,6 +77,7 @@ export function CreateCharacterForm({ action, character, editMode = false }: { a
                 placeholder="Character name e.g. Albert Einstein"
                 className="w-full p-2 text-sm border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-neutral-900"
                 required
+                value={character ? character.name : ""}
                 defaultValue={character ? character.name : ""}
               />
             </div>
@@ -100,7 +102,12 @@ export function CreateCharacterForm({ action, character, editMode = false }: { a
                 className="w-full p-2 text-sm border border-gray-200 dark:border-gray-700 rounded-md h-24 bg-white dark:bg-neutral-900"
                 required
                 defaultValue={character ? character.description : ""}
+                onKeyUp={(e) => {
+                  const target = e.target as HTMLTextAreaElement;
+                  setDescriptionCharCount(target.value.length);
+                }}
               />
+              <p className='text-xs font-light text-gray-500'>character length: {descriptionCharCount}</p>
             </div>
 
             <div>
