@@ -8,14 +8,6 @@ import { db } from '@/server/db';
 import { eq, and, desc } from 'drizzle-orm';
 import { auth } from '@/server/auth';
 
-const groq = createOpenAI({
-  baseUrl: "https://groq.helicone.ai/openai/v1",
-  apiKey: process.env.GROQ_API_KEY,
-  headers: {
-    "Helicone-Auth": `Bearer ${process.env.HELICONE_API_KEY}`,
-  }
-});
-
 const openrouter = createOpenAI({
   baseURL: "https://openrouter.helicone.ai/api/v1",
   apiKey: process.env.OPENROUTER_API_KEY,
@@ -28,26 +20,8 @@ const openrouter = createOpenAI({
 });
 
 export async function continueConversation(messages: CoreMessage[], model_name: string, character: typeof characters.$inferSelect) {
-  console.log(`Starting conversation continuation with model: ${model_name}`);
-
-  let model;
-  try {
-    switch (model_name) {
-      case 'lizpreciatior/lzlv-70b-fp16-hf':
-      case 'deepseek/deepseek-chat':
-      case 'gryphe/mythomax-l2-13b':
-        model = openrouter(model_name);
-        break;
-      default:
-        model = groq(model_name);
-    }
-  } catch (error) {
-    console.error('Failed to initialize model:', error);
-    throw new Error('Failed to initialize model. Please try again later.');
-  }
-
+  const model = openrouter(model_name)
   const session = await auth();
-  console.log(`User session: ${session?.user?.id || 'Not authenticated'}`);
 
   try {
     // Update character interaction count
@@ -66,18 +40,20 @@ export async function continueConversation(messages: CoreMessage[], model_name: 
         updatedAt: new Date()
       })
       .where(eq(characters.id, character.id));
-
-    console.log(`Updated interaction count for character: ${character.id}`);
   } catch (error) {
     console.error('Failed to update interaction count:', error);
-    // Consider whether you want to throw this error or continue
   }
 
   try {
     const result = await streamText({
       model: model,
       messages,
-      temperature: 1,
+      temperature: character.temperature ?? 1.0,
+      topP: character.top_p ?? 1.0,
+      topK: character.top_k ?? 0,
+      frequencyPenalty: character.frequency_penalty ?? 0.0,
+      presencePenalty: character.presence_penalty ?? 0.0,
+      maxTokens: character.max_tokens ?? 200,
       onFinish: async (completion) => {
         if (session?.user) {
           try {
@@ -123,7 +99,6 @@ export async function continueConversation(messages: CoreMessage[], model_name: 
             }
           } catch (error) {
             console.error('Failed to update chat session:', error);
-            // Consider whether you want to throw this error or continue
           }
         }
       }

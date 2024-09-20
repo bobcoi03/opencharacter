@@ -213,54 +213,6 @@ export function CreateCharacterForm({ action, character, editMode = false }: { a
             </div>
 
             <div>
-              <label className="block mb-1 text-sm font-medium">Repetition Penalty</label>
-              <input
-                type="number"
-                name="repetition_penalty"
-                min="0"
-                max="2"
-                step="0.1"
-                defaultValue={character?.repetition_penalty ?? 1.0}
-                className="w-full p-2 text-sm border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-neutral-900"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Reduces input token repetition. 0.0 to 2.0. Higher values: less repetition; Too high: may affect coherence.
-              </p>
-            </div>
-
-            <div>
-              <label className="block mb-1 text-sm font-medium">Min P</label>
-              <input
-                type="number"
-                name="min_p"
-                min="0"
-                max="1"
-                step="0.05"
-                defaultValue={character?.min_p ?? 0.0}
-                className="w-full p-2 text-sm border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-neutral-900"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Minimum probability for token consideration. 0.0 to 1.0. Higher values: more focused on likely tokens.
-              </p>
-            </div>
-
-            <div>
-              <label className="block mb-1 text-sm font-medium">Top A</label>
-              <input
-                type="number"
-                name="top_a"
-                min="0"
-                max="1"
-                step="0.05"
-                defaultValue={character?.top_a ?? 0.0}
-                className="w-full p-2 text-sm border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-neutral-900"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Considers top tokens with high probabilities. 0.0 to 1.0. Lower values: more focused choices.
-              </p>
-            </div>
-
-            <div>
               <label className="block mb-1 text-sm font-medium">Max Tokens</label>
               <input
                 type="number"
@@ -268,6 +220,7 @@ export function CreateCharacterForm({ action, character, editMode = false }: { a
                 min="1"
                 step="1"
                 defaultValue={character?.max_tokens ?? 200}
+                max={1000}
                 className="w-full p-2 text-sm border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-neutral-900"
               />
               <p className="text-xs text-gray-500 mt-1">
@@ -275,6 +228,7 @@ export function CreateCharacterForm({ action, character, editMode = false }: { a
               </p>
             </div>
           </div>
+
 
           <SubmitButton editMode={editMode} />
         </form>
