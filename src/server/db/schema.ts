@@ -1,4 +1,4 @@
-import { integer, sqliteTable, text, primaryKey, index } from "drizzle-orm/sqlite-core"
+import { integer, sqliteTable, text, primaryKey, index, real  } from "drizzle-orm/sqlite-core"
 import type { AdapterAccountType } from "next-auth/adapters"
 import { sql } from "drizzle-orm";
  
@@ -104,6 +104,15 @@ export const characters = sqliteTable("character", {
   updatedAt: integer("updatedAt", { mode: "timestamp_ms" })
     .notNull()
     .$defaultFn(() => sql`CURRENT_TIMESTAMP`),
+  temperature: real("temperature"),
+  top_p: real("top_p"),
+  top_k: integer("top_k"),
+  frequency_penalty: real("frequency_penalty"),
+  presence_penalty: real("presence_penalty"),
+  repetition_penalty: real("repetition_penalty"),
+  min_p: real("min_p"),
+  top_a: real("top_a"),
+  max_tokens: integer("max_tokens")
 })
 
 // Define the structure of the messages array

@@ -5,7 +5,6 @@ import { MessageCircle } from 'lucide-react';
 import { db } from '@/server/db';
 import { characters } from '@/server/db/schema';
 import { desc } from 'drizzle-orm';
-import Image from 'next/image';
 
 const AICharacterCard: React.FC<{ character: typeof characters.$inferSelect }> = ({ character }) => (
   <Link href={`/chat/${character.id}`} passHref className="block h-full">
@@ -30,7 +29,7 @@ const AICharacterCard: React.FC<{ character: typeof characters.$inferSelect }> =
 async function getLatestCharacters() {
   return await db.query.characters.findMany({
     orderBy: [desc(characters.interactionCount)],
-    limit: 50, // Adjust this number as needed
+    limit: 500, // Adjust this number as needed
   });
 }
 

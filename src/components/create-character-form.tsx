@@ -130,6 +130,152 @@ export function CreateCharacterForm({ action, character, editMode = false }: { a
             </div>
           </div>
 
+          <div className="space-y-3">
+            <h3 className="text-sm font-medium">AI Behavior Configuration</h3>
+
+            <div>
+              <label className="block mb-1 text-sm font-medium">Temperature</label>
+              <input
+                type="number"
+                name="temperature"
+                min="0"
+                max="2"
+                step="0.1"
+                defaultValue={character?.temperature ?? 1.0}
+                className="w-full p-2 text-sm border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-neutral-900"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Influences response variety. 0.0 to 2.0. Lower values: more predictable; Higher values: more diverse.
+              </p>
+            </div>
+
+            <div>
+              <label className="block mb-1 text-sm font-medium">Top P</label>
+              <input
+                type="number"
+                name="top_p"
+                min="0"
+                max="1"
+                step="0.05"
+                defaultValue={character?.top_p ?? 1.0}
+                className="w-full p-2 text-sm border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-neutral-900"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Limits token choices to top percentage. 0.0 to 1.0. Lower values: more predictable; Higher values: more diverse.
+              </p>
+            </div>
+
+            <div>
+              <label className="block mb-1 text-sm font-medium">Top K</label>
+              <input
+                type="number"
+                name="top_k"
+                min="0"
+                step="1"
+                defaultValue={character?.top_k ?? 0}
+                className="w-full p-2 text-sm border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-neutral-900"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Limits token choices to top K. 0 or above. Lower values: more predictable; 0: consider all choices.
+              </p>
+            </div>
+
+            <div>
+              <label className="block mb-1 text-sm font-medium">Frequency Penalty</label>
+              <input
+                type="number"
+                name="frequency_penalty"
+                min="-2"
+                max="2"
+                step="0.1"
+                defaultValue={character?.frequency_penalty ?? 0.0}
+                className="w-full p-2 text-sm border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-neutral-900"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Controls token repetition based on frequency. -2.0 to 2.0. Positive: reduce repetition; Negative: encourage repetition.
+              </p>
+            </div>
+
+            <div>
+              <label className="block mb-1 text-sm font-medium">Presence Penalty</label>
+              <input
+                type="number"
+                name="presence_penalty"
+                min="-2"
+                max="2"
+                step="0.1"
+                defaultValue={character?.presence_penalty ?? 0.0}
+                className="w-full p-2 text-sm border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-neutral-900"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Adjusts repetition of used tokens. -2.0 to 2.0. Positive: reduce repetition; Negative: encourage repetition.
+              </p>
+            </div>
+
+            <div>
+              <label className="block mb-1 text-sm font-medium">Repetition Penalty</label>
+              <input
+                type="number"
+                name="repetition_penalty"
+                min="0"
+                max="2"
+                step="0.1"
+                defaultValue={character?.repetition_penalty ?? 1.0}
+                className="w-full p-2 text-sm border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-neutral-900"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Reduces input token repetition. 0.0 to 2.0. Higher values: less repetition; Too high: may affect coherence.
+              </p>
+            </div>
+
+            <div>
+              <label className="block mb-1 text-sm font-medium">Min P</label>
+              <input
+                type="number"
+                name="min_p"
+                min="0"
+                max="1"
+                step="0.05"
+                defaultValue={character?.min_p ?? 0.0}
+                className="w-full p-2 text-sm border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-neutral-900"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Minimum probability for token consideration. 0.0 to 1.0. Higher values: more focused on likely tokens.
+              </p>
+            </div>
+
+            <div>
+              <label className="block mb-1 text-sm font-medium">Top A</label>
+              <input
+                type="number"
+                name="top_a"
+                min="0"
+                max="1"
+                step="0.05"
+                defaultValue={character?.top_a ?? 0.0}
+                className="w-full p-2 text-sm border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-neutral-900"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Considers top tokens with high probabilities. 0.0 to 1.0. Lower values: more focused choices.
+              </p>
+            </div>
+
+            <div>
+              <label className="block mb-1 text-sm font-medium">Max Tokens</label>
+              <input
+                type="number"
+                name="max_tokens"
+                min="1"
+                step="1"
+                defaultValue={character?.max_tokens ?? 200}
+                className="w-full p-2 text-sm border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-neutral-900"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Maximum number of tokens in the response. 1 or above. Limits the length of the generated text.
+              </p>
+            </div>
+          </div>
+
           <SubmitButton editMode={editMode} />
         </form>
       </div>

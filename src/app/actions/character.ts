@@ -14,6 +14,16 @@ const CreateCharacterSchema = z.object({
   description: z.string().min(1, "Description is required"),
   greeting: z.string().min(1, "Greeting is required"),
   visibility: z.enum(["public", "private"]).optional().default("public"),
+  // New AI behavior fields
+  temperature: z.coerce.number().min(0).max(2).optional().default(1.0),
+  top_p: z.coerce.number().min(0).max(1).optional().default(1.0),
+  top_k: z.coerce.number().int().min(0).optional().default(0),
+  frequency_penalty: z.coerce.number().min(-2).max(2).optional().default(0.0),
+  presence_penalty: z.coerce.number().min(-2).max(2).optional().default(0.0),
+  repetition_penalty: z.coerce.number().min(0).max(2).optional().default(1.0),
+  min_p: z.coerce.number().min(0).max(1).optional().default(0.0),
+  top_a: z.coerce.number().min(0).max(1).optional().default(0.0),
+  max_tokens: z.coerce.number().int().min(1).optional().default(200),
 });
 
 async function uploadToR2(file: File): Promise<string> {
@@ -38,7 +48,7 @@ export async function createCharacter(formData: FormData) {
     throw new Error("You must be logged in to create a character");
   }
   
-  const formDataObject = Object.fromEntries(formData.entries());
+  const formDataObject: { [key: string]: FormDataEntryValue } = Object.fromEntries(formData.entries());
 
   const validationResult = CreateCharacterSchema.safeParse(formDataObject);
 
@@ -51,7 +61,11 @@ export async function createCharacter(formData: FormData) {
     };
   }
 
-  const { name, tagline, description, greeting, visibility } = validationResult.data;
+  const { 
+    name, tagline, description, greeting, visibility,
+    temperature, top_p, top_k, frequency_penalty, presence_penalty,
+    repetition_penalty, min_p, top_a, max_tokens
+  } = validationResult.data;
 
   try {
     let avatarImageUrl = null;
@@ -74,6 +88,16 @@ export async function createCharacter(formData: FormData) {
       avatar_image_url: avatarImageUrl,
       createdAt: sql`CURRENT_TIMESTAMP`,
       updatedAt: sql`CURRENT_TIMESTAMP`,
+      // New AI behavior fields
+      temperature,
+      top_p,
+      top_k,
+      frequency_penalty,
+      presence_penalty,
+      repetition_penalty,
+      min_p,
+      top_a,
+      max_tokens,
     }).returning();
 
     return { success: true, character: newCharacter[0] };

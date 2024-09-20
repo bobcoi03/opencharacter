@@ -8,14 +8,6 @@ import { db } from '@/server/db';
 import { eq, and, desc } from 'drizzle-orm';
 import { auth } from '@/server/auth';
 
-type ErrorResponse = {
-  error: {
-    code: number;
-    message: string;
-    metadata?: Record<string, unknown>;
-  };
-};
-
 const groq = createOpenAI({
   baseUrl: "https://groq.helicone.ai/openai/v1",
   apiKey: process.env.GROQ_API_KEY,
@@ -35,49 +27,47 @@ const openrouter = createOpenAI({
   }
 });
 
-const openai = createOpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-  baseURL: "https://oai.helicone.ai/v1",
-  headers: {
-    "Helicone-Auth": `Bearer ${process.env.HELICONE_API_KEY}`,
-  }
-})
-
 export async function continueConversation(messages: CoreMessage[], model_name: string, character: typeof characters.$inferSelect) {
-  let model;
-  switch (model_name) {
-    case 'gpt-4o-mini':
-      model = openai(model_name);
-      break;
-    case 'lizpreciatior/lzlv-70b-fp16-hf':
-      model = openrouter(model_name);
-      break;
-    case 'deepseek/deepseek-chat':
-      model = openrouter(model_name);
-      break;
-    case 'gryphe/mythomax-l2-13b':
-      model = openrouter(model_name);
-      break;
-    default:
-      model = groq(model_name);
-  }
-  const session = await auth();
+  console.log(`Starting conversation continuation with model: ${model_name}`);
 
-  // Update character interaction count
+  let model;
   try {
+    switch (model_name) {
+      case 'lizpreciatior/lzlv-70b-fp16-hf':
+      case 'deepseek/deepseek-chat':
+      case 'gryphe/mythomax-l2-13b':
+        model = openrouter(model_name);
+        break;
+      default:
+        model = groq(model_name);
+    }
+  } catch (error) {
+    console.error('Failed to initialize model:', error);
+    throw new Error('Failed to initialize model. Please try again later.');
+  }
+
+  const session = await auth();
+  console.log(`User session: ${session?.user?.id || 'Not authenticated'}`);
+
+  try {
+    // Update character interaction count
     const [currentCharacter] = await db.select()
       .from(characters)
       .where(eq(characters.id, character.id))
       .limit(1);
+
     if (!currentCharacter) {
       throw new Error('Character not found');
     }
+
     await db.update(characters)
       .set({
         interactionCount: (currentCharacter.interactionCount ?? 0) + 1,
         updatedAt: new Date()
       })
       .where(eq(characters.id, character.id));
+
+    console.log(`Updated interaction count for character: ${character.id}`);
   } catch (error) {
     console.error('Failed to update interaction count:', error);
     // Consider whether you want to throw this error or continue
@@ -87,7 +77,7 @@ export async function continueConversation(messages: CoreMessage[], model_name: 
     const result = await streamText({
       model: model,
       messages,
-      temperature: 1,  
+      temperature: 1,
       onFinish: async (completion) => {
         if (session?.user) {
           try {
@@ -116,8 +106,9 @@ export async function continueConversation(messages: CoreMessage[], model_name: 
                   updated_at: new Date()
                 })
                 .where(eq(chat_sessions.id, chatSession.id));
+              console.log(`Updated chat session: ${chatSession.id}`);
             } else {
-              await db.insert(chat_sessions)
+              const newSession = await db.insert(chat_sessions)
                 .values({
                   user_id: session.user.id!,
                   character_id: character.id,
@@ -126,7 +117,9 @@ export async function continueConversation(messages: CoreMessage[], model_name: 
                   last_message_timestamp: new Date(),
                   created_at: new Date(),
                   updated_at: new Date()
-                });
+                })
+                .returning({ id: chat_sessions.id });
+              console.log(`Created new chat session: ${newSession[0].id}`);
             }
           } catch (error) {
             console.error('Failed to update chat session:', error);
@@ -137,9 +130,10 @@ export async function continueConversation(messages: CoreMessage[], model_name: 
     });
 
     const stream = createStreamableValue(result.textStream);
+    console.log('Successfully created streamable value');
     return stream.value;
   } catch (error) {
-    console.error('Failed to generate or stream response:', error);
+    console.error('Failed to generate or stream response:', JSON.stringify(error));
     throw new Error('Failed to generate response. Please try again later.');
   }
 }

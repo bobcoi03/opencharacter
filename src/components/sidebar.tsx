@@ -45,7 +45,6 @@ function SideBarContent() {
         if (status === "authenticated") {
           const result = await getConversations();
           if (!result.error) {
-            console.log("conversations", result.conversations)
             setConversations(result.conversations)
           }
         }
