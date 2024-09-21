@@ -6,7 +6,7 @@ import { readStreamableValue } from 'ai/rsc';
 import { continueConversation } from '@/app/actions/chat';
 import { User } from 'next-auth';
 import Image from 'next/image';
-import { Cpu, Check } from 'lucide-react';
+import { Cpu, Check, RotateCcw } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,52 +18,63 @@ import ReactMarkdown from 'react-markdown';
 import { getModelArray } from '@/lib/llm_models';
 import Link from 'next/link';
 
+interface ErrorMessageProps {
+  message: string;
+  onRetry: () => void;
+}
+
 interface MessageContentProps {
   message: CoreMessage;
   isUser: boolean;
   userName?: string;
   characterName: string;
   characterAvatarUrl?: string | undefined | null;
+  isError?: boolean;
+  onRetry?: () => void;
 }
 
-const MessageContent: React.FC<MessageContentProps> = ({ message, isUser, userName, characterName, characterAvatarUrl }) => {
+const MessageContent: React.FC<MessageContentProps> = ({ message, isUser, userName, characterName, characterAvatarUrl, isError, onRetry }) => {
   return (
     <div className={`flex items-start mb-4 ${isUser ? 'justify-end' : 'justify-start'}`}>
       {!isUser && (
-        <div className="w-6 h-6 rounded-full overflow-hidden mr-3">
+        <div className="w-6 h-6 rounded-full overflow-hidden mr-3 flex-shrink-0">
           <Image
             src={characterAvatarUrl || '/default-avatar.jpg'}
             alt={characterName}
             width={24}
             height={24}
-            className="rounded-full mr-3 w-full h-full object-cover"
+            className="rounded-full w-full h-full object-cover"
           />
         </div>
       )}
-      <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'}`}>
-        <span className="text-sm text-gray-600 dark:text-gray-400 mb-1">
-          {isUser ? userName || 'You' : characterName}
-        </span>
-        <div
-          className={`p-3 rounded-2xl max-w-lg ${
-            isUser
-              ? 'bg-gray-300 dark:bg-neutral-800 text-black dark:text-white'
-              : 'bg-gray-200 dark:bg-neutral-700 text-black dark:text-white'
-          }`}
-        >
-          {isUser ? (
-            <ReactMarkdown>
-             {message.content as string}
-            </ReactMarkdown>
-          ) : (
-            <ReactMarkdown className="prose dark:prose-invert max-w-none dark:text-white text-black break-words">
-              {message.content as string}
-            </ReactMarkdown>
-          )}
+      <div className={`flex ${isUser ? 'items-end' : 'items-start'} max-w-lg`}>
+        <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'}`}>
+          <span className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+            {isUser ? userName || 'You' : characterName}
+          </span>
+          <div
+            className={`p-3 rounded-2xl ${
+              isUser
+                ? isError
+                  ? 'bg-red-200 dark:bg-red-800 text-red-800 dark:text-red-200'
+                  : 'bg-gray-300 dark:bg-neutral-800 text-black dark:text-white'
+                : 'bg-gray-200 dark:bg-neutral-700 text-black dark:text-white'
+            }`}
+          >
+            {isUser ? (
+              <ReactMarkdown>
+               {message.content as string}
+              </ReactMarkdown>
+            ) : (
+              <ReactMarkdown className="prose dark:prose-invert max-w-none dark:text-white text-black break-words">
+                {message.content as string}
+              </ReactMarkdown>
+            )}
+          </div>
         </div>
       </div>
-      {isUser && (
-        <div className="w-6 h-6 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white text-sm ml-3">
+      {isUser && !isError && (
+        <div className="w-6 h-6 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white text-sm ml-3 flex-shrink-0">
           {userName?.[0] || 'U'}
         </div>
       )}
@@ -116,6 +127,7 @@ export default function MessageAndInput({ user, character, made_by_name, message
     const [selectedModel, setSelectedModel] = useState("deepseek/deepseek-chat");
     const [isLoading, setIsLoading] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const [error, setError] = useState<boolean>(false);
   
     const scrollToBottom = () => {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -129,30 +141,49 @@ export default function MessageAndInput({ user, character, made_by_name, message
       scrollToBottom();
     }, [messagesState]);
   
-    const handleSubmit = async (input: string) => {
-       const newMessages: CoreMessage[] = [
-        ...messagesState,
-        { content: input, role: 'user' },
-      ];
+    const handleSubmit = async (input: string, error: boolean = false) => {
+      const newMessages: CoreMessage[] = error
+        ? [...messagesState]
+        : [
+            ...messagesState,
+            { content: input, role: 'user' },
+          ];
       setMessagesState(newMessages);
       setInput('');
       setIsLoading(true);
-      const result = await continueConversation(newMessages, selectedModel, character);
-      for await (const content of readStreamableValue(result)) {
-        setMessagesState([
-          ...newMessages,
-          {
-            role: 'assistant',
-            content: replacePlaceholders(content) as string,
-          },
-        ]);
+      setError(false);
+  
+      try {
+        const result = await continueConversation(newMessages, selectedModel, character);
+        for await (const content of readStreamableValue(result)) {
+          setMessagesState([
+            ...newMessages,
+            {
+              role: 'assistant',
+              content: replacePlaceholders(content) as string,
+            },
+          ]);
+        }
+      } catch (err) {
+        console.error('Error in conversation:', err);
+        setError(true);
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     };
 
     const handleModelSelect = (modelId: string) => {
       setSelectedModel(modelId);
       localStorage.setItem('selectedModel', modelId);
+    };
+
+    const handleRetry = () => {
+      if (messagesState.length > 0) {
+        const lastUserMessage = messagesState[messagesState.length - 1];
+        if (lastUserMessage.role === 'user') {
+          handleSubmit(lastUserMessage.content as string, true);
+        }
+      }
     };
 
     return (
@@ -213,16 +244,18 @@ export default function MessageAndInput({ user, character, made_by_name, message
               <div className="p-4 pb-32">
                 {messagesState.length > 1 && 
                     <>
-                    {messagesState.slice(1).map((m, i) => (
-                        <MessageContent
-                            key={i}
-                            message={m}
-                            isUser={m.role === 'user'}
-                            userName={user?.name ?? "guest"}
-                            characterName={character.name}
-                            characterAvatarUrl={character.avatar_image_url}
-                        />
-                    ))}
+                  {messagesState.slice(1).map((m, i) => (
+                    <MessageContent
+                      key={i}
+                      message={m}
+                      isUser={m.role === 'user'}
+                      userName={user?.name ?? "guest"}
+                      characterName={character.name}
+                      characterAvatarUrl={character.avatar_image_url}
+                      isError={error && i === messagesState.length - 2}
+                      onRetry={handleRetry}
+                    />
+                  ))}
                     </>
                 }
                 <div ref={messagesEndRef} />
@@ -233,6 +266,20 @@ export default function MessageAndInput({ user, character, made_by_name, message
           {/* Message Input */}
           <div className="absolute bottom-0 left-0 right-0 p-4 pointer-events-none">
             <div className="max-w-xl mx-auto w-full">
+              {error && (
+                <div className="mb-2 p-2 bg-red-100 dark:bg-red-900 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-200 text-sm pointer-events-auto flex justify-between items-center">
+                  <p className="flex items-center">
+                    <svg className="w-4 h-4 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    </svg>
+                    Failed to send message, please try again
+                  </p>
+                  <RotateCcw
+                    className="w-5 h-5 text-red-500 cursor-pointer hover:text-red-600 ml-2"
+                    onClick={handleRetry}
+                  />
+                </div>
+              )}
               <form onSubmit={(e) => { e.preventDefault(); handleSubmit(input); }} className="pointer-events-auto flex items-center space-x-2">
                 <div className="relative flex-grow">
                   <div className="absolute inset-0 bg-gray-300 dark:bg-neutral-700 bg-opacity-20 dark:bg-opacity-20 backdrop-blur-md rounded-full border border-gray-200 dark:border-neutral-700"></div>

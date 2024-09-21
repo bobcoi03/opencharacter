@@ -11,7 +11,7 @@ type Models = {
 export const models: Models = {
     "google/gemini-flash-1.5": {id: "google/gemini-flash-1.5", name: "google/gemini-flash-1.5 (censored)"},
     "lzlv-70b": {id: "lizpreciatior/lzlv-70b-fp16-hf", name: "lzlv 70b (most uncensored)"},
-    "DeepSeek V2.5": {id: "deepseek/deepseek-chat", name: "DeepSeek V2.5 (moderate)"},
+    "deepseek/deepseek-chat": {id: "deepseek/deepseek-chat", name: "DeepSeek V2.5 (moderate)"},
     'gryphe/mythomax-l2-13b': { id: 'gryphe/mythomax-l2-13b', name: 'Gryphe Mythomax L2 13B' },
 };
   
