@@ -12,7 +12,7 @@ export default async function Page() {
   console.log("userID: ", session?.user?.id)
   
   return (
-    <div className="max-w-7xl mx-auto py-8 text-white w-full overflow-y-auto">
+    <div className="py-8 text-white w-full overflow-y-auto">
       <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4 px-6">
         <div className="flex items-center space-x-3">
           {session?.user ?
