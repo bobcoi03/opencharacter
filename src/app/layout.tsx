@@ -4,6 +4,7 @@ import "./globals.css";
 import { ThemeScript } from "@/lib/theme/theme-script";
 import SideBar from "@/components/sidebar";
 import { Toaster } from "@/components/ui/toaster"
+import { GoogleAnalytics } from '@next/third-parties/google'
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -55,6 +56,7 @@ export default function RootLayout({
         </div>
         <Toaster />
       </body>
+      <GoogleAnalytics gaId={process.env.GOOGLE_ANALYTICS_ID ?? ""} />
     </html>
   );
 }

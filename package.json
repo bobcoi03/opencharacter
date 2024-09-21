@@ -19,6 +19,7 @@
     "@clack/prompts": "^0.7.0",
     "@iarna/toml": "^2.2.5",
     "@libsql/client": "^0.10.0",
+    "@next/third-parties": "^14.2.13",
     "@radix-ui/react-avatar": "^1.1.0",
     "@radix-ui/react-dialog": "^1.1.1",
     "@radix-ui/react-dropdown-menu": "^2.1.1",
