@@ -137,7 +137,7 @@ export default function MessageAndInput({ user, character, made_by_name, message
     })) as CoreMessage[];
     const [messagesState, setMessagesState] = useState<CoreMessage[]>(processedMessages);
     const [input, setInput] = useState('');
-    const [selectedModel, setSelectedModel] = useState("deepseek/deepseek-chat");
+    const [selectedModel, setSelectedModel] = useState("gryphe/mythomax-l2-13b");
     const [isLoading, setIsLoading] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const [error, setError] = useState<boolean>(false);
