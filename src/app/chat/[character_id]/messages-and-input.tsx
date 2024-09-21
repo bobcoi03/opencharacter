@@ -15,13 +15,9 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { characters } from '@/server/db/schema';
 import ReactMarkdown from 'react-markdown';
+import { Components } from 'react-markdown';
 import { getModelArray } from '@/lib/llm_models';
 import Link from 'next/link';
-
-interface ErrorMessageProps {
-  message: string;
-  onRetry: () => void;
-}
 
 interface MessageContentProps {
   message: CoreMessage;
@@ -30,25 +26,42 @@ interface MessageContentProps {
   characterName: string;
   characterAvatarUrl?: string | undefined | null;
   isError?: boolean;
+  chatSession?: string | null
   onRetry?: () => void;
 }
 
-const MessageContent: React.FC<MessageContentProps> = ({ message, isUser, userName, characterName, characterAvatarUrl, isError, onRetry }) => {
+const MessageContent: React.FC<MessageContentProps> = ({ 
+  message, 
+  isUser, 
+  userName, 
+  characterName, 
+  characterAvatarUrl, 
+  isError, 
+  onRetry 
+}) => {
+  const markdownComponents: Partial<Components> = {
+    p: ({ children }) => (
+      <p className="whitespace-pre-wrap leading-relaxed break-words">
+        {children}
+      </p>
+    )
+  };
+
   return (
     <div className={`flex items-start mb-4 ${isUser ? 'justify-end' : 'justify-start'}`}>
       {!isUser && (
-        <div className="w-6 h-6 rounded-full overflow-hidden mr-3 flex-shrink-0">
+        <div className="w-10 h-10 rounded-full overflow-hidden mr-3 flex-shrink-0">
           <Image
             src={characterAvatarUrl || '/default-avatar.jpg'}
             alt={characterName}
-            width={24}
-            height={24}
+            width={46}
+            height={46}
             className="rounded-full w-full h-full object-cover"
           />
         </div>
       )}
-      <div className={`flex ${isUser ? 'items-end' : 'items-start'} max-w-lg`}>
-        <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'}`}>
+      <div className={`flex ${isUser ? 'items-end' : 'items-start'} max-w-[calc(100%-3rem)]`}>
+        <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} max-w-full`}>
           <span className="text-sm text-gray-600 dark:text-gray-400 mb-1">
             {isUser ? userName || 'You' : characterName}
           </span>
@@ -59,22 +72,22 @@ const MessageContent: React.FC<MessageContentProps> = ({ message, isUser, userNa
                   ? 'bg-red-200 dark:bg-red-800 text-red-800 dark:text-red-200'
                   : 'bg-gray-300 dark:bg-neutral-800 text-black dark:text-white'
                 : 'bg-gray-200 dark:bg-neutral-700 text-black dark:text-white'
-            }`}
+            } max-w-full`}
           >
-            {isUser ? (
-              <ReactMarkdown>
-               {message.content as string}
-              </ReactMarkdown>
-            ) : (
-              <ReactMarkdown className="prose dark:prose-invert max-w-none dark:text-white text-black break-words">
+            <div className="font-display font-light swiper-no-swiping">
+              <ReactMarkdown 
+                className="prose dark:prose-invert text-black dark:text-white max-w-full overflow-hidden" 
+                components={markdownComponents}
+              >
                 {message.content as string}
               </ReactMarkdown>
-            )}
+              <div className="flex flex-row gap-1 items-center"></div>
+            </div>
           </div>
         </div>
       </div>
       {isUser && !isError && (
-        <div className="w-6 h-6 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white text-sm ml-3 flex-shrink-0">
+        <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white text-sm ml-3 flex-shrink-0">
           {userName?.[0] || 'U'}
         </div>
       )}
@@ -108,7 +121,7 @@ const TypingIndicator: React.FC<{ characterAvatarUrl?: string | undefined | null
   );
 };
 
-export default function MessageAndInput({ user, character, made_by_name, messages }: { user: User | undefined, character: typeof characters.$inferSelect, made_by_name: string, messages: CoreMessage[] }) {
+export default function MessageAndInput({ user, character, made_by_name, messages, chat_session }: { user: User | undefined, character: typeof characters.$inferSelect, made_by_name: string, messages: CoreMessage[], chat_session?: string | undefined }) {
     const replacePlaceholders = (content: string | undefined) => {
       if (content === undefined) {
         return content
@@ -154,7 +167,7 @@ export default function MessageAndInput({ user, character, made_by_name, message
       setError(false);
   
       try {
-        const result = await continueConversation(newMessages, selectedModel, character);
+        const result = await continueConversation(newMessages, selectedModel, character, chat_session);
         for await (const content of readStreamableValue(result)) {
           setMessagesState([
             ...newMessages,

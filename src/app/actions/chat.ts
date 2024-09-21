@@ -5,7 +5,7 @@ import { CoreMessage, streamText } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
 import { characters, chat_sessions, ChatMessageArray} from '@/server/db/schema';
 import { db } from '@/server/db';
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, and, desc, sql } from 'drizzle-orm';
 import { auth } from '@/server/auth';
 
 const openrouter = createOpenAI({
@@ -19,8 +19,40 @@ const openrouter = createOpenAI({
   }
 });
 
-export async function continueConversation(messages: CoreMessage[], model_name: string, character: typeof characters.$inferSelect) {
-  const model = openrouter(model_name)
+export async function createChatSession(character: typeof characters.$inferInsert) {
+  const session = await auth();
+  
+  if (!session || !session.user || !session.user.id) {
+    throw new Error("User not authenticated");
+  }
+
+  if (character.id === undefined || character.id === null) {
+    throw new Error("No character found");
+  } 
+
+  try {
+    const newSession = await db.insert(chat_sessions)
+      .values({
+        user_id: session.user.id!,
+        character_id: character.id!,
+        messages: [{role: "system", content: character.description}, {role: "assistant", content: character.greeting }] as ChatMessageArray,
+        interaction_count: 1,
+        last_message_timestamp: new Date(),
+        created_at: new Date(),
+        updated_at: new Date()
+      })
+      .returning({ id: chat_sessions.id });
+
+    console.log(`Created new chat session: ${newSession[0].id}`);
+    return newSession[0].id;
+  } catch (error) {
+    console.error("Error creating chat session:", error);
+    throw new Error("Failed to create chat session");
+  }
+}
+
+export async function continueConversation(messages: CoreMessage[], model_name: string, character: typeof characters.$inferSelect, chat_session_id?: string) {
+  const model = openrouter(model_name);
   const session = await auth();
 
   try {
@@ -62,16 +94,35 @@ export async function continueConversation(messages: CoreMessage[], model_name: 
               content: completion.text
             });
 
-            let chatSession = await db.select()
-              .from(chat_sessions)
-              .where(
-                and(
-                  eq(chat_sessions.user_id, session.user.id!),
-                  eq(chat_sessions.character_id, character.id)
+            let chatSession;
+
+            if (chat_session_id) {
+              // If chat_session_id is provided, fetch that specific session
+              chatSession = await db.select()
+                .from(chat_sessions)
+                .where(
+                  and(
+                    eq(chat_sessions.id, chat_session_id),
+                    eq(chat_sessions.user_id, session.user.id!),
+                    eq(chat_sessions.character_id, character.id)
+                  )
                 )
-              )
-              .limit(1)
-              .then(rows => rows[0]);
+                .limit(1)
+                .then(rows => rows[0]);
+            } else {
+              // If no chat_session_id, find the most recent session
+              chatSession = await db.select()
+                .from(chat_sessions)
+                .where(
+                  and(
+                    eq(chat_sessions.user_id, session.user.id!),
+                    eq(chat_sessions.character_id, character.id)
+                  )
+                )
+                .orderBy(desc(chat_sessions.updated_at))
+                .limit(1)
+                .then(rows => rows[0]);
+            }
 
             if (chatSession) {
               await db.update(chat_sessions)
@@ -121,7 +172,7 @@ export async function getConversations() {
   }
 
   try {
-    const userChatSessions = await db.select({
+    const latestSessions = await db.select({
       id: chat_sessions.id,
       character_id: chat_sessions.character_id,
       last_message_timestamp: chat_sessions.last_message_timestamp,
@@ -133,11 +184,25 @@ export async function getConversations() {
       .from(chat_sessions)
       .leftJoin(characters, eq(chat_sessions.character_id, characters.id))
       .where(eq(chat_sessions.user_id, session.user.id!))
+      .innerJoin(
+        db.select({
+          character_id: chat_sessions.character_id,
+          max_updated_at: sql<Date>`MAX(${chat_sessions.updated_at})`.as('max_updated_at'),
+        })
+          .from(chat_sessions)
+          .where(eq(chat_sessions.user_id, session.user.id!))
+          .groupBy(chat_sessions.character_id)
+          .as('latest_sessions'),
+        and(
+          eq(chat_sessions.character_id, sql.raw('latest_sessions.character_id')),
+          eq(chat_sessions.updated_at, sql.raw('latest_sessions.max_updated_at'))
+        )
+      )
       .orderBy(desc(chat_sessions.updated_at));
 
     return {
       error: false,
-      conversations: userChatSessions.map(session => ({
+      conversations: latestSessions.map(session => ({
         id: session.id,
         character_id: session.character_id,
         character_name: session.character_name,
@@ -151,4 +216,22 @@ export async function getConversations() {
     console.error('Failed to fetch conversations:', error);
     return { error: true, message: "Failed to fetch conversations" };
   }
+}
+
+export async function getAllConversationsByCharacter(character_id: string) {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    throw new Error('User not authenticated');
+  }
+
+  const conversations = await db.query.chat_sessions.findMany({
+    where: and(
+      eq(chat_sessions.user_id, session.user.id),
+      eq(chat_sessions.character_id, character_id)
+    ),
+    orderBy: [desc(chat_sessions.updated_at)]
+  });
+
+  return conversations;
 }

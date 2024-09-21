@@ -6,7 +6,7 @@ import MessageAndInput from './messages-and-input';
 import { auth } from '@/server/auth';
 import { db } from '@/server/db';
 import { characters, chat_sessions, users } from '@/server/db/schema';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, desc } from 'drizzle-orm';
 import { CoreMessage } from 'ai';
 import ShareButton from '@/components/share-button';
 import Link from 'next/link';
@@ -139,7 +139,8 @@ interface TwitterUser {
   followingsCount: number;
 }
 
-export default async function ChatPage({ params }: { params: { character_id: string } }) {
+export default async function ChatPage({ params, searchParams }: { params: { character_id: string }, searchParams: { [key: string]: string | string[] | undefined }
+}) {
   const session = await auth();
 
   let character = await db.query.characters.findFirst({
@@ -194,12 +195,29 @@ export default async function ChatPage({ params }: { params: { character_id: str
   ];
 
   if (session?.user) {
-    const chatSession = await db.query.chat_sessions.findFirst({
-      where: and(
-        eq(chat_sessions.user_id, session.user.id!),
-        eq(chat_sessions.character_id, character.id)
-      ),
-    });
+    let chatSession;
+  
+    if (searchParams.session) {
+      // If a specific session ID is provided in the URL
+      console.log("searchParams: session: ", searchParams.session)
+      
+      chatSession = await db.query.chat_sessions.findFirst({
+        where: and(
+          eq(chat_sessions.id, searchParams.session as string),
+          eq(chat_sessions.user_id, session.user.id!),
+          eq(chat_sessions.character_id, character.id)
+        )
+      });
+    } else {
+      // If no specific session ID is provided, get the most recent session
+      chatSession = await db.query.chat_sessions.findFirst({
+        where: and(
+          eq(chat_sessions.user_id, session.user.id!),
+          eq(chat_sessions.character_id, character.id)
+        ),
+        orderBy: [desc(chat_sessions.updated_at)]
+      });
+    }
     
     if (chatSession) {
       initialMessages = [
@@ -215,6 +233,7 @@ export default async function ChatPage({ params }: { params: { character_id: str
       {/* Chat Header - Absolute Positioned */}
       <div className="bg-white dark:bg-neutral-900 p-4 flex items-center justify-between dark:border-neutral-700 absolute top-0 left-0 right-0 z-10">
         <div className="flex items-center">
+
           <Link className="w-10 h-10 rounded-full overflow-hidden mr-3 ml-12" href={`/character/${character.id}/profile`}>
             <Image src={character.avatar_image_url ?? "/default-avatar.jpg"} alt={`${character.name}'s avatar`} width={40} height={40} className="object-cover w-full h-full" />
           </Link>
@@ -226,9 +245,6 @@ export default async function ChatPage({ params }: { params: { character_id: str
 
         <div className="flex items-center space-x-2">
           <ShareButton />
-          <button className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-neutral-800 transition-colors border border-gray-200 dark:border-neutral-700">
-            <AudioLines className="text-gray-600 dark:text-gray-400" />
-          </button>
           <Suspense fallback={<div className="w-10 h-10" />}>
             <EllipsisButton 
               character={character}
@@ -245,6 +261,7 @@ export default async function ChatPage({ params }: { params: { character_id: str
           character={character}
           made_by_name={made_by_user?.name ?? 'System'}
           messages={initialMessages}
+          chat_session={searchParams.session as string ?? null}
         />
       </div>
     </div>
