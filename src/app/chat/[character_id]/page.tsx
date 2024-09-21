@@ -211,9 +211,9 @@ export default async function ChatPage({ params }: { params: { character_id: str
   }
 
   return (
-    <div className="flex flex-col h-screen dark:bg-neutral-900">
-      {/* Chat Header - Always Sticky */}
-      <div className="bg-white dark:bg-neutral-900 p-4 flex items-center justify-between dark:border-neutral-700 sticky top-0 z-10 border-b">
+    <div className="flex flex-col h-screen dark:bg-neutral-900 relative">
+      {/* Chat Header - Absolute Positioned */}
+      <div className="bg-white dark:bg-neutral-900 p-4 flex items-center justify-between dark:border-neutral-700 absolute top-0 left-0 right-0 z-10 border-b">
         <div className="flex items-center">
           <Link className="w-10 h-10 rounded-full overflow-hidden mr-3 ml-12" href={`/character/${character.id}/profile`}>
             <Image src={character.avatar_image_url ?? "/default-avatar.jpg"} alt={`${character.name}'s avatar`} width={40} height={40} className="object-cover w-full h-full" />
@@ -226,7 +226,7 @@ export default async function ChatPage({ params }: { params: { character_id: str
 
         <div className="flex items-center space-x-2">
           <ShareButton />
-          <button className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-neutral-800 transition-colors border border-gray-200 dark:border-border-neutral-700">
+          <button className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-neutral-800 transition-colors border border-gray-200 dark:border-neutral-700">
             <AudioLines className="text-gray-600 dark:text-gray-400" />
           </button>
           <Suspense fallback={<div className="w-10 h-10" />}>
@@ -239,7 +239,7 @@ export default async function ChatPage({ params }: { params: { character_id: str
       </div>
 
       {/* Chat Content */}
-      <div className="flex-grow overflow-hidden w-full">
+      <div className="flex-grow overflow-auto w-full pt-[72px]"> {/* Adjust pt value based on your header height */}
         <MessageAndInput 
           user={session?.user} 
           character={character}
