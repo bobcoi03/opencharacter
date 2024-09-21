@@ -213,7 +213,7 @@ export default async function ChatPage({ params }: { params: { character_id: str
   return (
     <div className="flex flex-col h-screen dark:bg-neutral-900 relative">
       {/* Chat Header - Absolute Positioned */}
-      <div className="bg-white dark:bg-neutral-900 p-4 flex items-center justify-between dark:border-neutral-700 absolute top-0 left-0 right-0 z-10 border-b">
+      <div className="bg-white dark:bg-neutral-900 p-4 flex items-center justify-between dark:border-neutral-700 absolute top-0 left-0 right-0 z-10">
         <div className="flex items-center">
           <Link className="w-10 h-10 rounded-full overflow-hidden mr-3 ml-12" href={`/character/${character.id}/profile`}>
             <Image src={character.avatar_image_url ?? "/default-avatar.jpg"} alt={`${character.name}'s avatar`} width={40} height={40} className="object-cover w-full h-full" />
