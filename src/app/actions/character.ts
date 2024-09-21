@@ -23,7 +23,7 @@ const CreateCharacterSchema = z.object({
   repetition_penalty: z.coerce.number().min(0).max(2).optional().default(1.0),
   min_p: z.coerce.number().min(0).max(1).optional().default(0.0),
   top_a: z.coerce.number().min(0).max(1).optional().default(0.0),
-  max_tokens: z.coerce.number().int().min(1).optional().default(200),
+  max_tokens: z.coerce.number().int().min(1).optional().default(600),
 });
 
 async function uploadToR2(file: File): Promise<string> {
