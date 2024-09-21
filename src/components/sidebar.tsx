@@ -15,6 +15,14 @@ import {
     DropdownMenuTrigger,
   } from "@/components/ui/dropdown-menu"
 import { getConversations } from '@/app/actions';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
 
 const DynamicThemeToggler = dynamic(() => import('@/lib/theme/get-theme-button').then(mod => mod.getThemeToggler()), {
   ssr: false,
@@ -25,6 +33,7 @@ function SideBarContent() {
     const { data: session, status } = useSession()
     const [conversations, setConversations] = useState<{ id: string; character_id: string; character_name: string | null; character_avatar: string | null; last_message_timestamp: string; updated_at: string; interaction_count: number; }[] | undefined>(undefined)
     const [isMobile, setIsMobile] = useState(false)
+    const [isProDialogOpen, setIsProDialogOpen] = useState(false)
   
     useEffect(() => {
       const checkMobile = () => {
@@ -155,9 +164,29 @@ function SideBarContent() {
             <div className="p-6 border-t border-gray-200 dark:border-neutral-800">
               {status === "authenticated" ? (
                 <>
-                  <button className="w-full py-3 border px-4 bg-gray-50 dark:bg-neutral-800 text-black dark:text-white rounded-full text-center text-sm hover:bg-gray-200 dark:hover:bg-neutral-700 transition-colors mb-4">
-                    Try Pro<span className='text-yellow-300'>+</span>
-                  </button>
+                <Dialog open={isProDialogOpen} onOpenChange={setIsProDialogOpen}>
+                    <DialogTrigger asChild>
+                      <button className="w-full py-3 border px-4 bg-gray-50 dark:bg-neutral-800 text-black dark:text-white rounded-full text-center text-sm hover:bg-gray-200 dark:hover:bg-neutral-700 transition-colors mb-4">
+                        Pro<span className='text-yellow-300 font-normal'>+</span>
+                      </button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[425px] rounded-2xl bg-white dark:bg-neutral-800 p-6 shadow-xl">
+                      <DialogHeader>
+                        <DialogTitle className="text-2xl font-semibold text-gray-900 dark:text-white mb-2">Interested in Pro features?</DialogTitle>
+                        <DialogDescription className="text-gray-600 dark:text-gray-300 text-base">
+                          DM <Link href="https://x.com/justwrapapi" target="_blank" className="text-blue-500 hover:text-blue-700 underline font-medium">@justwrapapi</Link> for feature suggestions or interest in a paid plan
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="mt-6 flex justify-end">
+                        <Button 
+                          onClick={() => setIsProDialogOpen(false)}
+                          className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-full transition-colors"
+                        >
+                          Close
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <div className="flex items-center justify-between px-2 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-neutral-800 cursor-pointer">
