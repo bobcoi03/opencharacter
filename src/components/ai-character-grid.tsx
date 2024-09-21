@@ -12,7 +12,6 @@ const AICharacterCard: React.FC<{ character: typeof characters.$inferSelect }> =
       <CardContent className="p-6">
         <div className="w-32 h-32 mx-auto relative mb-4 rounded-lg overflow-hidden">
           <img src={character.avatar_image_url ?? "/default-avatar.jpg"} alt={character.name} className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black opacity-70"></div>
         </div>
         <div className="text-black dark:text-white">
           <h3 className="text-md font-semibold truncate text-center mb-2">{character.name}</h3>
