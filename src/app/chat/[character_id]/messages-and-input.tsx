@@ -52,7 +52,9 @@ const MessageContent: React.FC<MessageContentProps> = ({ message, isUser, userNa
           }`}
         >
           {isUser ? (
-            message.content as string
+            <ReactMarkdown>
+             {message.content as string}
+            </ReactMarkdown>
           ) : (
             <ReactMarkdown className="prose dark:prose-invert max-w-none dark:text-white text-black break-words">
               {message.content as string}
