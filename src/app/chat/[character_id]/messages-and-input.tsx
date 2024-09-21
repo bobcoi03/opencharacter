@@ -96,7 +96,20 @@ const TypingIndicator: React.FC<{ characterAvatarUrl?: string | undefined | null
 };
 
 export default function MessageAndInput({ user, character, made_by_name, messages }: { user: User | undefined, character: typeof characters.$inferSelect, made_by_name: string, messages: CoreMessage[] }) {
-    const [messagesState, setMessagesState] = useState<CoreMessage[]>(messages);
+    const replacePlaceholders = (content: string | undefined) => {
+      if (content === undefined) {
+        return content
+      }
+      return content
+        .replace(/{{user}}/g, user?.name ?? "Guest")
+        .replace(/{{char}}/g, character.name || "");
+    };
+
+    const processedMessages = messages.map(message => ({
+      ...message,
+      content: replacePlaceholders(message.content as string)
+    })) as CoreMessage[];
+    const [messagesState, setMessagesState] = useState<CoreMessage[]>(processedMessages);
     const [input, setInput] = useState('');
     const [selectedModel, setSelectedModel] = useState("deepseek/deepseek-chat");
     const [isLoading, setIsLoading] = useState(false);
@@ -128,7 +141,7 @@ export default function MessageAndInput({ user, character, made_by_name, message
           ...newMessages,
           {
             role: 'assistant',
-            content: content as string,
+            content: replacePlaceholders(content) as string,
           },
         ]);
       }
