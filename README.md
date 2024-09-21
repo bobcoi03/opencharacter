@@ -1,12 +1,6 @@
-# 🚀 Full-Stack Cloudflare SaaS Kit
+# 🚀 OpenCharacter: An Open Source Alternative to Character.ai
 
-**_Build and deploy scalable products on Cloudflare with ease._**
-
-An opinionated, batteries-included starter kit for quickly building and deploying SaaS products on Cloudflare. This is a [Next.js](https://nextjs.org/) project bootstrapped with [`c3`](https://developers.cloudflare.com/pages/get-started/c3).
-
-This is the same stack used to build [Supermemory.ai](https://Supermemory.ai) which is open source at [git.new/memory](https://git.new/memory)
-
-Supermemory now has 20k+ users and it runs on $5/month. safe to say, it's _very_ effective.
+**_Create and run any characters locally with local models or use the hosted version._**
 
 ## The stack includes:
 
@@ -84,7 +78,15 @@ Don't forget to add the CORS policy to the R2 bucket. The CORS policy should loo
 ]
 ```
 
-You can now even set up object upload.
+### Using OpenRouter
+
+To integrate OpenCharacter with OpenRouter, you must configure your OpenRouter API key. To do this, add the following environment variable:
+```bash
+OPENROUTER_API_KEY="your_openrouter_api_key_here"
+```
+This can be done in your `.env` file for local development or in your Cloudflare Pages environment variables for production.
+
+With this setup, you can also enable object upload capabilities.
 
 ## Manual Setup
 
