@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import dynamic from 'next/dynamic';
-import { AlignLeft, ChevronsLeft, Plus, Compass, Search, ChevronDown, User, Settings, LogOut, Twitter, FileText } from 'lucide-react'
+import { AlignLeft, ChevronsLeft, Plus, Compass, Search, ChevronDown, User, Settings, LogOut, Twitter, FileText, GithubIcon } from 'lucide-react'
 import Link from 'next/link';
 import AuthProvider from './auth-provider';
 import { useSession, signIn, signOut } from 'next-auth/react';
@@ -76,6 +76,9 @@ function SideBarContent() {
               <div className="flex items-center justify-between mb-4">
                 <Link className="text-md font-bold text-black dark:text-white p-2" href={"/"}>OpenCharacter</Link>
                 <div className="flex items-center space-x-2">
+                  <Link href={"https://github.com/bobcoi03/opencharacter"} target='_blank'>
+                    <GithubIcon className='w-4 h-4 text-gray-400 dark:text-gray-500 hover:text-gray-900'/>
+                  </Link>
                   <DynamicThemeToggler />
                   <Button
                     onClick={toggleSidebar}
