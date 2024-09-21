@@ -220,7 +220,7 @@ export function CreateCharacterForm({ action, character, editMode = false }: { a
                 min="1"
                 step="1"
                 defaultValue={character?.max_tokens ?? 200}
-                max={1000}
+                max={9999}
                 className="w-full p-2 text-sm border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-neutral-900"
               />
               <p className="text-xs text-gray-500 mt-1">
