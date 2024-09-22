@@ -24,7 +24,7 @@ export default async function CreateRoomPage() {
       'use server'
       // You can use the session here if needed
       // For example, to filter characters based on user permissions
-      const characters = await searchCharacters(query, 10);
+      const characters = await searchCharacters(query, 30);
       // You might want to filter or process the results here
       // based on the session or other server-side logic
       return characters;
