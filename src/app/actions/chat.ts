@@ -8,17 +8,6 @@ import { db } from '@/server/db';
 import { eq, and, desc, sql } from 'drizzle-orm';
 import { auth } from '@/server/auth';
 
-const openrouter = createOpenAI({
-  baseURL: "https://openrouter.helicone.ai/api/v1",
-  apiKey: process.env.OPENROUTER_API_KEY,
-  headers: {
-    "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
-    "Helicone-Auth": `Bearer ${process.env.HELICONE_API_KEY}`,
-    "HTTP-Referer": "https://opencharacter.org", // Optional, for including your app on openrouter.ai rankings.
-    "X-Title": "OpenCharacter", // Optional. Shows in rankings on openrouter.ai.
-  }
-});
-
 export async function createChatSession(character: typeof characters.$inferInsert) {
   const session = await auth();
   
@@ -52,8 +41,21 @@ export async function createChatSession(character: typeof characters.$inferInser
 }
 
 export async function continueConversation(messages: CoreMessage[], model_name: string, character: typeof characters.$inferSelect, chat_session_id?: string) {
-  const model = openrouter(model_name);
   const session = await auth();
+
+  const openrouter = createOpenAI({
+    baseURL: "https://openrouter.helicone.ai/api/v1",
+    apiKey: process.env.OPENROUTER_API_KEY,
+    headers: {
+      "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+      "Helicone-Auth": `Bearer ${process.env.HELICONE_API_KEY}`,
+      "HTTP-Referer": "https://opencharacter.org", // Optional, for including your app on openrouter.ai rankings.
+      "X-Title": "OpenCharacter", // Optional. Shows in rankings on openrouter.ai.
+      "Helicone-User-Id": session?.user?.email ?? "guest",
+    }
+  });
+
+  const model = openrouter(model_name);
 
   try {
     // Update character interaction count
