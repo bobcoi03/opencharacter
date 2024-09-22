@@ -1,15 +1,24 @@
 import { auth } from "@/server/auth";
 import { AICharacterGrid } from "@/components/ai-character-grid";
-import { Search } from 'lucide-react';
 import CreateCharacterCardMarketing from "@/components/create-character-card-marketing";
 import SignInButton from "@/components/signin-button";
+import { searchCharacters } from "./actions/index";
+import { CharacterSearchBar } from "@/components/character-search-bar";
 
 export const runtime = "edge";
 
 export default async function Page() {
   const session = await auth();
 
-  console.log("userID: ", session?.user?.id)
+  async function search(query: string) {
+    'use server'
+    // You can use the session here if needed
+    // For example, to filter characters based on user permissions
+    const characters = await searchCharacters(query, 30);
+    // You might want to filter or process the results here
+    // based on the session or other server-side logic
+    return characters;
+  }
   
   return (
     <div className="py-8 text-white w-full overflow-y-auto">
@@ -32,14 +41,9 @@ export default async function Page() {
             )
           }
         </div>
-        <div className="relative w-full md:w-auto">
-          <input
-            type="text"
-            placeholder="Search for Characters"
-            className="w-full md:w-64 py-2 px-10 bg-gray-100 dark:bg-neutral-800 text-black dark:text-white rounded-full text-sm"
-          />
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-        </div>
+
+        <CharacterSearchBar searchCharacters={search} />
+
       </div>
 
       <AICharacterGrid />

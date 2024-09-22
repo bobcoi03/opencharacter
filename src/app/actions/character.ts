@@ -197,7 +197,6 @@ export async function searchCharacters(query: string, limit = 10) {
       or(
         like(characters.name, searchQuery),
         like(characters.tagline, searchQuery),
-        like(characters.description, searchQuery),
         like(characters.tags, searchQuery)
       )
     );
