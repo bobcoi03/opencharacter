@@ -184,11 +184,6 @@ export default async function ChatPage({ params, searchParams }: { params: { cha
     }
   }
 
-  // get name of user who made char
-  const made_by_user = await db.query.users.findFirst({
-    where: eq(users.id, character.userId)
-  });
-
   let initialMessages: CoreMessage[] = [
     { role: 'system', content: character.description },
     { role: 'assistant', content: character.greeting }
@@ -239,7 +234,7 @@ export default async function ChatPage({ params, searchParams }: { params: { cha
           </Link>
           <div>
             <h2 className="font-light text-black dark:text-white">{character.name}</h2>
-            <p className="text-xs font-light text-gray-600 dark:text-gray-400">by {made_by_user?.name ?? 'System'}</p>
+            <p className="text-xs font-light text-gray-600 dark:text-gray-400">by Anon</p>
           </div>
         </div>
 
@@ -248,7 +243,7 @@ export default async function ChatPage({ params, searchParams }: { params: { cha
           <Suspense fallback={<div className="w-10 h-10" />}>
             <EllipsisButton 
               character={character}
-              made_by_username={made_by_user?.name ?? 'System'}
+              made_by_username={'Anon'}
             />
           </Suspense>
         </div>
@@ -259,7 +254,7 @@ export default async function ChatPage({ params, searchParams }: { params: { cha
         <MessageAndInput 
           user={session?.user} 
           character={character}
-          made_by_name={made_by_user?.name ?? 'System'}
+          made_by_name={'Anon'}
           messages={initialMessages}
           chat_session={searchParams.session as string ?? null}
         />
