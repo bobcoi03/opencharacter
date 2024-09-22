@@ -151,3 +151,72 @@ export const chat_sessions = sqliteTable("chat_session", {
 }, (table) => ({
   userCharacterIndex: index('user_character_idx').on(table.user_id, table.character_id),
 }));
+
+export const rooms = sqliteTable("room", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  name: text("name").notNull(),
+  topic: text("topic"),
+  visibility: text("visibility").notNull().default("public"),
+  userId: text("userId")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  interactionCount: integer("interactionCount").notNull().default(0),
+  likeCount: integer("likeCount").notNull().default(0),
+  createdAt: integer("createdAt", { mode: "timestamp_ms" })
+    .notNull()
+    .$defaultFn(() => sql`CURRENT_TIMESTAMP`),
+  updatedAt: integer("updatedAt", { mode: "timestamp_ms" })
+    .notNull()
+    .$defaultFn(() => sql`CURRENT_TIMESTAMP`),
+});
+
+export const roomCharacters = sqliteTable("room_characters", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  roomId: text("roomId")
+    .notNull()
+    .references(() => rooms.id, { onDelete: "cascade" }),
+  characterId: text("characterId")
+    .notNull()
+    .references(() => characters.id, { onDelete: "cascade" }),
+  createdAt: integer("createdAt", { mode: "timestamp_ms" })
+    .notNull()
+    .$defaultFn(() => sql`CURRENT_TIMESTAMP`),
+});
+
+export const group_chat_sessions = sqliteTable("group_chat_sessions", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  roomId: text("roomId")
+    .notNull()
+    .references(() => rooms.id, { onDelete: "cascade" }),
+  userId: text("userId")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  messages: text("messages").notNull().default('[]'),
+  createdAt: integer("createdAt", { mode: "timestamp_ms" })
+    .notNull()
+    .$defaultFn(() => sql`CURRENT_TIMESTAMP`),
+  updatedAt: integer("updatedAt", { mode: "timestamp_ms" })
+    .notNull()
+    .$defaultFn(() => sql`CURRENT_TIMESTAMP`),
+});
+
+export const group_chat_session_characters = sqliteTable("group_chat_session_characters", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  sessionId: text("sessionId")
+    .notNull()
+    .references(() => group_chat_sessions.id, { onDelete: "cascade" }),
+  characterId: text("characterId")
+    .notNull()
+    .references(() => characters.id, { onDelete: "cascade" }),
+  createdAt: integer("createdAt", { mode: "timestamp_ms" })
+    .notNull()
+    .$defaultFn(() => sql`CURRENT_TIMESTAMP`),
+});

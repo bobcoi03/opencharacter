@@ -3,7 +3,6 @@ import { createCharacter } from '@/app/actions/character';
 import { redirect } from 'next/navigation';
 import { CreateCharacterForm } from '@/components/create-character-form';
 import { auth } from '@/server/auth';
-import Link from 'next/link';
 
 export const runtime = "edge";
 

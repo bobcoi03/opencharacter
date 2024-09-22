@@ -4,9 +4,8 @@ import { db } from "@/server/db";
 import { characters } from "@/server/db/schema";
 import { auth } from "@/server/auth";
 import { z } from "zod";
-import { sql } from "drizzle-orm";
 import FileStorage from "@/lib/r2_storage";
-import { eq } from "drizzle-orm";
+import { eq, like, or, desc, sql } from 'drizzle-orm';
 
 const CreateCharacterSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -166,4 +165,64 @@ export async function updateCharacter(characterId: string, formData: FormData) {
     console.error("Error updating character:", error);
     return { success: false, error: "Failed to update character", details: error };
   }
+}
+
+export async function searchCharacters(query: string, limit = 10) {
+  const session = await auth()
+
+  if (!session?.user) {
+    throw new Error("User not logged in")
+  }
+
+  const userId = session.user.id
+
+  console.log(`Searching characters with query: ${query}, userId: ${userId}, limit: ${limit}`);
+  const searchQuery = `%${query}%`;
+  
+  const results = await db
+    .select({
+      id: characters.id,
+      name: characters.name,
+      tagline: characters.tagline,
+      description: characters.description,
+      visibility: characters.visibility,
+      userId: characters.userId,
+      interactionCount: characters.interactionCount,
+      likeCount: characters.likeCount,
+      tags: characters.tags,
+      avatar_image_url: characters.avatar_image_url,
+    })
+    .from(characters)
+    .where(
+      or(
+        like(characters.name, searchQuery),
+        like(characters.tagline, searchQuery),
+        like(characters.description, searchQuery),
+        like(characters.tags, searchQuery)
+      )
+    );
+
+  console.log(`Fetched ${results.length} characters`);
+
+  // Sort the results in JavaScript
+  const sortedResults = results.sort((a, b) => {
+    // Prioritize user's own characters if userId is provided
+    if (userId) {
+      if (a.userId === userId && b.userId !== userId) return -1;
+      if (b.userId === userId && a.userId !== userId) return 1;
+    }
+    // Then sort by interaction count and like count
+    if (b.interactionCount !== a.interactionCount) {
+      return b.interactionCount - a.interactionCount;
+    }
+    return b.likeCount - a.likeCount;
+  });
+
+  console.log(`Sorted characters based on interaction count and like count`);
+
+  // Limit the results
+  const limitedResults = sortedResults.slice(0, limit);
+  console.log(`Returning ${limitedResults.length} characters`);
+
+  return limitedResults;
 }

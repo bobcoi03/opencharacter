@@ -43,6 +43,13 @@
       "when": 1726874754507,
       "tag": "0005_past_spectrum",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1727045733264,
+      "tag": "0006_eager_talon",
+      "breakpoints": true
     }
   ]
 }

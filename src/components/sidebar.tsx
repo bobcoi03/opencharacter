@@ -117,7 +117,15 @@ function SideBarContent() {
                       className="bg-neutral-100 dark:bg-neutral-800 w-full justify-start rounded-none text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-neutral-200 dark:hover:bg-neutral-700"
                     >
                       <FileText className="w-4 h-4 mr-2" />
-                      From Scratch
+                      Create Character
+                    </Button>
+                  </Link>
+                  <Link href="/room/create" passHref>
+                    <Button
+                      className="bg-neutral-100 dark:bg-neutral-800 w-full justify-start rounded-none text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-neutral-200 dark:hover:bg-neutral-700"
+                    >
+                      <FileText className="w-4 h-4 mr-2" />
+                      Create Room
                     </Button>
                   </Link>
                   <Link href="/twitter" passHref>
