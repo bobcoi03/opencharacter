@@ -95,32 +95,6 @@ const MessageContent: React.FC<MessageContentProps> = ({
   );
 };
 
-const TypingIndicator: React.FC<{ characterAvatarUrl?: string | undefined | null; characterName: string }> = ({ characterAvatarUrl, characterName }) => {
-  return (
-    <div className="flex items-start mb-4 justify-start">
-      <Image
-        src={characterAvatarUrl || '/default-avatar.jpg'}
-        alt={characterName}
-        width={24}
-        height={24}
-        className="rounded-full mr-3"
-      />
-      <div className="flex flex-col items-start">
-        <span className="text-sm text-gray-600 dark:text-gray-400 mb-1">
-          {characterName}
-        </span>
-        <div className="p-3 rounded-2xl bg-gray-200 dark:bg-neutral-700">
-          <div className="flex space-x-1">
-            <div className="w-2 h-2 bg-gray-500 dark:bg-gray-300 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-            <div className="w-2 h-2 bg-gray-500 dark:bg-gray-300 rounded-full animate-bounce" style={{ animationDelay: '200ms' }}></div>
-            <div className="w-2 h-2 bg-gray-500 dark:bg-gray-300 rounded-full animate-bounce" style={{ animationDelay: '400ms' }}></div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
 export default function MessageAndInput({ user, character, made_by_name, messages, chat_session }: { user: User | undefined, character: typeof characters.$inferSelect, made_by_name: string, messages: CoreMessage[], chat_session?: string | undefined }) {
     const replacePlaceholders = (content: string | undefined) => {
       if (content === undefined) {
