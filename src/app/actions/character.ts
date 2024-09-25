@@ -168,15 +168,7 @@ export async function updateCharacter(characterId: string, formData: FormData) {
 }
 
 export async function searchCharacters(query: string, limit = 10) {
-  const session = await auth()
-
-  if (!session?.user) {
-    throw new Error("User not logged in")
-  }
-
-  const userId = session.user.id
-
-  console.log(`Searching characters with query: ${query}, userId: ${userId}, limit: ${limit}`);
+  console.log(`Searching characters with query: ${query}, limit: ${limit}`);
   const searchQuery = `%${query}%`;
   
   const results = await db
@@ -205,12 +197,7 @@ export async function searchCharacters(query: string, limit = 10) {
 
   // Sort the results in JavaScript
   const sortedResults = results.sort((a, b) => {
-    // Prioritize user's own characters if userId is provided
-    if (userId) {
-      if (a.userId === userId && b.userId !== userId) return -1;
-      if (b.userId === userId && a.userId !== userId) return 1;
-    }
-    // Then sort by interaction count and like count
+    // Sort by interaction count and like count
     if (b.interactionCount !== a.interactionCount) {
       return b.interactionCount - a.interactionCount;
     }
