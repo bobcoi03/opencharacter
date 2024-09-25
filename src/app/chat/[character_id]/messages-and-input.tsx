@@ -60,31 +60,36 @@ const MessageContent: React.FC<MessageContentProps> = ({
           />
         </div>
       )}
-      <div className={`flex ${isUser ? 'items-end' : 'items-start'} max-w-[calc(100%-3rem)]`}>
-        <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} max-w-full`}>
-          <span className="text-sm text-gray-600 dark:text-gray-400 mb-1">
-            {isUser ? userName || 'You' : characterName}
-          </span>
-          <div
-            className={`p-3 rounded-2xl ${
-              isUser
-                ? isError
-                  ? 'bg-red-200 dark:bg-red-800 text-red-800 dark:text-red-200'
-                  : 'bg-gray-300 dark:bg-neutral-800 text-black dark:text-white'
-                : 'bg-gray-200 dark:bg-neutral-700 text-black dark:text-white'
-            } max-w-full`}
-          >
-            <div className="font-display font-light swiper-no-swiping">
-              <ReactMarkdown 
-                className="prose dark:prose-invert text-black dark:text-white max-w-full overflow-hidden" 
-                components={markdownComponents}
-              >
-                {message.content as string}
-              </ReactMarkdown>
-              <div className="flex flex-row gap-1 items-center"></div>
-            </div>
+      <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} max-w-[calc(100%-3rem)]`}>
+        <span className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+          {isUser ? userName || 'You' : characterName}
+        </span>
+        <div
+          className={`p-3 rounded-2xl ${
+            isUser
+              ? isError
+                ? 'bg-red-200 dark:bg-red-800 text-red-800 dark:text-red-200'
+                : 'bg-gray-300 dark:bg-neutral-800 text-black dark:text-white'
+              : 'bg-gray-200 dark:bg-neutral-700 text-black dark:text-white'
+          } max-w-full`}
+        >
+          <div className="font-display font-light swiper-no-swiping">
+            <ReactMarkdown 
+              className="prose dark:prose-invert text-black dark:text-white max-w-full overflow-hidden" 
+              components={markdownComponents}
+            >
+              {message.content as string}
+            </ReactMarkdown>
           </div>
         </div>
+        {!isUser && onRetry && (
+          <button 
+            onClick={onRetry}
+            className="mt-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors duration-200"
+          >
+            <RotateCcw className="w-5 h-5" />
+          </button>
+        )}
       </div>
       {isUser && !isError && (
         <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white text-sm ml-3 flex-shrink-0">
@@ -128,18 +133,26 @@ export default function MessageAndInput({ user, character, made_by_name, message
       scrollToBottom();
     }, [messagesState]);
   
-    const handleSubmit = async (input: string, error: boolean = false) => {
-      const newMessages: CoreMessage[] = error
-        ? [...messagesState]
-        : [
-            ...messagesState,
-            { content: input, role: 'user' },
-          ];
+    const handleSubmit = async (input: string, error: boolean = false, regenerate: boolean = false) => {
+      let newMessages: CoreMessage[];
+    
+      if (regenerate && !error) {
+        // Remove the last assistant message
+        newMessages = messagesState.slice(0, -1);
+      } else if (error) {
+        newMessages = [...messagesState];
+      } else {
+        newMessages = [
+          ...messagesState,
+          { content: input, role: 'user' },
+        ];
+      }
+    
       setMessagesState(newMessages);
       setInput('');
       setIsLoading(true);
       setError(false);
-  
+    
       try {
         const result = await continueConversation(newMessages, selectedModel, character, chat_session);
         for await (const content of readStreamableValue(result)) {
@@ -165,10 +178,16 @@ export default function MessageAndInput({ user, character, made_by_name, message
     };
 
     const handleRetry = () => {
-      if (messagesState.length > 0) {
-        const lastUserMessage = messagesState[messagesState.length - 1];
-        if (lastUserMessage.role === 'user') {
-          handleSubmit(lastUserMessage.content as string, true);
+      if (messagesState.length > 1) {  // Ensure there are at least two messages
+        const lastMessage = messagesState[messagesState.length - 1];
+        const lastUserMessage = messagesState[messagesState.length - 2];
+    
+        if (lastMessage.role === 'user') {
+          // Error case: retry the user's message
+          handleSubmit(lastMessage.content as string, true);
+        } else if (lastMessage.role === 'assistant') {
+          // Regeneration case: retry the last user message to get a new assistant response
+          handleSubmit(lastUserMessage.content as string, false, true);
         }
       }
     };
@@ -229,21 +248,28 @@ export default function MessageAndInput({ user, character, made_by_name, message
               </div>
 
               <div className="p-4 pb-32">
-                {messagesState.length > 1 && 
-                    <>
-                  {messagesState.slice(1).map((m, i) => (
-                    <MessageContent
-                      key={i}
-                      message={m}
-                      isUser={m.role === 'user'}
-                      userName={user?.name ?? "guest"}
-                      characterName={character.name}
-                      characterAvatarUrl={character.avatar_image_url}
-                      isError={error && i === messagesState.length - 2}
-                      onRetry={handleRetry}
-                    />
-                  ))}
-                    </>
+              {messagesState.length > 1 && 
+                  <>
+                    {messagesState.slice(1).map((m, i) => (
+                      <MessageContent
+                        key={i}
+                        message={m}
+                        isUser={m.role === 'user'}
+                        userName={user?.name ?? "guest"}
+                        characterName={character.name}
+                        characterAvatarUrl={character.avatar_image_url}
+                        isError={error && i === messagesState.length - 2}
+                        onRetry={
+                          m.role === "assistant" && 
+                          i === messagesState.length - 2 && 
+                          messagesState.length > 2 &&
+                          !isLoading ? 
+                          handleRetry : 
+                          undefined
+                        }
+                      />
+                    ))}
+                  </>
                 }
                 <div ref={messagesEndRef} />
               </div>
