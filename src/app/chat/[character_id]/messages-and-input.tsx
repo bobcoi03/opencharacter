@@ -155,7 +155,9 @@ export default function MessageAndInput({ user, character, made_by_name, message
     
       try {
         const result = await continueConversation(newMessages, selectedModel, character, chat_session);
+        console.log("result: " + JSON.stringify(result));
         for await (const content of readStreamableValue(result)) {
+          console.log("content: " + content);
           setMessagesState([
             ...newMessages,
             {

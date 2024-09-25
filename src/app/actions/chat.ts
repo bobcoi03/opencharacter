@@ -161,8 +161,8 @@ export async function continueConversation(messages: CoreMessage[], model_name: 
     console.log('Successfully created streamable value');
     return stream.value;
   } catch (error) {
-    console.error('Failed to generate or stream response:', JSON.stringify(error));
-    throw new Error('Failed to generate response. Please try again later.');
+    console.error('Failed to generate or stream response:', error);
+    throw new Error('Failed to generate response. Please try again.');
   }
 }
 
