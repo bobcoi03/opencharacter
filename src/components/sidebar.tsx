@@ -23,12 +23,26 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import { CharacterSearchBar } from './character-search-bar';
+
+type Character = {
+  id: string;
+  name: string;
+  tagline: string;
+  description: string;
+  visibility: string;
+  userId: string;
+  interactionCount: number;
+  likeCount: number;
+  tags: string;
+  avatar_image_url: string | null;
+};
 
 const DynamicThemeToggler = dynamic(() => import('@/lib/theme/get-theme-button').then(mod => mod.getThemeToggler()), {
   ssr: false,
 });
 
-function SideBarContent() {
+function SideBarContent({ search }: { search: (query: string) => Promise<Character[]> }) {
     const [isOpen, setIsOpen] = useState(false)
     const { data: session, status } = useSession()
     const [conversations, setConversations] = useState<{ id: string; character_id: string; character_name: string | null; character_avatar: string | null; last_message_timestamp: string; updated_at: string; interaction_count: number; }[] | undefined>(undefined)
@@ -143,15 +157,9 @@ function SideBarContent() {
                 <Compass className="w-6 h-6 mr-2" />
                 Discover
               </Link>
-              
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Search for Characters"
-                  className="w-full py-2 px-4 pl-10 bg-gray-100 dark:bg-neutral-800 text-black dark:text-white rounded-full text-sm"
-                />
-                <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
-              </div>
+            
+              <CharacterSearchBar searchCharacters={search} />
+
             </div>
             
             <div className="flex-1 overflow-y-auto px-4 py-2 custom-scrollbar">
@@ -268,10 +276,10 @@ function SideBarContent() {
     )
   }
 
-function SideBar() {
+function SideBar({ search }: { search: (query: string) => Promise<Character[]> }) {
     return (
         <AuthProvider>
-            <SideBarContent />
+            <SideBarContent search={search} />
         </AuthProvider>
     )
 }

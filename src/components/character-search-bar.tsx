@@ -57,8 +57,8 @@ export function CharacterSearchBar({ searchCharacters }: { searchCharacters: Sea
         type="text"
         value={inputValue}
         onChange={handleInputChange}
-        placeholder="Search for Characters"
-        className="w-full md:w-64 py-2 px-10 bg-gray-100 dark:bg-neutral-800 text-black dark:text-white rounded-full text-sm"
+        placeholder="Search Characters"
+        className="w-full py-2 px-10 bg-gray-100 dark:bg-neutral-800 text-black dark:text-white rounded-full text-sm"
       />
       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
       {isLoading && (
@@ -67,7 +67,7 @@ export function CharacterSearchBar({ searchCharacters }: { searchCharacters: Sea
         </div>
       )}
       {suggestions.length > 0 && (
-        <ul className="absolute z-10 mt-1 w-full bg-white dark:bg-neutral-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg max-h-60 overflow-auto">
+        <ul className="absolute z-[9999] mt-1 w-full bg-white dark:bg-neutral-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg max-h-60 overflow-auto">
           {suggestions.map(char => (
             <li 
               key={char.id}
