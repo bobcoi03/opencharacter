@@ -14,30 +14,30 @@ const safeTruncate = (str: string, n: number) => {
 };
 
 const AICharacterCard: React.FC<{ character: typeof characters.$inferSelect }> = ({ character }) => {
-  const truncatedTagline = React.useMemo(() => safeTruncate(character.tagline, 80), [character.tagline]);
+  const truncatedTagline = React.useMemo(() => safeTruncate(character.tagline, 50), [character.tagline]);
 
   return (
-    <Link href={`/chat/${character.id}`} passHref className="block">
-      <Card className="h-full bg-white dark:bg-neutral-800 hover:shadow-md transition-all duration-300 overflow-hidden">
-        <CardContent className="p-4 flex flex-col h-full">
-          <div className="relative w-full pb-[100%] mb-4 rounded-lg overflow-hidden">
+    <Link href={`/chat/${character.id}`} passHref className="block h-full">
+      <Card className="transition-colors duration-300 overflow-hidden rounded-lg h-full bg-neutral-50 dark:bg-neutral-900">
+        <CardContent className="p-3 flex flex-col h-full">
+          <div className="relative w-full pb-[100%] rounded-lg overflow-hidden">
             <Image 
               src={character.avatar_image_url ?? "/default-avatar.jpg"} 
               alt={character.name} 
               layout="fill"
               objectFit="cover"
-              className="transition-transform duration-300 hover:scale-105"
             />
           </div>
-          <div className="flex-grow">
-            <h3 className="text-lg font-semibold truncate mb-2 text-gray-800 dark:text-gray-200">{character.name}</h3>
-            <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-3">
-              {truncatedTagline}
-            </p>
-          </div>
-          <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mt-4">
-            <div className="flex items-center">
-              <MessageCircle className="w-4 h-4 mr-1" />
+          <div className="flex flex-col justify-between flex-grow mt-2">
+            <div>
+              <h3 className="text-sm font-semibold truncate text-gray-700 dark:text-gray-200 text-center">{character.name}</h3>
+              <p className="text-xs text-gray-400 line-clamp-2 mt-1">
+                {truncatedTagline}
+              </p>
+            </div>
+            <div className="flex items-center text-xs text-gray-500 mt-2">
+              <span className="mr-1">@anon</span>
+              <MessageCircle className="w-3 h-3 ml-2 mr-1" />
               <span>{character.interactionCount.toLocaleString()}</span>
             </div>
           </div>
@@ -58,9 +58,9 @@ export async function AICharacterGrid() {
   const popularCharacters = await getPopularCharacters();
 
   return (
-    <div className="bg-gray-100 dark:bg-neutral-900 p-6 md:p-8">
-      <h2 className="text-2xl font-bold mb-6 text-gray-900 dark:text-gray-100">Most Popular Characters</h2>
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
+    <div className="p-6 md:p-8">
+      <h2 className="text-2xl font-bold mb-6 text-slate-800 dark:text-gray-100">Recommended</h2>
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
         {popularCharacters.map((character) => (
           <AICharacterCard key={character.id} character={character} />
         ))}
