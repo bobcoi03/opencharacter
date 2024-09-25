@@ -39,7 +39,7 @@ export default async function CharacterProfilePage({ params }: { params: { chara
   };
   
   return (
-    <div className="w-full bg-white dark:bg-neutral-900 min-h-screen p-4 lg:p-6 overflow-y-auto">
+    <div className="w-full bg-white dark:bg-neutral-900 min-h-screen p-4 lg:p-6 overflow-y-auto mt-12">
       <header className="mb-6">
         <Link href="/" className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-neutral-800 inline-block">
           <ArrowLeft size={24} className="text-black dark:text-white" />
