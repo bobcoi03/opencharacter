@@ -60,48 +60,44 @@ const MessageContent: React.FC<MessageContentProps> = ({
   onRetry 
 }) => {
   const markdownComponents: Partial<Components> = {
-    p: ({ children }) => (
-      <p className="leading-relaxed break-words text-wrap max-w-full w-full">
-        {children}
-      </p>
-    )
+    p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+    em: ({ children }) => <em className="text-neutral-300">{children}</em>,
+    code: ({ children }) => <code className="bg-neutral-800 px-1 py-0.5 rounded text-sm text-neutral-200">{children}</code>
   };
 
   return (
     <div className="flex items-start mb-8 max-w-full w-full">
-      <div className="w-10 h-10 rounded-full mr-3 flex-shrink-0">
+      <div className="w-8 h-8 rounded-full mr-6 flex-shrink-0">
         {isUser ? (
           <UserAvatar userName={userName ?? "Guest"} />
         ) : (
           <Image
             src={characterAvatarUrl || '/default-avatar.jpg'}
             alt={characterName}
-            width={46}
-            height={46}
+            width={32}
+            height={32}
             className="rounded-full w-full h-full object-cover"
           />
         )}
       </div>
-      <div className="flex flex-col max-w-[calc(100%-3rem)]">
-        <span className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+      <div className="flex flex-col max-w-[calc(100%-2.5rem)]">
+        <span className="text-xs text-neutral-400 mb-2">
           {isUser ? (userName || 'You') : characterName}
         </span>
         <div className="max-w-full">
-          <div className="font-display font-light swiper-no-swiping">
-            <ReactMarkdown 
-              className="prose dark:prose-invert text-gray-900 dark:text-gray-100 max-w-full overflow-hidden" 
-              components={markdownComponents}
-            >
-              {message.content as string}
-            </ReactMarkdown>
-          </div>
+          <ReactMarkdown 
+            className="text-sm text-white" 
+            components={markdownComponents}
+          >
+            {message.content as string}
+          </ReactMarkdown>
         </div>
         {!isUser && onRetry && (
           <button 
             onClick={onRetry}
-            className="mt-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors duration-200"
+            className="mt-1 text-neutral-500 hover:text-neutral-300 transition-colors duration-200"
           >
-            <RotateCcw className="w-5 h-5" />
+            <RotateCcw className="w-4 h-4" />
           </button>
         )}
       </div>
@@ -336,7 +332,7 @@ export default function MessageAndInput({ user, character, made_by_name, message
                       type="button"
                       className="bg-gray-200 dark:bg-neutral-600 rounded-full p-2 z-20 transition-opacity opacity-70 hover:opacity-100 focus:opacity-100 hover:cursor-pointer"
                     >
-                      <Cpu className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+                      <Cpu className="w-4 h-4 text-gray-700 dark:text-gray-300" />
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent>

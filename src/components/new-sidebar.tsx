@@ -129,8 +129,10 @@ const NewSidebarContent: React.FC<NewSidebarProps> = ({ search }) => {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56 bg-white dark:bg-neutral-800">
                     <DropdownMenuItem className="text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">
-                      <User className="mr-2 h-4 w-4" />
-                      <span>Profile</span>
+                        <Link href={"/profile"} className='w-full flex'>
+                            <User className="mr-2 h-4 w-4" />
+                            <span>Profile</span>
+                        </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem className="text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">
                       <Settings className="mr-2 h-4 w-4" />
@@ -163,7 +165,7 @@ const NewSidebarContent: React.FC<NewSidebarProps> = ({ search }) => {
   
         {/* Mobile Bottom Navigation */}
         {!isChatRoute && 
-          <div className="md:hidden fixed bottom-0 left-0 right-0 bg-neutral-900 flex justify-around items-center h-16 z-50">
+          <div className="md:hidden fixed bottom-0 left-0 right-0 bg-neutral-900 flex justify-around items-center h-16 z-[9999]">
             <SidebarContent isCreateOpen={isCreateOpen} setIsCreateOpen={setIsCreateOpen} isMobile />
           </div>      
         }
@@ -201,10 +203,12 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ isCreateOpen, setIsCrea
         
         <Popover>
           <PopoverTrigger asChild>
-            <Button variant="ghost" size="icon" className={`h-10 w-10 ${buttonClass}`}>
-              <PlusCircle className={iconClass} />
+            <div className={`${buttonClass}`}>
+              <Button variant={"ghost"} size={"icon"} className='h-10 w-10'>
+                <PlusCircle className={iconClass} />
+              </Button>
               <span className={textClass}>Create</span>
-            </Button>
+            </div>
           </PopoverTrigger>
           <PopoverContent side={isMobile ? "top" : "right"} className="w-48 p-0 bg-neutral-800">
             <div className="flex flex-col">
@@ -215,16 +219,16 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ isCreateOpen, setIsCrea
                   router.push('/new');
                 }}
               >
-                Create Character
+                Character
               </Button>
               <Button
                 variant="ghost"
                 className="w-full justify-start rounded-none text-left px-4 py-2 text-sm text-gray-300 hover:bg-neutral-700"
                 onClick={() => {
-                  router.push('/room/create');
+                  router.push('/persona');
                 }}
               >
-                Create Room
+                Persona
               </Button>
               <Button
                 variant="ghost"
@@ -246,7 +250,7 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ isCreateOpen, setIsCrea
           <span className={textClass}>Chats</span>
         </Link>
         
-        <Link href="/community" className={buttonClass}>
+        <Link href="https://discord.com/channels/1288919825585803347/1288919826441703629" target="_blank" className={buttonClass}>
           <Button variant="ghost" size="icon" className="h-10 w-10">
             <Users className={iconClass} />
           </Button>
