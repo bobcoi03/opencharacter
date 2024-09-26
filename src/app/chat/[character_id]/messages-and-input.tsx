@@ -7,6 +7,7 @@ import { continueConversation } from '@/app/actions/chat';
 import { User } from 'next-auth';
 import Image from 'next/image';
 import { Cpu, Check, RotateCcw } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,6 +31,17 @@ interface MessageContentProps {
   onRetry?: () => void;
 }
 
+const UserAvatar = ({ userName }: { userName: string }) => {
+  const firstLetter = (userName || 'U')[0].toUpperCase();
+  const gradientClass = `bg-gradient-to-br from-black via-black to-purple-300`;
+
+  return (
+    <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold ${gradientClass}`}>
+      {firstLetter}
+    </div>
+  );
+};
+
 const MessageContent: React.FC<MessageContentProps> = ({ 
   message, 
   isUser, 
@@ -41,16 +53,18 @@ const MessageContent: React.FC<MessageContentProps> = ({
 }) => {
   const markdownComponents: Partial<Components> = {
     p: ({ children }) => (
-      <p className="whitespace-pre-wrap leading-relaxed break-words">
+      <p className="leading-relaxed break-words text-wrap max-w-full w-full">
         {children}
       </p>
     )
   };
 
   return (
-    <div className={`flex items-start mb-4 ${isUser ? 'justify-end' : 'justify-start'}`}>
-      {!isUser && (
-        <div className="w-10 h-10 rounded-full overflow-hidden mr-3 flex-shrink-0">
+    <div className="flex items-start mb-8 max-w-full w-full">
+      <div className="w-10 h-10 rounded-full mr-3 flex-shrink-0">
+        {isUser ? (
+          <UserAvatar userName={userName ?? "Guest"} />
+        ) : (
           <Image
             src={characterAvatarUrl || '/default-avatar.jpg'}
             alt={characterName}
@@ -58,24 +72,16 @@ const MessageContent: React.FC<MessageContentProps> = ({
             height={46}
             className="rounded-full w-full h-full object-cover"
           />
-        </div>
-      )}
-      <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} max-w-[calc(100%-3rem)]`}>
+        )}
+      </div>
+      <div className="flex flex-col max-w-[calc(100%-3rem)]">
         <span className="text-sm text-gray-600 dark:text-gray-400 mb-1">
-          {isUser ? userName || 'You' : characterName}
+          {isUser ? (userName || 'You') : characterName}
         </span>
-        <div
-          className={`p-3 rounded-2xl ${
-            isUser
-              ? isError
-                ? 'bg-red-200 dark:bg-red-800 text-red-800 dark:text-red-200'
-                : 'bg-gray-300 dark:bg-neutral-800 text-black dark:text-white'
-              : 'bg-gray-200 dark:bg-neutral-700 text-black dark:text-white'
-          } max-w-full`}
-        >
+        <div className="max-w-full">
           <div className="font-display font-light swiper-no-swiping">
             <ReactMarkdown 
-              className="prose dark:prose-invert text-black dark:text-white max-w-full overflow-hidden" 
+              className="prose dark:prose-invert text-gray-900 dark:text-gray-100 max-w-full overflow-hidden" 
               components={markdownComponents}
             >
               {message.content as string}
@@ -91,11 +97,6 @@ const MessageContent: React.FC<MessageContentProps> = ({
           </button>
         )}
       </div>
-      {isUser && !isError && (
-        <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white text-sm ml-3 flex-shrink-0">
-          {userName?.[0] || 'U'}
-        </div>
-      )}
     </div>
   );
 };
@@ -195,7 +196,7 @@ export default function MessageAndInput({ user, character, made_by_name, message
     };
 
     return (
-        <div className="flex flex-col h-full relative">
+        <div className="flex flex-col h-full relative max-w-full overflow-x-hidden">
             <style jsx global>{`
             /* Webkit browsers (Chrome, Safari) */
             ::-webkit-scrollbar {
@@ -279,7 +280,7 @@ export default function MessageAndInput({ user, character, made_by_name, message
           </div>
     
           {/* Message Input */}
-          <div className="absolute bottom-0 left-0 right-0 p-4 pointer-events-none">
+          <div className="fixed bottom-0 left-0 right-0 p-4 pointer-events-none w-full max-w-full">
             <div className="max-w-xl mx-auto w-full">
               {error && (
                 <div className="mb-2 p-2 bg-red-100 dark:bg-red-900 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-200 text-sm pointer-events-auto flex justify-between items-center">
@@ -295,19 +296,19 @@ export default function MessageAndInput({ user, character, made_by_name, message
                   />
                 </div>
               )}
-              <form onSubmit={(e) => { e.preventDefault(); handleSubmit(input); }} className="pointer-events-auto flex items-center space-x-2">
+              <form onSubmit={(e) => { e.preventDefault(); handleSubmit(input); }} className="flex items-center space-x-2 max-w-full pointer-events-auto">
                 <div className="relative flex-grow">
                   <div className="absolute inset-0 bg-gray-300 dark:bg-neutral-700 bg-opacity-20 dark:bg-opacity-20 backdrop-blur-md rounded-full border border-gray-200 dark:border-neutral-700"></div>
-                  <input
+                  <Input
                     type="text"
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     placeholder={`Message ${character.name}...`}
-                    className="w-full py-4 pl-6 pr-12 bg-transparent relative z-10 outline-none text-black dark:text-white text-lg rounded-3xl"
+                    className="py-4 pl-6 pr-12 bg-transparent relative z-10 outline-none text-black dark:text-white text-sm rounded-3xl"
                   />
                   <button 
                     type="submit" 
-                    className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black dark:bg-white rounded-full p-2 z-20 transition-opacity opacity-70 hover:opacity-100 focus:opacity-100 hover:cursor-pointer"
+                    className="absolute right-0 top-1/2 transform -translate-y-1/2 bg-black dark:bg-white rounded-full p-2 z-20 transition-opacity opacity-70 hover:opacity-100 focus:opacity-100 hover:cursor-pointer"
                     disabled={!input.trim() || isLoading}
                   >
                     <svg viewBox="0 0 24 24" className="w-5 h-5 text-white dark:text-black" fill="none" stroke="currentColor">

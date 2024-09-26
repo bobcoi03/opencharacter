@@ -2,10 +2,16 @@ import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Card, CardContent } from "@/components/ui/card";
-import { MessageCircle, Star } from 'lucide-react';
-import { db } from '@/server/db';
-import { characters } from '@/server/db/schema';
-import { desc } from 'drizzle-orm';
+import { MessageCircle } from 'lucide-react';
+
+type Character = {
+  id: string;
+  name: string;
+  tagline: string;
+  avatar_image_url: string | null;
+  userId: string;
+  interactionCount: number;
+};
 
 const safeTruncate = (str: string, n: number) => {
   if (str.length <= n) return str;
@@ -13,32 +19,31 @@ const safeTruncate = (str: string, n: number) => {
   return (subString.match(/[\uD800-\uDBFF]$/) ? subString.slice(0, -1) : subString) + '…';
 };
 
-const AICharacterCard: React.FC<{ character: typeof characters.$inferSelect }> = ({ character }) => {
+const AICharacterCard: React.FC<{ character: Character }> = ({ character }) => {
   const truncatedTagline = React.useMemo(() => safeTruncate(character.tagline, 50), [character.tagline]);
 
   return (
-    <Link href={`/chat/${character.id}`} passHref className="block h-full">
-      <Card className="transition-colors duration-300 overflow-hidden rounded-lg h-full bg-neutral-50 dark:bg-neutral-900">
-        <CardContent className="p-3 flex flex-col h-full">
-          <div className="relative w-full pb-[100%] rounded-lg overflow-hidden">
+    <Link href={`/chat/${character.id}`} passHref className="block w-full h-full">
+      <Card className="bg-neutral-800 border-none overflow-hidden rounded-lg h-full flex flex-col">
+        <CardContent className="px-6 py-3 flex flex-col flex-grow">
+          <div className="relative w-full pb-[100%] rounded-lg overflow-hidden max-h-24 h-full">
             <Image 
               src={character.avatar_image_url ?? "/default-avatar.jpg"} 
               alt={character.name} 
               layout="fill"
-              objectFit="cover"
+              objectFit='cover'
+              className='overflow-hidden border'
             />
           </div>
-          <div className="flex flex-col justify-between flex-grow mt-2">
-            <div>
-              <h3 className="text-sm font-semibold truncate text-gray-700 dark:text-gray-200 text-center">{character.name}</h3>
-              <p className="text-xs text-gray-400 line-clamp-2 mt-1">
-                {truncatedTagline}
-              </p>
-            </div>
-            <div className="flex items-center text-xs text-gray-500 mt-2">
-              <span className="mr-1">@anon</span>
+          <h3 className="mt-2 text-sm font-semibold text-gray-200 truncate text-center">{character.name}</h3>
+          <p className="text-xs text-gray-400 line-clamp-2 mt-1 flex-grow">
+            {truncatedTagline}
+          </p>
+          <div className="flex items-center text-xs text-gray-500 mt-2 w-full justify-between">
+            <span className="mr-1">@anon</span>
+            <div className='flex items-center'>
               <MessageCircle className="w-3 h-3 ml-2 mr-1" />
-              <span>{character.interactionCount.toLocaleString()}</span>
+              <span>{(character.interactionCount)}</span>
             </div>
           </div>
         </CardContent>
@@ -47,24 +52,18 @@ const AICharacterCard: React.FC<{ character: typeof characters.$inferSelect }> =
   );
 };
 
-async function getPopularCharacters() {
-  return await db.query.characters.findMany({
-    orderBy: [desc(characters.interactionCount)],
-    limit: 500,
-  });
-}
-
-export async function AICharacterGrid() {
-  const popularCharacters = await getPopularCharacters();
-
+const AICharacterGrid: React.FC<{ characters: Character[] }> = ({ characters }) => {
   return (
-    <div className="p-6 md:p-8">
-      <h2 className="text-2xl font-bold mb-6 text-slate-800 dark:text-gray-100">Recommended</h2>
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-        {popularCharacters.map((character) => (
+    <div className='px-4 md:px-8 py-6 bg-neutral-900'>
+      <h2 className="text-sm font-medium text-gray-100 mb-4">Popular</h2>
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
+        {characters.map((character) => (
           <AICharacterCard key={character.id} character={character} />
         ))}
       </div>
+      <div className='border m-8'/>
     </div>
   );
-}
+};
+
+export default AICharacterGrid;
