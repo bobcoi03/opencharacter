@@ -25,7 +25,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 
 interface MessageContentProps {
@@ -44,7 +43,7 @@ const UserAvatar = ({ userName }: { userName: string }) => {
   const gradientClass = `bg-gradient-to-br from-black via-black to-purple-300`;
 
   return (
-    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-white font-semibold ${gradientClass}`}>
+    <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold ${gradientClass}`}>
       {firstLetter}
     </div>
   );
@@ -66,8 +65,8 @@ const MessageContent: React.FC<MessageContentProps> = ({
   };
 
   return (
-    <div className="flex items-start mb-8 max-w-full w-full">
-      <div className="w-6 h-6 rounded-full mr-4 flex-shrink-0">
+    <div className="flex items-start mb-8 max-w-full w-full overflow-hidden">
+      <div className="w-10 h-10 rounded-full mr-4 flex-shrink-0">
         {isUser ? (
           <UserAvatar userName={userName ?? "Guest"} />
         ) : (
@@ -86,7 +85,7 @@ const MessageContent: React.FC<MessageContentProps> = ({
         </span>
         <div className="max-w-full ml-2">
           <ReactMarkdown 
-            className="text-sm text-white" 
+            className="text-sm text-white text-wrap break-words" 
             components={markdownComponents}
           >
             {message.content as string}
@@ -260,7 +259,7 @@ export default function MessageAndInput({ user, character, made_by_name, message
                 <p className='font-light text-xs text-slate-600 dark:text-slate-200'>by {made_by_name}</p>
               </div>
 
-              <div className="p-4 pb-32">
+              <div className="pb-32">
               {messagesState.length > 1 && 
                   <>
                     {messagesState.slice(1).map((m, i) => (
@@ -308,17 +307,43 @@ export default function MessageAndInput({ user, character, made_by_name, message
               )}
               <form onSubmit={(e) => { e.preventDefault(); handleSubmit(input); }} className="flex items-center space-x-2 max-w-full pointer-events-auto">
                 <div className="relative flex-grow">
-                  <div className="absolute inset-0 bg-gray-300 dark:bg-neutral-700 bg-opacity-20 dark:bg-opacity-20 backdrop-blur-md rounded-full border border-gray-200 dark:border-neutral-700"></div>
+                  <div className="absolute inset-0 bg-gray-300 dark:bg-neutral-700 bg-opacity-20 dark:bg-opacity-20 backdrop-blur-md rounded-full dark:border-neutral-700"></div>
+                  <div className="absolute left-2 top-1/2 transform -translate-y-1/2 z-20">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button
+                          type="button"
+                          className="bg-gray-200 dark:bg-neutral-600 rounded-full p-2 transition-opacity opacity-70 hover:opacity-100 focus:opacity-100 hover:cursor-pointer"
+                        >
+                          <Cpu className="w-3 h-3 text-gray-700 dark:text-gray-300" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        {getModelArray().map((model) => (
+                          <DropdownMenuItem
+                            key={model.id}
+                            onClick={() => handleModelSelect(model.id)}
+                            className="flex items-center justify-between"
+                          >
+                            {model.name}
+                            {selectedModel === model.id && (
+                              <Check className="w-4 h-4 text-green-500" />
+                            )}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
                   <Input
                     type="text"
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     placeholder={`Message ${character.name}...`}
-                    className="py-4 pl-6 pr-12 bg-transparent relative z-10 outline-none text-black dark:text-white text-sm rounded-3xl"
+                    className="py-6 pl-12 pr-12 bg-transparent relative z-10 outline-none text-black dark:text-white text-sm rounded-3xl"
                   />
                   <button 
                     type="submit" 
-                    className="absolute right-0 top-1/2 transform -translate-y-1/2 bg-black dark:bg-white rounded-full p-2 z-20 transition-opacity opacity-70 hover:opacity-100 focus:opacity-100 hover:cursor-pointer"
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black dark:bg-white rounded-full p-2 z-20 transition-opacity opacity-70 hover:opacity-100 focus:opacity-100 hover:cursor-pointer"
                     disabled={!input.trim() || isLoading}
                   >
                     <svg viewBox="0 0 24 24" className="w-5 h-5 text-white dark:text-black" fill="none" stroke="currentColor">
@@ -326,30 +351,6 @@ export default function MessageAndInput({ user, character, made_by_name, message
                     </svg>
                   </button>
                 </div>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button
-                      type="button"
-                      className="bg-gray-200 dark:bg-neutral-600 rounded-full p-2 z-20 transition-opacity opacity-70 hover:opacity-100 focus:opacity-100 hover:cursor-pointer"
-                    >
-                      <Cpu className="w-4 h-4 text-gray-700 dark:text-gray-300" />
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    {getModelArray().map((model) => (
-                      <DropdownMenuItem
-                        key={model.id}
-                        onClick={() => handleModelSelect(model.id)}
-                        className="flex items-center justify-between"
-                      >
-                        {model.name}
-                        {selectedModel === model.id && (
-                          <Check className="w-4 h-4 text-green-500" />
-                        )}
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
               </form>
 
               <Dialog open={isSignInDialogOpen} onOpenChange={setIsSignInDialogOpen}>

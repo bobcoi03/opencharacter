@@ -52,7 +52,7 @@ export default function Conversation() {
     <div className="container mx-auto px-4 py-8 mb-12">
       <h1 className="text-xl font-semibold mb-6">Your Conversations</h1>
       {conversations.length === 0 ? (
-        <p>You haven't started any conversations yet.</p>
+        <p>You haven{"'"}t started any conversations yet.</p>
       ) : (
         <div className="space-y-4">
           {conversations.map((conversation) => (

@@ -13,7 +13,7 @@ export default async function CreatePersonaPage() {
     }
 
     return (
-        <div className="bg-neutral-900 text-white p-4 max-w-md mx-auto">
+        <div className="bg-neutral-900 text-white p-4 max-w-md mx-auto mb-24">
             <div className="flex items-center justify-between mb-4">
                 <h1 className="text-xl font-bold">Persona</h1>
                 <Link className="text-neutral-400" href={"/profile/persona"}>
