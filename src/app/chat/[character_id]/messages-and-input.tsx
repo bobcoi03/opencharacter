@@ -44,7 +44,7 @@ const UserAvatar = ({ userName }: { userName: string }) => {
   const gradientClass = `bg-gradient-to-br from-black via-black to-purple-300`;
 
   return (
-    <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold ${gradientClass}`}>
+    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-white font-semibold ${gradientClass}`}>
       {firstLetter}
     </div>
   );
@@ -67,15 +67,15 @@ const MessageContent: React.FC<MessageContentProps> = ({
 
   return (
     <div className="flex items-start mb-8 max-w-full w-full">
-      <div className="w-8 h-8 rounded-full mr-6 flex-shrink-0">
+      <div className="w-6 h-6 rounded-full mr-4 flex-shrink-0">
         {isUser ? (
           <UserAvatar userName={userName ?? "Guest"} />
         ) : (
           <Image
             src={characterAvatarUrl || '/default-avatar.jpg'}
             alt={characterName}
-            width={32}
-            height={32}
+            width={24}
+            height={24}
             className="rounded-full w-full h-full object-cover"
           />
         )}
@@ -84,7 +84,7 @@ const MessageContent: React.FC<MessageContentProps> = ({
         <span className="text-xs text-neutral-400 mb-2">
           {isUser ? (userName || 'You') : characterName}
         </span>
-        <div className="max-w-full">
+        <div className="max-w-full ml-2">
           <ReactMarkdown 
             className="text-sm text-white" 
             components={markdownComponents}
@@ -95,7 +95,7 @@ const MessageContent: React.FC<MessageContentProps> = ({
         {!isUser && onRetry && (
           <button 
             onClick={onRetry}
-            className="mt-1 text-neutral-500 hover:text-neutral-300 transition-colors duration-200"
+            className="mt-1 text-neutral-500 hover:text-neutral-300 transition-colors duration-200 ml-2 mt-4"
           >
             <RotateCcw className="w-4 h-4" />
           </button>

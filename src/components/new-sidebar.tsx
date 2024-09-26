@@ -122,7 +122,7 @@ const NewSidebarContent: React.FC<NewSidebarProps> = ({ search }) => {
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <div className="flex items-center space-x-2 cursor-pointer">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white text-xs">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-black via-black to-purple-300 flex items-center justify-center text-md text-white font-semibold">
                         <span>{session?.user?.name?.charAt(0)}</span>
                       </div>
                     </div>
@@ -225,7 +225,7 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ isCreateOpen, setIsCrea
                 variant="ghost"
                 className="w-full justify-start rounded-none text-left px-4 py-2 text-sm text-gray-300 hover:bg-neutral-700"
                 onClick={() => {
-                  router.push('/persona');
+                  router.push('/profile/persona/create');
                 }}
               >
                 Persona

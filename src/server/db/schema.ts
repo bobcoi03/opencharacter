@@ -220,3 +220,21 @@ export const group_chat_session_characters = sqliteTable("group_chat_session_cha
     .notNull()
     .$defaultFn(() => sql`CURRENT_TIMESTAMP`),
 });
+
+export const personas = sqliteTable("persona", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  userId: text("userId")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  displayName: text("displayName").notNull(),
+  background: text("background").notNull(),
+  isDefault: integer("isDefault", { mode: "boolean" }).notNull().default(false),
+  createdAt: integer("createdAt", { mode: "timestamp_ms" })
+    .notNull()
+    .$defaultFn(() => sql`CURRENT_TIMESTAMP`),
+  updatedAt: integer("updatedAt", { mode: "timestamp_ms" })
+    .notNull()
+    .$defaultFn(() => sql`CURRENT_TIMESTAMP`),
+});
