@@ -18,7 +18,15 @@ import { characters } from '@/server/db/schema';
 import ReactMarkdown from 'react-markdown';
 import { Components } from 'react-markdown';
 import { getModelArray } from '@/lib/llm_models';
+import SignInButton from '@/components/signin-button';
 import Link from 'next/link';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 interface MessageContentProps {
   message: CoreMessage;
@@ -121,6 +129,7 @@ export default function MessageAndInput({ user, character, made_by_name, message
     const [isLoading, setIsLoading] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const [error, setError] = useState<boolean>(false);
+    const [isSignInDialogOpen, setIsSignInDialogOpen] = useState(false);
   
     const scrollToBottom = () => {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -135,6 +144,11 @@ export default function MessageAndInput({ user, character, made_by_name, message
     }, [messagesState]);
   
     const handleSubmit = async (input: string, error: boolean = false, regenerate: boolean = false) => {
+      if (!user) {
+        setIsSignInDialogOpen(true);
+        return;
+      }
+
       let newMessages: CoreMessage[];
     
       if (regenerate && !error) {
@@ -341,9 +355,21 @@ export default function MessageAndInput({ user, character, made_by_name, message
                   </DropdownMenuContent>
                 </DropdownMenu>
               </form>
+
+              <Dialog open={isSignInDialogOpen} onOpenChange={setIsSignInDialogOpen}>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Sign in to continue</DialogTitle>
+                  </DialogHeader>
+                  <p>Please sign in to send messages and save your conversation.</p>
+                  <SignInButton />
+                </DialogContent>
+              </Dialog>
+
               <p className="text-xs text-center mt-2 text-gray-500 dark:text-gray-400 pointer-events-auto">
                 {!user && "Sign in to save messages"}
               </p>
+              
             </div>
           </div>
         </div>
