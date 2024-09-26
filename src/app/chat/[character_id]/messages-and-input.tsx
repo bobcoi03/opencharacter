@@ -125,7 +125,7 @@ export default function MessageAndInput({ user, character, made_by_name, message
     })) as CoreMessage[];
     const [messagesState, setMessagesState] = useState<CoreMessage[]>(processedMessages);
     const [input, setInput] = useState('');
-    const [selectedModel, setSelectedModel] = useState("gryphe/mythomax-l2-13b");
+    const [selectedModel, setSelectedModel] = useState("deepseek/deepseek-chat");
     const [isLoading, setIsLoading] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const [error, setError] = useState<boolean>(false);
@@ -369,7 +369,7 @@ export default function MessageAndInput({ user, character, made_by_name, message
               <p className="text-xs text-center mt-2 text-gray-500 dark:text-gray-400 pointer-events-auto">
                 {!user && "Sign in to save messages"}
               </p>
-              
+
             </div>
           </div>
         </div>
