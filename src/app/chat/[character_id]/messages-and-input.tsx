@@ -14,7 +14,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { characters } from '@/server/db/schema';
+import { characters, personas } from '@/server/db/schema';
 import ReactMarkdown from 'react-markdown';
 import { Components } from 'react-markdown';
 import { getModelArray } from '@/lib/llm_models';
@@ -104,13 +104,13 @@ const MessageContent: React.FC<MessageContentProps> = ({
   );
 };
 
-export default function MessageAndInput({ user, character, made_by_name, messages, chat_session }: { user: User | undefined, character: typeof characters.$inferSelect, made_by_name: string, messages: CoreMessage[], chat_session?: string | undefined }) {
+export default function MessageAndInput({ user, character, made_by_name, messages, chat_session, persona }: { user: User | undefined, character: typeof characters.$inferSelect, made_by_name: string, messages: CoreMessage[], chat_session?: string | undefined, persona?: typeof personas.$inferSelect | undefined }) {
     const replacePlaceholders = (content: string | undefined) => {
       if (content === undefined) {
         return content
       }
       return content
-        .replace(/{{user}}/g, user?.name ?? "Guest")
+        .replace(/{{user}}/g, persona?.displayName || user?.name || "Guest")
         .replace(/{{char}}/g, character.name || "");
     };
 
@@ -166,6 +166,11 @@ export default function MessageAndInput({ user, character, made_by_name, message
       try {
         const result = await continueConversation(newMessages, selectedModel, character, chat_session);
         console.log("result: " + JSON.stringify(result));
+        if ('error' in result) {
+          console.error("Error: " + result.message);
+          setError(true)
+          return
+        }
         for await (const content of readStreamableValue(result)) {
           console.log("content: " + content);
           setMessagesState([
@@ -267,7 +272,7 @@ export default function MessageAndInput({ user, character, made_by_name, message
                         key={i}
                         message={m}
                         isUser={m.role === 'user'}
-                        userName={user?.name ?? "guest"}
+                        userName={persona?.displayName ?? user?.name ?? "Guest"}
                         characterName={character.name}
                         characterAvatarUrl={character.avatar_image_url}
                         isError={error && i === messagesState.length - 2}
@@ -305,7 +310,7 @@ export default function MessageAndInput({ user, character, made_by_name, message
                   />
                 </div>
               )}
-              <form onSubmit={(e) => { e.preventDefault(); handleSubmit(input); }} className="flex items-center space-x-2 max-w-full pointer-events-auto">
+              <form onSubmit={(e) => { e.preventDefault(); handleSubmit(input); }} className="pointer-events-auto flex items-center space-x-2 max-w-full">
                 <div className="relative flex-grow">
                   <div className="absolute inset-0 bg-gray-300 dark:bg-neutral-700 bg-opacity-20 dark:bg-opacity-20 backdrop-blur-md rounded-full dark:border-neutral-700"></div>
                   <div className="absolute left-2 top-1/2 transform -translate-y-1/2 z-20">
@@ -339,7 +344,7 @@ export default function MessageAndInput({ user, character, made_by_name, message
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     placeholder={`Message ${character.name}...`}
-                    className="py-6 pl-12 pr-12 bg-transparent relative z-10 outline-none text-black dark:text-white text-sm rounded-3xl"
+                    className="py-7 pl-12 pr-12 bg-transparent relative z-10 outline-none text-black dark:text-white text-lg rounded-3xl"
                   />
                   <button 
                     type="submit" 

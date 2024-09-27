@@ -1,6 +1,5 @@
 import React from 'react';
-import Link from 'next/link';
-import { MessageCircle, MoreVertical } from 'lucide-react';
+import { MessageCircle } from 'lucide-react';
 import { auth } from '@/server/auth';
 import { db } from '@/server/db';
 import { sql } from 'drizzle-orm';
@@ -20,13 +19,16 @@ export default async function ProfileLaout({ children }: { children: React.React
     const userName = session.user.name ?? 'User';
 
     // Get the number of chats for the user
-    const chatCountResult = await db
-        .select({ count: sql<number>`count(*)` })
-        .from(chat_sessions)
-        .where(sql`user_id = ${userId}`)
-        .get();
+     // Get the sum of interaction_count for the user
+    const chatCount = await db
+    .select({
+        totalInteractions: sql<number>`sum(${chat_sessions.interaction_count})`
+    })
+    .from(chat_sessions)
+    .where(sql`${chat_sessions.user_id} = ${userId}`)
+    .get();
 
-    const chatCount = chatCountResult?.count ?? 0;
+    const chatCountDisplay = chatCount?.totalInteractions ?? 0;
 
     return (
         <div className="flex justify-center bg-neutral-900">
@@ -37,7 +39,7 @@ export default async function ProfileLaout({ children }: { children: React.React
                     </div>
                     <h1 className="text-xl font-bold mt-2 mb-1">{userName}</h1>
                     <p className="text-sm text-neutral-400 mb-2">
-                        <MessageCircle className="inline w-4 h-4 mr-1" /> {chatCount} Chats
+                        <MessageCircle className="inline w-4 h-4 mr-1" /> {chatCountDisplay} Chats
                     </p>
                 </div>
 

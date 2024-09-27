@@ -5,7 +5,7 @@ import EllipsisButton from "@/components/chat-settings-button";
 import MessageAndInput from './messages-and-input';
 import { auth } from '@/server/auth';
 import { db } from '@/server/db';
-import { characters, chat_sessions, users } from '@/server/db/schema';
+import { characters, chat_sessions, personas, users } from '@/server/db/schema';
 import { eq, and, desc } from 'drizzle-orm';
 import { CoreMessage } from 'ai';
 import ShareButton from '@/components/share-button';
@@ -189,6 +189,8 @@ export default async function ChatPage({ params, searchParams }: { params: { cha
     { role: 'assistant', content: character.greeting }
   ];
 
+
+  let persona;
   if (session?.user) {
     let chatSession;
   
@@ -221,7 +223,16 @@ export default async function ChatPage({ params, searchParams }: { params: { cha
         ...(chatSession.messages as CoreMessage[]).slice(2)
       ];
     }
+
+    persona = await db.query.personas.findFirst({
+      where: and (
+        eq(personas.userId, session.user.id!),
+        eq(personas.isDefault, true)
+      )
+    })
   }
+
+  console.log("persona: ", persona)
 
   return (
     <div className="flex flex-col dark:bg-neutral-900 relative overflow-x-hidden max-w-full">
@@ -262,6 +273,7 @@ export default async function ChatPage({ params, searchParams }: { params: { cha
           made_by_name={'Anon'}
           messages={initialMessages}
           chat_session={searchParams.session as string ?? null}
+          persona={persona}
         />
       </div>
     </div>

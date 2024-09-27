@@ -1,18 +1,32 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Clock, Repeat2, Loader2 } from 'lucide-react';
-import { CreatePersona } from "@/app/actions/index"
+import { CreatePersona, updatePersona } from "@/app/actions/index"
 import { useRouter } from 'next/navigation';
+import { personas } from '@/server/db/schema';
 
-export default function CreatePersonaForm() {
-    const [displayName, setDisplayName] = useState('');
-    const [background, setBackground] = useState('');
-    const [isDefault, setIsDefault] = useState(false);
+interface CreatePersonaFormProps {
+    edit?: boolean;
+    persona?: typeof personas.$inferSelect | undefined
+}
+
+export default function CreatePersonaForm({ edit = false, persona }: CreatePersonaFormProps) {
+    const [displayName, setDisplayName] = useState(persona?.displayName || '');
+    const [background, setBackground] = useState(persona?.background || '');
+    const [isDefault, setIsDefault] = useState(persona?.isDefault || false);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(false);
     const router = useRouter()
+
+    useEffect(() => {
+        if (persona) {
+            setDisplayName(persona.displayName);
+            setBackground(persona.background);
+            setIsDefault(persona.isDefault);
+        }
+    }, [persona]);
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -25,8 +39,15 @@ export default function CreatePersonaForm() {
         formData.append('background', background);
         formData.append('isDefault', isDefault ? 'on' : 'off');
 
+        if (edit && persona) {
+            formData.append('personaId', persona.id);
+        }
+
         try {
-            const result = await CreatePersona(formData);
+            const result = edit && persona 
+                ? await updatePersona(formData)
+                : await CreatePersona(formData);
+
             if (result.success) {
                 setSuccess(true);
                 router.push(`/profile/persona?t=${new Date()}`)
@@ -34,7 +55,7 @@ export default function CreatePersonaForm() {
                 setError(result.error || 'An unexpected error occurred');
             }
         } catch (err) {
-            setError('Failed to create persona. Please try again.');
+            setError(`Failed to ${edit ? 'update' : 'create'} persona. Please try again.`);
         } finally {
             setIsLoading(false);
         }
@@ -101,7 +122,7 @@ export default function CreatePersonaForm() {
             )}
 
             {success && (
-                <div className="text-green-500 text-sm">Persona created successfully!</div>
+                <div className="text-green-500 text-sm">Persona {edit ? 'updated' : 'created'} successfully!</div>
             )}
 
             <button
@@ -112,9 +133,9 @@ export default function CreatePersonaForm() {
                 {isLoading ? (
                     <>
                         <Loader2 className="animate-spin mr-2" />
-                        Creating...
+                        {edit ? 'Updating...' : 'Creating...'}
                     </>
-                ) : 'Save'}
+                ) : edit ? 'Update' : 'Create'}
             </button>
         </form>
     );
