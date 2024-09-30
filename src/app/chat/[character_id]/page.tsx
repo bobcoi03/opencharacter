@@ -26,7 +26,7 @@ export async function generateMetadata({ params }: { params: { character_id: str
 
   return {
     title: `Chat with ${character.name}`,
-    description: character.description,
+    description: character.description.substring(0, 100),
     openGraph: {
       images: [{ url: character.avatar_image_url || '/default-avatar.png' }],
     },
