@@ -193,14 +193,7 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ isCreateOpen, setIsCrea
           </Button>
           <span className={textClass}>Home</span>
         </Link>
-        
-        <Link href="/feed" className={buttonClass}>
-          <Button variant="ghost" size="icon" className="h-10 w-10">
-            <Rss className={iconClass} />
-          </Button>
-          <span className={textClass}>Feed</span>
-        </Link>
-        
+                
         <Popover>
           <PopoverTrigger asChild>
             <div className={`${buttonClass}`}>

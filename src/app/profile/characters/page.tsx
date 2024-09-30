@@ -33,7 +33,7 @@ export default async function CharactersPage() {
     return (
         <div className="space-y-4 mb-24">
             {userCharacters.map((character) => (
-                <Link key={character.id} href={`/character/${character.id}`} className="block">
+                <Link key={character.id} href={`/chat/${character.id}`} className="block">
                     <div className="flex items-center">
                         {character.avatarImageUrl ? (
                             <img src={character.avatarImageUrl} alt={character.name} className="w-12 h-12 rounded-full mr-3 flex-shrink-0" />

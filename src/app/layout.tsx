@@ -61,7 +61,7 @@ export default async function RootLayout({
       </head>
       <body className={`${inter.className} bg-white dark:bg-neutral-900`}>
         <NewSidebar search={search} />
-        <div className="flex flex-col min-h-screen pt-12 md:pl-16">
+        <div className="flex flex-col min-h-screen pt-12">
           <main className="flex-1 p-4">
             {children}
           </main>

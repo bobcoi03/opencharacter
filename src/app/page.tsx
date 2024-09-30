@@ -31,7 +31,7 @@ export default async function Page() {
   }
   
   return (
-    <div className="text-white w-full overflow-y-auto overflow-x-hidden">
+    <div className="text-white w-full overflow-y-auto overflow-x-hidden md:pl-16">
 
       <AICharacterGrid characters={popularCharacters} />
 

@@ -54,7 +54,7 @@ const AICharacterCard: React.FC<{ character: Character }> = ({ character }) => {
 
 const AICharacterGrid: React.FC<{ characters: Character[] }> = ({ characters }) => {
   return (
-    <div className='px-4 md:px-8 py-6 bg-neutral-900'>
+    <div className='py-6 bg-neutral-900'>
       <h2 className="text-sm font-medium text-gray-100 mb-4">Popular</h2>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
         {characters.map((character) => (

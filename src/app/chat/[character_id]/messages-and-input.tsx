@@ -65,7 +65,7 @@ const MessageContent: React.FC<MessageContentProps> = ({
   };
 
   return (
-    <div className="flex items-start mb-8 max-w-full w-full overflow-hidden">
+    <div className="flex items-start mb-8 w-full overflow-hidden ">
       <div className="w-10 h-10 rounded-full mr-4 flex-shrink-0">
         {isUser ? (
           <UserAvatar userName={userName ?? "Guest"} />
@@ -79,13 +79,13 @@ const MessageContent: React.FC<MessageContentProps> = ({
           />
         )}
       </div>
-      <div className="flex flex-col max-w-[calc(100%-2.5rem)]">
+      <div className="flex flex-col max-w-full">
         <span className="text-xs text-neutral-400 mb-2">
           {isUser ? (userName || 'You') : characterName}
         </span>
-        <div className="max-w-full ml-2">
+        <div className="max-w-full">
           <ReactMarkdown 
-            className="text-sm text-white text-wrap break-words" 
+            className="text-sm text-slate-300 break-words max-w-xl text-wrap break-word" 
             components={markdownComponents}
           >
             {message.content as string}
@@ -250,8 +250,8 @@ export default function MessageAndInput({ user, character, made_by_name, message
               }
             }
           `}</style>
-          <div className="flex-grow w-full flex justify-center overflow-y-auto">
-            <div id="messages-container" className="w-full max-w-2xl">
+          <div className="flex-grow w-full flex justify-center overflow-y-auto mx-auto">
+            <div id="messages-container" className="w-full mx-auto max-w-2xl">
               {/* Character Information Header */}
               <div className='mx-auto pt-12 pb-6 flex flex-col gap-2 text-center items-center overflow-hidden'>
                 <div className="w-24 h-24 rounded-full overflow-hidden mr-3">
@@ -264,7 +264,7 @@ export default function MessageAndInput({ user, character, made_by_name, message
                 <p className='font-light text-xs text-slate-600 dark:text-slate-200'>by {made_by_name}</p>
               </div>
 
-              <div className="pb-32">
+              <div className="pb-32 max-w-2xl mx-auto px-2">
               {messagesState.length > 1 && 
                   <>
                     {messagesState.slice(1).map((m, i) => (
@@ -294,8 +294,8 @@ export default function MessageAndInput({ user, character, made_by_name, message
           </div>
     
           {/* Message Input */}
-          <div className="fixed bottom-0 left-0 right-0 p-4 pointer-events-none w-full max-w-full">
-            <div className="max-w-xl mx-auto w-full">
+          <div className="fixed bottom-0 left-0 right-0 py-4 pointer-events-none w-full max-w-full">
+            <div className="max-w-2xl mx-auto w-full">
               {error && (
                 <div className="mb-2 p-2 bg-red-100 dark:bg-red-900 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-200 text-sm pointer-events-auto flex justify-between items-center">
                   <p className="flex items-center">
@@ -310,7 +310,7 @@ export default function MessageAndInput({ user, character, made_by_name, message
                   />
                 </div>
               )}
-              <form onSubmit={(e) => { e.preventDefault(); handleSubmit(input); }} className="pointer-events-auto flex items-center space-x-2 max-w-full">
+              <form onSubmit={(e) => { e.preventDefault(); handleSubmit(input); }} className="pointer-events-auto flex items-center space-x-2 max-w-full px-2">
                 <div className="relative flex-grow">
                   <div className="absolute inset-0 bg-gray-300 dark:bg-neutral-700 bg-opacity-20 dark:bg-opacity-20 backdrop-blur-md rounded-full dark:border-neutral-700"></div>
                   <div className="absolute left-2 top-1/2 transform -translate-y-1/2 z-20">
@@ -344,7 +344,7 @@ export default function MessageAndInput({ user, character, made_by_name, message
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     placeholder={`Message ${character.name}...`}
-                    className="py-7 pl-12 pr-12 bg-transparent relative z-10 outline-none text-black dark:text-white text-lg rounded-3xl"
+                    className="py-7 pl-12 pr-12 bg-transparent relative z-10 outline-none text-black dark:text-white text-lg rounded-full"
                   />
                   <button 
                     type="submit" 
