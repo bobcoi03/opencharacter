@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import Image from 'next/image';
-import { ArrowLeft, AudioLines, ChevronLeft } from 'lucide-react';
+import { ChevronLeft } from 'lucide-react';
 import EllipsisButton from "@/components/chat-settings-button";
 import MessageAndInput from './messages-and-input';
 import { auth } from '@/server/auth';
@@ -10,10 +10,11 @@ import { eq, and, desc } from 'drizzle-orm';
 import { CoreMessage } from 'ai';
 import ShareButton from '@/components/share-button';
 import Link from 'next/link';
+import { Metadata } from 'next'
 
 export const runtime = 'edge';
 
-export async function generateMetadata({ params }: { params: { character_id: string } }) {
+export async function generateMetadata({ params }: { params: { character_id: string } }): Promise<Metadata> {
   const character = await db.query.characters.findFirst({
     where: eq(characters.id, params.character_id),
   });
@@ -24,11 +25,33 @@ export async function generateMetadata({ params }: { params: { character_id: str
     };
   }
 
+  const title = `Chat with ${character.name}`;
+  const description = character.description.substring(0, 200);
+  const imageUrl = character.avatar_image_url || '/default-avatar.png';
+
   return {
-    title: `Chat with ${character.name}`,
-    description: character.description.substring(0, 100),
+    title,
+    description,
     openGraph: {
-      images: [{ url: character.avatar_image_url || '/default-avatar.png' }],
+      title,
+      description,
+      images: [{ url: imageUrl }],
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: [imageUrl],
+      creator: '@justwrapapi', // Replace with your Twitter handle
+    },
+    other: {
+      'og:site_name': 'OpenCharacter',
+      'og:locale': 'en_US',
+      'og:url': `https://opencharacter.org/chat/${params.character_id}`, // Replace with your actual URL structure
+    },
+    alternates: {
+      canonical: `https://opecharacter.org/chat/${params.character_id}`,
     },
   };
 }
