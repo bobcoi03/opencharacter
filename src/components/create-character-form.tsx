@@ -38,7 +38,7 @@ export function CreateCharacterForm({ action, character, editMode = false }: { a
   };
 
   return (
-    <div className="w-full bg-white dark:bg-neutral-900 min-h-screen p-6 overflow-y-auto">
+    <div className="w-full bg-white dark:bg-neutral-900 min-h-screen p-6 overflow-y-auto mb-12">
       <header>
         <Link href="/" className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-neutral-800 inline-block">
           <ArrowLeft size={16} />

@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import Image from 'next/image';
 
 export default function TwitterPageClient() {
     const [isLoading, setIsLoading] = useState(false);
@@ -21,7 +22,14 @@ export default function TwitterPageClient() {
     };
 
     return (
-        <div className="flex flex-col items-center justify-center min-h-screen p-4">
+        <div className="flex flex-col items-center min-h-screen p-4">
+            <Image
+                src={"/twitter-x.png"}
+                width={300}
+                height={300}
+                alt='X'
+            />
+
             <h1 className="text-2xl font-bold mb-4">Create a Twitter Character</h1>
             <form onSubmit={handleSubmit} className="w-full max-w-md">
                 <div className="flex items-center space-x-2">

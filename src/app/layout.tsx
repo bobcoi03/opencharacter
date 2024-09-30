@@ -2,11 +2,11 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeScript } from "@/lib/theme/theme-script";
-import SideBar from "@/components/sidebar";
 import { Toaster } from "@/components/ui/toaster"
 import { GoogleAnalytics } from '@next/third-parties/google'
 import { auth } from "@/server/auth";
 import { searchCharacters } from "./actions";
+import NewSidebar from "@/components/new-sidebar";
 
 
 const inter = Inter({ subsets: ["latin"] });
@@ -48,11 +48,7 @@ export default async function RootLayout({
 
   async function search(query: string) {
     'use server'
-    // You can use the session here if needed
-    // For example, to filter characters based on user permissions
     const characters = await searchCharacters(query, 30);
-    // You might want to filter or process the results here
-    // based on the session or other server-side logic
     return characters;
   }
 
@@ -61,17 +57,18 @@ export default async function RootLayout({
       <head>
         <ThemeScript/>
         <link rel="icon" href="/favicon.svg" sizes="any" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"></meta>
       </head>
-      <body className={`${inter.className}`}>
-        <div className="flex h-screen">       
-          <SideBar search={search} />
-          <main className="flex-1 flex flex-col overflow-hidden bg-white dark:bg-neutral-900 relative w-full"> {/* Added pl-16 for left padding */}
+      <body className={`${inter.className} bg-white dark:bg-neutral-900`}>
+        <NewSidebar search={search} />
+        <div className="flex flex-col min-h-screen pt-12">
+          <main className="flex-1 p-4">
             {children}
           </main>
         </div>
         <Toaster />
+        <GoogleAnalytics gaId={process.env.GOOGLE_ANALYTICS_ID ?? ""} />
       </body>
-      <GoogleAnalytics gaId={process.env.GOOGLE_ANALYTICS_ID ?? ""} />
     </html>
   );
 }

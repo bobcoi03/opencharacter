@@ -3,7 +3,7 @@
 import { createStreamableValue } from 'ai/rsc';
 import { CoreMessage, streamText } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
-import { characters, chat_sessions, ChatMessageArray} from '@/server/db/schema';
+import { characters, chat_sessions, ChatMessageArray, personas } from '@/server/db/schema';
 import { db } from '@/server/db';
 import { eq, and, desc, sql } from 'drizzle-orm';
 import { auth } from '@/server/auth';
@@ -43,6 +43,10 @@ export async function createChatSession(character: typeof characters.$inferInser
 export async function continueConversation(messages: CoreMessage[], model_name: string, character: typeof characters.$inferSelect, chat_session_id?: string) {
   const session = await auth();
 
+  if (!session?.user) {
+    return { error: true, message: "Failed to authenticate user"}
+  }
+
   const openrouter = createOpenAI({
     baseURL: "https://openrouter.helicone.ai/api/v1",
     apiKey: process.env.OPENROUTER_API_KEY,
@@ -56,6 +60,31 @@ export async function continueConversation(messages: CoreMessage[], model_name: 
   });
 
   const model = openrouter(model_name);
+
+  // Fetch the default persona for the user
+  const defaultPersona = await db.select()
+    .from(personas)
+    .where(
+      and(
+        eq(personas.userId, session.user.id!),
+        eq(personas.isDefault, true)
+      )
+    )
+    .limit(1)
+    .then(rows => rows[0]);
+
+
+  // Modify the first message to include persona information
+  if (defaultPersona && messages.length > 0) {
+    const personaInfo = `The user you are chatting to is called: ${defaultPersona.displayName} {{user}}\nBackground information:${defaultPersona.background}`;
+    messages[0] = {
+      ...messages[0],
+      role: "system",
+      content: `${messages[0].content}\n\n${personaInfo}`
+    };
+  }
+
+  console.log("messages: " + messages[0])
 
   try {
     // Update character interaction count
@@ -87,7 +116,7 @@ export async function continueConversation(messages: CoreMessage[], model_name: 
       topK: character.top_k ?? 0,
       frequencyPenalty: character.frequency_penalty ?? 0.0,
       presencePenalty: character.presence_penalty ?? 0.0,
-      maxTokens: character.max_tokens ?? 200,
+      maxTokens: character.max_tokens ?? 1000,
       onFinish: async (completion) => {
         if (session?.user) {
           try {
@@ -161,8 +190,8 @@ export async function continueConversation(messages: CoreMessage[], model_name: 
     console.log('Successfully created streamable value');
     return stream.value;
   } catch (error) {
-    console.error('Failed to generate or stream response:', JSON.stringify(error));
-    throw new Error('Failed to generate response. Please try again later.');
+    console.error('Failed to generate or stream response:', error);
+    throw new Error('Failed to generate response. Please try again.');
   }
 }
 

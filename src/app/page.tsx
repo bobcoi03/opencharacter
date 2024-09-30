@@ -1,14 +1,24 @@
 import { auth } from "@/server/auth";
-import { AICharacterGrid } from "@/components/ai-character-grid";
 import CreateCharacterCardMarketing from "@/components/create-character-card-marketing";
-import SignInButton from "@/components/signin-button";
 import { searchCharacters } from "./actions/index";
-import { CharacterSearchBar } from "@/components/character-search-bar";
+import Navbar from "@/components/navbar";
+import { db } from "@/server/db";
+import { desc } from "drizzle-orm";
+import { characters } from "@/server/db/schema";
+import AICharacterGrid from "@/components/ai-character-grid";
 
 export const runtime = "edge";
 
 export default async function Page() {
   const session = await auth();
+  const popularCharacters = await getPopularCharacters()
+
+  async function getPopularCharacters() {
+    return await db.query.characters.findMany({
+      orderBy: [desc(characters.interactionCount)],
+      limit: 500, // Reduced for better horizontal scrolling experience
+    });
+  }
 
   async function search(query: string) {
     'use server'
@@ -21,34 +31,9 @@ export default async function Page() {
   }
   
   return (
-    <div className="py-8 text-white w-full overflow-y-auto">
-      <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4 px-6">
-        <div className="flex items-center space-x-3">
-          {session?.user ?
-            <div className="flex md:flex-col items-center gap-2">
-              <h1 className="text-lg font-light text-black dark:text-white">Welcome!</h1>
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white text-xs">
-                  {session?.user?.name?.[0] || 'G'}
-                </div>
-                <p className="text-sm font-light text-black dark:text-white">
-                  {session?.user?.name || 'Guest'}
-                </p>
-              </div> 
-            </div>
-            : (
-              <SignInButton />
-            )
-          }
-        </div>
+    <div className="text-white w-full overflow-y-auto overflow-x-hidden md:pl-16">
 
-        <CharacterSearchBar searchCharacters={search} />
-
-      </div>
-
-      <AICharacterGrid />
-
-      <CreateCharacterCardMarketing />
+      <AICharacterGrid characters={popularCharacters} />
 
     </div>
   );

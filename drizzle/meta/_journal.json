@@ -50,6 +50,13 @@
       "when": 1727045733264,
       "tag": "0006_eager_talon",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1727390877192,
+      "tag": "0007_big_wendell_vaughn",
+      "breakpoints": true
     }
   ]
 }

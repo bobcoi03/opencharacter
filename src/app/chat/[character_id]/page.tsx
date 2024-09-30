@@ -1,11 +1,11 @@
 import { Suspense } from 'react';
 import Image from 'next/image';
-import { AudioLines } from 'lucide-react';
+import { ArrowLeft, AudioLines, ChevronLeft } from 'lucide-react';
 import EllipsisButton from "@/components/chat-settings-button";
 import MessageAndInput from './messages-and-input';
 import { auth } from '@/server/auth';
 import { db } from '@/server/db';
-import { characters, chat_sessions, users } from '@/server/db/schema';
+import { characters, chat_sessions, personas, users } from '@/server/db/schema';
 import { eq, and, desc } from 'drizzle-orm';
 import { CoreMessage } from 'ai';
 import ShareButton from '@/components/share-button';
@@ -189,6 +189,8 @@ export default async function ChatPage({ params, searchParams }: { params: { cha
     { role: 'assistant', content: character.greeting }
   ];
 
+
+  let persona;
   if (session?.user) {
     let chatSession;
   
@@ -221,15 +223,29 @@ export default async function ChatPage({ params, searchParams }: { params: { cha
         ...(chatSession.messages as CoreMessage[]).slice(2)
       ];
     }
+
+    persona = await db.query.personas.findFirst({
+      where: and (
+        eq(personas.userId, session.user.id!),
+        eq(personas.isDefault, true)
+      )
+    })
   }
 
+  console.log("persona: ", persona)
+
   return (
-    <div className="flex flex-col h-screen dark:bg-neutral-900 relative">
+    <div className="flex flex-col dark:bg-neutral-900 relative overflow-x-hidden max-w-full">
       {/* Chat Header - Absolute Positioned */}
-      <div className="bg-white dark:bg-neutral-900 p-4 flex items-center justify-between dark:border-neutral-700 fixed md:absolute top-0 left-0 right-0 z-10">
+      <div className="bg-white dark:bg-neutral-900 p-4 flex items-center justify-between dark:border-neutral-700 fixed md:fixed top-0 md:top-0 left-0 right-0 z-10">
         <div className="flex items-center">
 
-          <Link className="w-10 h-10 rounded-full overflow-hidden mr-3 ml-12" href={`/character/${character.id}/profile`}>
+          <Link href={"/"} >
+            <ChevronLeft className='w-8 h-8 text-neutral-700'/>          
+          </Link>
+
+
+          <Link className="w-10 h-10 rounded-full overflow-hidden mr-3 ml-6" href={`/character/${character.id}/profile`}>
             <Image src={character.avatar_image_url ?? "/default-avatar.jpg"} alt={`${character.name}'s avatar`} width={40} height={40} className="object-cover w-full h-full" />
           </Link>
           <div>
@@ -250,13 +266,14 @@ export default async function ChatPage({ params, searchParams }: { params: { cha
       </div>
 
       {/* Chat Content */}
-      <div className="flex-grow overflow-auto w-full pt-[72px]"> {/* Adjust pt value based on your header height */}
+      <div className="flex-grow overflow-y-auto pt-[72px] pb-4"> {/* Adjust pt value based on your header height */}
         <MessageAndInput 
           user={session?.user} 
           character={character}
           made_by_name={'Anon'}
           messages={initialMessages}
           chat_session={searchParams.session as string ?? null}
+          persona={persona}
         />
       </div>
     </div>
