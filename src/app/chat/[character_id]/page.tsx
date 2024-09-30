@@ -13,6 +13,26 @@ import Link from 'next/link';
 
 export const runtime = 'edge';
 
+export async function generateMetadata({ params }: { params: { character_id: string } }) {
+  const character = await db.query.characters.findFirst({
+    where: eq(characters.id, params.character_id),
+  });
+
+  if (!character) {
+    return {
+      title: 'Character Not Found',
+    };
+  }
+
+  return {
+    title: `Chat with ${character.name}`,
+    description: character.description,
+    openGraph: {
+      images: [{ url: character.avatar_image_url || '/default-avatar.png' }],
+    },
+  };
+}
+
 // Function to resolve t.co URLs by following redirects
 async function resolveTwitterUrl(shortUrl: string): Promise<string> {
   try {
