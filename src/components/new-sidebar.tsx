@@ -243,7 +243,7 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ isCreateOpen, setIsCrea
           <span className={textClass}>Chats</span>
         </Link>
         
-        <Link href="https://discord.com/channels/1288919825585803347/1288919826441703629" target="_blank" className={buttonClass}>
+        <Link href="https://discord.gg/kQz5XeJc" target="_blank" className={buttonClass}>
           <Button variant="ghost" size="icon" className="h-10 w-10">
             <Users className={iconClass} />
           </Button>
