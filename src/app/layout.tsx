@@ -13,15 +13,15 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "OpenCharacter",
-  description: "Explore the world of open AI characters at OpenCharacter.org. Connect, interact, and grow with a diverse range of AI personalities.",
+  description: "Chat to who ever you desire! Open source and uncensored.",
   openGraph: {
     title: "OpenCharacter - Open AI Characters",
-    description: "Explore the world of open AI characters at OpenCharacter.org. Connect, interact, and grow with a diverse range of AI personalities.",
+    description: "Chat to who ever you desire! Open source and uncensored.",
     url: "https://opencharacter.org",
     siteName: "OpenCharacter.org",
     images: [
       {
-        url: "https://opencharacter.org/og-image.jpg", // Make sure to create and add this image
+        url: "https://opencharacter.org/OpenCharacterCard.png", 
         width: 1200,
         height: 630,
         alt: "OpenCharacter.org Logo",
@@ -33,9 +33,9 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "OpenCharacter.org - Explore Open AI Characters",
-    description: "Explore the world of open AI characters at OpenCharacter.org. Connect, interact, and grow with a diverse range of AI personalities.",
+    description: "Chat to who ever you desire! Open source and uncensored.",
     creator: "@justwrapapi",
-    images: ["https://opencharacter.org/twitter-image.jpg"], // Make sure to create and add this image
+    images: ["https://opencharacter.org/OpenCharacterCard.png"],
   },
 };
 
