@@ -137,6 +137,12 @@ export default function MessageAndInput({ user, character, made_by_name, message
       }
       scrollToBottom();
     }, [messagesState]);
+
+    const handleInputFocus = () => {
+      if (!user) {
+        setIsSignInDialogOpen(true);
+      }
+    };
   
     const handleSubmit = async (input: string, error: boolean = false, regenerate: boolean = false) => {
       if (!user) {
@@ -343,6 +349,7 @@ export default function MessageAndInput({ user, character, made_by_name, message
                     type="text"
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
+                    onFocus={handleInputFocus}
                     placeholder={`Message ${character.name}...`}
                     className="py-7 pl-12 pr-12 bg-transparent relative z-10 outline-none text-black dark:text-white text-lg rounded-full"
                   />
