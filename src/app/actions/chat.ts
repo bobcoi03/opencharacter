@@ -8,7 +8,77 @@ import { db } from '@/server/db';
 import { eq, and, desc, sql } from 'drizzle-orm';
 import { auth } from '@/server/auth';
 
-export async function createChatSession(character: typeof characters.$inferInsert) {
+export async function saveChat(messages: CoreMessage[], character: typeof characters.$inferSelect, chat_session_id?: string) {
+  const session = await auth();
+  if (!session || !session.user || !session.user.id) {
+    throw new Error("User not authenticated");
+  }
+
+  let chatSession;
+
+  if (chat_session_id) {
+    // If chat_session_id is provided, fetch the existing session
+    chatSession = await db.select()
+      .from(chat_sessions)
+      .where(
+        and(
+          eq(chat_sessions.id, chat_session_id),
+          eq(chat_sessions.user_id, session.user.id),
+          eq(chat_sessions.character_id, character.id)
+        )
+      )
+      .then(rows => rows[0]);
+
+    if (!chatSession) {
+      throw new Error("Chat session not found");
+    }
+  } else {
+    // If no chat_session_id, find the most recent session
+    chatSession = await db.select()
+      .from(chat_sessions)
+      .where(
+        and(
+          eq(chat_sessions.user_id, session.user.id),
+          eq(chat_sessions.character_id, character.id)
+        )
+      )
+      .orderBy(desc(chat_sessions.updated_at))
+      .limit(1)
+      .then(rows => rows[0]);
+  }
+
+  const now = new Date();
+
+  if (chatSession) {
+    // Update existing chat session
+    await db.update(chat_sessions)
+      .set({
+        messages: messages as ChatMessageArray,
+        interaction_count: sql`${chat_sessions.interaction_count} + 1`,
+        last_message_timestamp: now,
+        updated_at: now
+      })
+      .where(eq(chat_sessions.id, chatSession.id));
+  } else {
+    // Create new chat session
+    chatSession = await db.insert(chat_sessions)
+      .values({
+        user_id: session.user.id,
+        character_id: character.id,
+        messages: messages as ChatMessageArray,
+        interaction_count: 1,
+        last_message_timestamp: now,
+        created_at: now,
+        updated_at: now
+      })
+      .returning()
+      .then(rows => rows[0]);
+  }
+
+  return chatSession;
+}
+
+export async function createChatSession(character: typeof characters.$inferInsert, messages?: CoreMessage[]) {
   const session = await auth();
   
   if (!session || !session.user || !session.user.id) {
@@ -24,7 +94,7 @@ export async function createChatSession(character: typeof characters.$inferInser
       .values({
         user_id: session.user.id!,
         character_id: character.id!,
-        messages: [{role: "system", content: character.description}, {role: "assistant", content: character.greeting }] as ChatMessageArray,
+        messages: messages as ChatMessageArray ?? [{role: "system", content: character.description}, {role: "assistant", content: character.greeting }] as ChatMessageArray,
         interaction_count: 1,
         last_message_timestamp: new Date(),
         created_at: new Date(),

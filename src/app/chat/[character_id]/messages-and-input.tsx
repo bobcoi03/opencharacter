@@ -4,9 +4,10 @@ import { type CoreMessage } from 'ai';
 import { useState, useEffect, useRef } from 'react';
 import { readStreamableValue } from 'ai/rsc';
 import { continueConversation } from '@/app/actions/chat';
+import { saveChat, createChatSession } from '@/app/actions/index';
 import { User } from 'next-auth';
 import Image from 'next/image';
-import { Cpu, Check, RotateCcw } from 'lucide-react';
+import { Cpu, Check, RotateCcw, Edit, Trash2, MoreHorizontal, Plus } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import {
   DropdownMenu,
@@ -14,11 +15,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { DialogFooter } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 import { characters, personas } from '@/server/db/schema';
 import ReactMarkdown from 'react-markdown';
 import { Components } from 'react-markdown';
 import { getModelArray } from '@/lib/llm_models';
 import SignInButton from '@/components/signin-button';
+import { Textarea } from "@/components/ui/textarea";
 import Link from 'next/link';
 import {
   Dialog,
@@ -26,9 +30,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useRouter } from 'next/navigation';
 
 interface MessageContentProps {
   message: CoreMessage;
+  index: number;
   isUser: boolean;
   userName?: string;
   characterName: string;
@@ -36,6 +42,8 @@ interface MessageContentProps {
   isError?: boolean;
   chatSession?: string | null
   onRetry?: () => void;
+  onEdit: (index: number, editedContent: string) => void;
+  onDelete: (index: number) => void;
 }
 
 const UserAvatar = ({ userName }: { userName: string }) => {
@@ -51,60 +59,191 @@ const UserAvatar = ({ userName }: { userName: string }) => {
 
 const MessageContent: React.FC<MessageContentProps> = ({ 
   message, 
+  index,
   isUser, 
   userName, 
   characterName, 
   characterAvatarUrl, 
   isError, 
-  onRetry 
+  onRetry,
+  onEdit,
+  onDelete,
 }) => {
+
+  const [isHovered, setIsHovered] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [deleted, setDeleted] = useState<boolean>(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedContent, setEditedContent] = useState(message.content as string);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
   const markdownComponents: Partial<Components> = {
     p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
     em: ({ children }) => <em className="text-neutral-300">{children}</em>,
     code: ({ children }) => <code className="bg-neutral-800 px-1 py-0.5 rounded text-sm text-neutral-200">{children}</code>
   };
 
+  useEffect(() => {
+    if (isEditing && textareaRef.current) {
+      adjustTextareaHeight();
+    }
+  }, [isEditing, editedContent]);
+
+  useEffect(() => {
+    setEditedContent(message.content as string);
+  }, [message.content]);
+
+  const handleEdit = () => {
+    setIsEditing(true);
+    setEditedContent(message.content as string);
+  };
+
+  const adjustTextareaHeight = () => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      textarea.style.height = 'auto';
+      textarea.style.height = `${textarea.scrollHeight}px`;
+    }
+  };
+
+  const handleDelete = () => {
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleSave = () => {
+    onEdit(index, editedContent);
+    setIsEditing(false);
+  };
+
+  const confirmDelete = () => {
+    onDelete(index);
+    setIsDeleteDialogOpen(false);
+  };
+
+  const handleCancel = () => {
+    setEditedContent(message.content as string);
+    setIsEditing(false);
+  };
+
+  const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setEditedContent(e.target.value);
+    adjustTextareaHeight();
+  };
+
+  if (deleted) {
+    return null;
+  }
+
   return (
-    <div className="flex items-start mb-8 w-full overflow-hidden ">
-      <div className="w-10 h-10 rounded-full mr-4 flex-shrink-0">
-        {isUser ? (
-          <UserAvatar userName={userName ?? "Guest"} />
-        ) : (
-          <Image
-            src={characterAvatarUrl || '/default-avatar.jpg'}
-            alt={characterName}
-            width={24}
-            height={24}
-            className="rounded-full w-full h-full object-cover"
-          />
-        )}
-      </div>
-      <div className="flex flex-col max-w-full">
-        <span className="text-xs text-neutral-400 mb-2">
-          {isUser ? (userName || 'You') : characterName}
-        </span>
-        <div className="max-w-full">
-          <ReactMarkdown 
-            className="text-sm text-slate-300 break-words max-w-xl text-wrap break-word" 
-            components={markdownComponents}
-          >
-            {message.content as string}
-          </ReactMarkdown>
+    <>
+      <div 
+        className="flex items-start mb-8 w-full overflow-hidden group"
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
+        <div className="w-10 h-10 rounded-full mr-4 flex-shrink-0">
+          {isUser ? (
+            <UserAvatar userName={userName ?? "Guest"} />
+          ) : (
+            <Image
+              src={characterAvatarUrl || '/default-avatar.jpg'}
+              alt={characterName}
+              width={24}
+              height={24}
+              className="rounded-full w-full h-full object-cover"
+            />
+          )}
         </div>
-        {!isUser && onRetry && (
-          <button 
-            onClick={onRetry}
-            className="mt-1 text-neutral-500 hover:text-neutral-300 transition-colors duration-200 ml-2 mt-4"
-          >
-            <RotateCcw className="w-4 h-4" />
-          </button>
-        )}
+        <div className="flex flex-col max-w-full flex-grow">
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-xs text-neutral-400">
+              {isUser ? (userName || 'You') : characterName}
+            </span>
+            {!isEditing && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button 
+                    className={`text-neutral-400 hover:text-neutral-300 focus:outline-none transition-opacity duration-200 ${
+                      isHovered ? 'opacity-100' : 'opacity-0'
+                    }`}
+                  >
+                    <MoreHorizontal className="w-4 h-4" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={handleEdit}>
+                    <Edit className="w-4 h-4 mr-2" />
+                    Edit
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleDelete}>
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Delete
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </div>
+          <div className="max-w-full max-w-xl text-wrap break-words">
+            {isEditing ? (
+              <div className="flex flex-col gap-2">
+                <Textarea
+                  ref={textareaRef}
+                  value={editedContent}
+                  onChange={handleTextareaChange}
+                  className="min-h-[100px] text-sm text-slate-300 overflow-hidden"
+                  rows={1}
+                />
+                <div className="flex justify-start gap-2">
+                  <Button variant="outline" onClick={handleCancel} className='rounded-full'>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleSave} className='rounded-full'>
+                    Save
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <ReactMarkdown 
+                className="text-sm text-slate-300 text-wrap break-words" 
+                components={markdownComponents}
+              >
+                {message.content as string}
+              </ReactMarkdown>
+            )}
+          </div>
+          {!isUser && onRetry && !isEditing && (
+            <button 
+              onClick={onRetry}
+              className="mt-1 text-neutral-500 hover:text-neutral-300 transition-colors duration-200 ml-2 mt-4"
+            >
+              <RotateCcw className="w-4 h-4" />
+            </button>
+          )}
+        </div>
       </div>
-    </div>
+
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent className="rounded-2xl flex flex-col gap-4">
+          <DialogHeader>
+            <DialogTitle>Delete message</DialogTitle>
+          </DialogHeader>
+          <p>Are you sure you want to delete this message?</p>
+          <DialogFooter className='flex gap-4 justify-between w-full mt-6'>
+            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={confirmDelete}>
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 
 export default function MessageAndInput({ user, character, made_by_name, messages, chat_session, persona }: { user: User | undefined, character: typeof characters.$inferSelect, made_by_name: string, messages: CoreMessage[], chat_session?: string | undefined, persona?: typeof personas.$inferSelect | undefined }) {
+    const router = useRouter()
     const replacePlaceholders = (content: string | undefined) => {
       if (content === undefined) {
         return content
@@ -125,6 +264,36 @@ export default function MessageAndInput({ user, character, made_by_name, message
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const [error, setError] = useState<boolean>(false);
     const [isSignInDialogOpen, setIsSignInDialogOpen] = useState(false);
+
+    const handleEdit = async (index: number, editedContent: string) => {
+      const newMessages = messagesState.map((msg, i) => 
+        i === index
+          ? { ...msg, content: editedContent } as CoreMessage
+          : msg
+      );
+
+      setMessagesState(newMessages);
+
+      try {
+        await saveChat(newMessages, character, chat_session);
+      } catch (error) {
+        console.error('Failed to save edited message:', error);
+        // Optionally, revert the change in the UI or show an error message to the user
+      }
+    };
+    
+    const handleDelete = async (index: number) => {
+      const newMessages = messagesState.filter((_, i) => i !== index);
+
+      setMessagesState(newMessages);
+
+      try {
+        await saveChat(newMessages, character, chat_session);
+      } catch (error) {
+        console.error('Failed to save after deleting message:', error);
+        // Optionally, revert the change in the UI or show an error message to the user
+      }
+    };
   
     const scrollToBottom = () => {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -277,6 +446,7 @@ export default function MessageAndInput({ user, character, made_by_name, message
                       <MessageContent
                         key={i}
                         message={m}
+                        index={i + 1}
                         isUser={m.role === 'user'}
                         userName={persona?.displayName ?? user?.name ?? "Guest"}
                         characterName={character.name}
@@ -290,6 +460,8 @@ export default function MessageAndInput({ user, character, made_by_name, message
                           handleRetry : 
                           undefined
                         }
+                        onEdit={handleEdit}
+                        onDelete={handleDelete}
                       />
                     ))}
                   </>
