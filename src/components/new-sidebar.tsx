@@ -13,6 +13,7 @@ import {
   User,
   LogOut,
   HandCoins,
+  Github,
 } from "lucide-react";
 import { useSession, signIn, signOut } from "next-auth/react";
 import {
@@ -162,9 +163,19 @@ const NewSidebarContent: React.FC<NewSidebarProps> = ({ search }) => {
                   </DropdownMenuItem>
                   <DropdownMenuItem className="text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">
                     <Link
+                      href={"https://github.com/bobcoi03/opencharacter"}
+                      target="_blank"
+                      className="flex w-full"
+                    >
+                      <Github className="mr-2 h-4 w-4" />
+                      <span>Github </span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">
+                    <Link
                       href={"https://buymeacoffee.com/luongquangn"}
                       target="_blank"
-                      className="flex"
+                      className="flex w-full"
                     >
                       <HandCoins className="mr-2 h-4 w-4" />
                       <span>Donate </span>
