@@ -1,11 +1,11 @@
-"use server"
+"use server";
 
 import { db } from "@/server/db";
 import { characters } from "@/server/db/schema";
 import { auth } from "@/server/auth";
 import { z } from "zod";
 import FileStorage from "@/lib/r2_storage";
-import { eq, like, or, desc, sql } from 'drizzle-orm';
+import { eq, like, or, desc, sql, and } from "drizzle-orm";
 
 const CreateCharacterSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -36,9 +36,9 @@ async function uploadToR2(file: File): Promise<string> {
     }
   } catch (e) {
     console.error(e);
-    throw new Error(String(e))
+    throw new Error(String(e));
   }
-  return ""
+  return "";
 }
 
 export async function createCharacter(formData: FormData) {
@@ -46,63 +46,82 @@ export async function createCharacter(formData: FormData) {
   if (!session || !session.user) {
     throw new Error("You must be logged in to create a character");
   }
-  
-  const formDataObject: { [key: string]: FormDataEntryValue } = Object.fromEntries(formData.entries());
+
+  const formDataObject: { [key: string]: FormDataEntryValue } =
+    Object.fromEntries(formData.entries());
 
   const validationResult = CreateCharacterSchema.safeParse(formDataObject);
 
   if (!validationResult.success) {
     console.error("Validation errors:", validationResult.error.errors);
-    return { 
-      success: false, 
-      error: "Invalid form data", 
-      details: validationResult.error.errors 
+    return {
+      success: false,
+      error: "Invalid form data",
+      details: validationResult.error.errors,
     };
   }
 
-  const { 
-    name, tagline, description, greeting, visibility,
-    temperature, top_p, top_k, frequency_penalty, presence_penalty,
-    repetition_penalty, min_p, top_a, max_tokens
+  const {
+    name,
+    tagline,
+    description,
+    greeting,
+    visibility,
+    temperature,
+    top_p,
+    top_k,
+    frequency_penalty,
+    presence_penalty,
+    repetition_penalty,
+    min_p,
+    top_a,
+    max_tokens,
   } = validationResult.data;
 
   try {
     let avatarImageUrl = null;
-    const avatarFile = formData.get('avatar') as File | null;
+    const avatarFile = formData.get("avatar") as File | null;
     if (avatarFile && avatarFile.size > 0) {
       avatarImageUrl = await uploadToR2(avatarFile);
     }
 
-    // @ts-ignore
-    const newCharacter = await db.insert(characters).values({
-      name,
-      tagline,
-      description,
-      greeting,
-      visibility,
-      userId: session.user.id,
-      tags: "[]", 
-      interactionCount: 0,
-      likeCount: 0,
-      avatar_image_url: avatarImageUrl,
-      createdAt: sql`CURRENT_TIMESTAMP`,
-      updatedAt: sql`CURRENT_TIMESTAMP`,
-      // New AI behavior fields
-      temperature,
-      top_p,
-      top_k,
-      frequency_penalty,
-      presence_penalty,
-      repetition_penalty,
-      min_p,
-      top_a,
-      max_tokens,
-    }).returning();
+    const newCharacter = await db
+      .insert(characters)
+      // @ts-ignore
+      .values({
+        name,
+        tagline,
+        description,
+        greeting,
+        visibility,
+        userId: session.user.id,
+        tags: "[]",
+        interactionCount: 0,
+        likeCount: 0,
+        avatar_image_url: avatarImageUrl,
+        createdAt: sql`CURRENT_TIMESTAMP`,
+        updatedAt: sql`CURRENT_TIMESTAMP`,
+        // New AI behavior fields
+        temperature,
+        top_p,
+        top_k,
+        frequency_penalty,
+        presence_penalty,
+        repetition_penalty,
+        min_p,
+        top_a,
+        max_tokens,
+      })
+      .returning();
 
     return { success: true, character: newCharacter[0] };
   } catch (error) {
     console.error("Error creating character:", error);
-    return { success: false, error: "Failed to create character", details: error };
+    return {
+      success: false,
+      error: "Failed to create character",
+      details: error,
+    };
   }
 }
 
@@ -114,17 +133,17 @@ export async function updateCharacter(characterId: string, formData: FormData) {
   if (!session || !session.user) {
     throw new Error("You must be logged in to update a character");
   }
-  
+
   const formDataObject = Object.fromEntries(formData.entries());
 
   const validationResult = UpdateCharacterSchema.safeParse(formDataObject);
 
   if (!validationResult.success) {
     console.error("Validation errors:", validationResult.error.errors);
-    return { 
-      success: false, 
-      error: "Invalid form data", 
-      details: validationResult.error.errors 
+    return {
+      success: false,
+      error: "Invalid form data",
+      details: validationResult.error.errors,
     };
   }
 
@@ -132,18 +151,25 @@ export async function updateCharacter(characterId: string, formData: FormData) {
 
   try {
     // Fetch the existing character to check ownership
-    const existingCharacter = await db.select().from(characters).where(eq(characters.id, characterId)).limit(1);
+    const existingCharacter = await db
+      .select()
+      .from(characters)
+      .where(eq(characters.id, characterId))
+      .limit(1);
 
     if (existingCharacter.length === 0) {
       return { success: false, error: "Character not found" };
     }
 
     if (existingCharacter[0].userId !== session.user.id) {
-      return { success: false, error: "You don't have permission to update this character" };
+      return {
+        success: false,
+        error: "You don't have permission to update this character",
+      };
     }
 
     let avatarImageUrl = existingCharacter[0].avatar_image_url;
-    const avatarFile = formData.get('avatar') as File | null;
+    const avatarFile = formData.get("avatar") as File | null;
     if (avatarFile && avatarFile.size > 0) {
       avatarImageUrl = await uploadToR2(avatarFile);
     }
@@ -152,10 +178,11 @@ export async function updateCharacter(characterId: string, formData: FormData) {
     const updateData: Partial<typeof characters.$inferSelect> = {
       ...validatedData,
       avatar_image_url: avatarImageUrl,
-      updatedAt: new Date()
+      updatedAt: new Date(),
     };
 
-    const updatedCharacter = await db.update(characters)
+    const updatedCharacter = await db
+      .update(characters)
       .set(updateData)
       .where(eq(characters.id, characterId))
       .returning();
@@ -163,14 +190,50 @@ export async function updateCharacter(characterId: string, formData: FormData) {
     return { success: true, character: updatedCharacter[0] };
   } catch (error) {
     console.error("Error updating character:", error);
-    return { success: false, error: "Failed to update character", details: error };
+    return {
+      success: false,
+      error: "Failed to update character",
+      details: error,
+    };
   }
 }
 
 export async function searchCharacters(query: string, limit = 10) {
   console.log(`Searching characters with query: ${query}, limit: ${limit}`);
   const searchQuery = `%${query}%`;
-  
+
+  const session = await auth();
+  const userId = session?.user?.id;
+
+  let whereClause;
+  if (userId) {
+    // If there's a session, search for public characters and user's private characters
+    whereClause = and(
+      or(
+        like(characters.name, searchQuery),
+        like(characters.tagline, searchQuery),
+        like(characters.tags, searchQuery),
+      ),
+      or(
+        eq(characters.visibility, "public"),
+        and(
+          eq(characters.visibility, "private"),
+          eq(characters.userId, userId),
+        ),
+      ),
+    );
+  } else {
+    // If there's no session, only search for public characters
+    whereClause = and(
+      or(
+        like(characters.name, searchQuery),
+        like(characters.tagline, searchQuery),
+        like(characters.tags, searchQuery),
+      ),
+      eq(characters.visibility, "public"),
+    );
+  }
+
   const results = await db
     .select({
       id: characters.id,
@@ -185,13 +248,7 @@ export async function searchCharacters(query: string, limit = 10) {
       avatar_image_url: characters.avatar_image_url,
     })
     .from(characters)
-    .where(
-      or(
-        like(characters.name, searchQuery),
-        like(characters.tagline, searchQuery),
-        like(characters.tags, searchQuery)
-      )
-    );
+    .where(whereClause);
 
   console.log(`Fetched ${results.length} characters`);
 
