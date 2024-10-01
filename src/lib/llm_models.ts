@@ -61,33 +61,9 @@ export const models = {
         "id": "openai/o1-mini-2024-09-12",
         "name": "O1Mini20240912"
     },
-    "openai/o1-mini": {
-        "id": "openai/o1-mini",
-        "name": "O1Mini"
-    },
-    "openai/o1-preview-2024-09-12": {
-        "id": "openai/o1-preview-2024-09-12",
-        "name": "O1Preview20240912"
-    },
-    "openai/o1-preview": {
-        "id": "openai/o1-preview",
-        "name": "O1Preview"
-    },
     "mistralai/pixtral-12b": {
         "id": "mistralai/pixtral-12b",
         "name": "Pixtral12B"
-    },
-    "cohere/command-r-plus-08-2024": {
-        "id": "cohere/command-r-plus-08-2024",
-        "name": "CommandRPlus082024"
-    },
-    "cohere/command-r-08-2024": {
-        "id": "cohere/command-r-08-2024",
-        "name": "CommandR082024"
-    },
-    "qwen/qwen-2-vl-7b-instruct": {
-        "id": "qwen/qwen-2-vl-7b-instruct",
-        "name": "Qwen2Vl7BInstruct"
     },
     "google/gemini-flash-8b-1": {
         "id": "google/gemini-flash-8b-1",
@@ -117,10 +93,6 @@ export const models = {
         "id": "perplexity/llama-3",
         "name": "Llama3"
     },
-    "openai/chatgpt-4o-latest": {
-        "id": "openai/chatgpt-4o-latest",
-        "name": "Chatgpt4OLatest"
-    },
     "sao10k/l3-lunaris-8b": {
         "id": "sao10k/l3-lunaris-8b",
         "name": "L3Lunaris8B"
@@ -129,17 +101,9 @@ export const models = {
         "id": "aetherwiing/mn-starcannon-12b",
         "name": "MnStarcannon12B"
     },
-    "openai/gpt-4o-2024-08-06": {
-        "id": "openai/gpt-4o-2024-08-06",
-        "name": "Gpt4O20240806"
-    },
     "nothingiisreal/mn-celeste-12b": {
         "id": "nothingiisreal/mn-celeste-12b",
         "name": "MnCeleste12B"
-    },
-    "google/gemini-pro-1": {
-        "id": "google/gemini-pro-1",
-        "name": "GeminiPro1"
     },
     "mistralai/codestral-mamba": {
         "id": "mistralai/codestral-mamba",
@@ -188,10 +152,6 @@ export const models = {
     "ai21/jamba-instruct": {
         "id": "ai21/jamba-instruct",
         "name": "JambaInstruct"
-    },
-    "anthropic/claude-3": {
-        "id": "anthropic/claude-3",
-        "name": "Claude3"
     },
     "sao10k/l3-euryale-70b": {
         "id": "sao10k/l3-euryale-70b",
@@ -265,18 +225,6 @@ export const models = {
         "id": "meta-llama/llama-guard-2-8b",
         "name": "LlamaGuard28B"
     },
-    "openai/gpt-4o-2024-05-13": {
-        "id": "openai/gpt-4o-2024-05-13",
-        "name": "Gpt4O20240513"
-    },
-    "openai/gpt-4o": {
-        "id": "openai/gpt-4o",
-        "name": "Gpt4O"
-    },
-    "openai/gpt-4o:extended": {
-        "id": "openai/gpt-4o:extended",
-        "name": "Gpt4OExtended"
-    },
     "qwen/qwen-72b-chat": {
         "id": "qwen/qwen-72b-chat",
         "name": "Qwen72BChat"
@@ -333,18 +281,6 @@ export const models = {
         "id": "microsoft/wizardlm-2-8x22b",
         "name": "Wizardlm28X22B"
     },
-    "openai/gpt-4-turbo": {
-        "id": "openai/gpt-4-turbo",
-        "name": "Gpt4Turbo"
-    },
-    "cohere/command-r-plus": {
-        "id": "cohere/command-r-plus",
-        "name": "CommandRPlus"
-    },
-    "cohere/command-r-plus-04-2024": {
-        "id": "cohere/command-r-plus-04-2024",
-        "name": "CommandRPlus042024"
-    },
     "databricks/dbrx-instruct": {
         "id": "databricks/dbrx-instruct",
         "name": "DbrxInstruct"
@@ -352,50 +288,6 @@ export const models = {
     "sophosympatheia/midnight-rose-70b": {
         "id": "sophosympatheia/midnight-rose-70b",
         "name": "MidnightRose70B"
-    },
-    "cohere/command-r": {
-        "id": "cohere/command-r",
-        "name": "CommandR"
-    },
-    "cohere/command": {
-        "id": "cohere/command",
-        "name": "Command"
-    },
-    "anthropic/claude-3-haiku": {
-        "id": "anthropic/claude-3-haiku",
-        "name": "Claude3Haiku"
-    },
-    "anthropic/claude-3-haiku:beta": {
-        "id": "anthropic/claude-3-haiku:beta",
-        "name": "Claude3HaikuBeta"
-    },
-    "anthropic/claude-3-sonnet": {
-        "id": "anthropic/claude-3-sonnet",
-        "name": "Claude3Sonnet"
-    },
-    "anthropic/claude-3-sonnet:beta": {
-        "id": "anthropic/claude-3-sonnet:beta",
-        "name": "Claude3SonnetBeta"
-    },
-    "anthropic/claude-3-opus": {
-        "id": "anthropic/claude-3-opus",
-        "name": "Claude3Opus"
-    },
-    "anthropic/claude-3-opus:beta": {
-        "id": "anthropic/claude-3-opus:beta",
-        "name": "Claude3OpusBeta"
-    },
-    "cohere/command-r-03-2024": {
-        "id": "cohere/command-r-03-2024",
-        "name": "CommandR032024"
-    },
-    "mistralai/mistral-large": {
-        "id": "mistralai/mistral-large",
-        "name": "MistralLarge"
-    },
-    "openai/gpt-4-turbo-preview": {
-        "id": "openai/gpt-4-turbo-preview",
-        "name": "Gpt4TurboPreview"
     },
     "openai/gpt-3": {
         "id": "openai/gpt-3",
@@ -429,14 +321,6 @@ export const models = {
         "id": "cognitivecomputations/dolphin-mixtral-8x7b",
         "name": "DolphinMixtral8X7B"
     },
-    "google/gemini-pro-vision": {
-        "id": "google/gemini-pro-vision",
-        "name": "GeminiProVision"
-    },
-    "google/gemini-pro": {
-        "id": "google/gemini-pro",
-        "name": "GeminiPro"
-    },
     "mistralai/mixtral-8x7b-instruct": {
         "id": "mistralai/mixtral-8x7b-instruct",
         "name": "Mixtral8X7BInstruct"
@@ -465,25 +349,9 @@ export const models = {
         "id": "neversleep/noromaid-20b",
         "name": "Noromaid20B"
     },
-    "anthropic/claude-instant-1": {
-        "id": "anthropic/claude-instant-1",
-        "name": "ClaudeInstant1"
-    },
-    "anthropic/claude-2": {
-        "id": "anthropic/claude-2",
-        "name": "Claude2"
-    },
-    "anthropic/claude-2:beta": {
-        "id": "anthropic/claude-2:beta",
-        "name": "Claude2Beta"
-    },
     "teknium/openhermes-2": {
         "id": "teknium/openhermes-2",
         "name": "Openhermes2"
-    },
-    "openai/gpt-4-vision-preview": {
-        "id": "openai/gpt-4-vision-preview",
-        "name": "Gpt4VisionPreview"
     },
     "alpindale/goliath-120b": {
         "id": "alpindale/goliath-120b",
@@ -505,18 +373,6 @@ export const models = {
         "id": "openrouter/auto",
         "name": "Auto"
     },
-    "openai/gpt-4-1106-preview": {
-        "id": "openai/gpt-4-1106-preview",
-        "name": "Gpt41106Preview"
-    },
-    "google/palm-2-codechat-bison-32k": {
-        "id": "google/palm-2-codechat-bison-32k",
-        "name": "Palm2CodechatBison32K"
-    },
-    "google/palm-2-chat-bison-32k": {
-        "id": "google/palm-2-chat-bison-32k",
-        "name": "Palm2ChatBison32K"
-    },
     "jondurbin/airoboros-l2-70b": {
         "id": "jondurbin/airoboros-l2-70b",
         "name": "AiroborosL270B"
@@ -528,14 +384,6 @@ export const models = {
     "pygmalionai/mythalion-13b": {
         "id": "pygmalionai/mythalion-13b",
         "name": "Mythalion13B"
-    },
-    "openai/gpt-4-32k-0314": {
-        "id": "openai/gpt-4-32k-0314",
-        "name": "Gpt432K0314"
-    },
-    "openai/gpt-4-32k": {
-        "id": "openai/gpt-4-32k",
-        "name": "Gpt432K"
     },
     "nousresearch/nous-hermes-llama2-13b": {
         "id": "nousresearch/nous-hermes-llama2-13b",
@@ -553,10 +401,6 @@ export const models = {
         "id": "anthropic/claude-1",
         "name": "Claude1"
     },
-    "anthropic/claude-instant-1:beta": {
-        "id": "anthropic/claude-instant-1:beta",
-        "name": "ClaudeInstant1Beta"
-    },
     "undi95/remm-slerp-l2-13b": {
         "id": "undi95/remm-slerp-l2-13b",
         "name": "RemmSlerpL213B"
@@ -564,14 +408,6 @@ export const models = {
     "undi95/remm-slerp-l2-13b:extended": {
         "id": "undi95/remm-slerp-l2-13b:extended",
         "name": "RemmSlerpL213BExtended"
-    },
-    "google/palm-2-codechat-bison": {
-        "id": "google/palm-2-codechat-bison",
-        "name": "Palm2CodechatBison"
-    },
-    "google/palm-2-chat-bison": {
-        "id": "google/palm-2-chat-bison",
-        "name": "Palm2ChatBison"
     },
     "gryphe/mythomax-l2-13b:nitro": {
         "id": "gryphe/mythomax-l2-13b:nitro",
@@ -584,14 +420,6 @@ export const models = {
     "meta-llama/llama-2-13b-chat": {
         "id": "meta-llama/llama-2-13b-chat",
         "name": "Llama213BChat"
-    },
-    "openai/gpt-4-0314": {
-        "id": "openai/gpt-4-0314",
-        "name": "Gpt40314"
-    },
-    "openai/gpt-4": {
-        "id": "openai/gpt-4",
-        "name": "Gpt4"
     },
 };
   
