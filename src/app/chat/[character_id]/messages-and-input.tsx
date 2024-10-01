@@ -706,7 +706,7 @@ export default function MessageAndInput({
                       <Cpu className="w-4 h-4 text-gray-700 dark:text-gray-300" />
                     </button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent>
+                  <DropdownMenuContent className="max-h-96 overflow-y-auto">
                     {getModelArray().map((model) => (
                       <DropdownMenuItem
                         key={model.id}

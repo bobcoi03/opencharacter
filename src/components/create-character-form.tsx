@@ -156,11 +156,11 @@ export function CreateCharacterForm({
 
             <div>
               <label className="block mb-1 text-sm font-medium">Greeting</label>
-              <input
-                type="text"
+              <textarea
+                rows={4}
                 name="greeting"
                 placeholder="e.g. Hello, I am Albert. Ask me anything about my scientific contributions."
-                className="w-full p-2 text-sm border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-neutral-900"
+                className="w-full p-2 text-sm border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-neutral-900 max-h-96"
                 required
                 defaultValue={character ? character.greeting : ""}
               />

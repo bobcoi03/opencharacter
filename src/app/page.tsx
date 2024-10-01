@@ -17,7 +17,7 @@ export default async function Page() {
     return await db.query.characters.findMany({
       where: eq(characters.visibility, "public"),
       orderBy: [desc(characters.interactionCount)],
-      limit: 500, // Reduced for better horizontal scrolling experience
+      limit: 200, // Reduced for better horizontal scrolling experience
     });
   }
 
