@@ -21,10 +21,6 @@ export const models = {
         "id": "gryphe/mythomax-l2-13b",
         "name": "MythomaxL213B"
     },
-    "google/gemini-flash-1": {
-        "id": "google/gemini-flash-1",
-        "name": "GeminiFlash1"
-    },
     "gryphe/mythomist-7b": {
         "id": "gryphe/mythomist-7b",
         "name": "Mythomist7B"
@@ -40,10 +36,6 @@ export const models = {
     "thedrummer/rocinante-12b": {
         "id": "thedrummer/rocinante-12b",
         "name": "Rocinante12B"
-    },
-    "eva-unit-01/eva-qwen-2": {
-        "id": "eva-unit-01/eva-qwen-2",
-        "name": "EvaQwen2"
     },
     "anthracite-org/magnum-v2-72b": {
         "id": "anthracite-org/magnum-v2-72b",
