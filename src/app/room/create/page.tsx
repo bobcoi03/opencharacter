@@ -1,6 +1,6 @@
 import { auth } from "@/server/auth";
 import CreateRoomForm from "@/components/create-room-form";
-import { searchCharacters } from "@/app/actions";
+import { searchCharacters, createRoom } from "@/app/actions/index";
 
 export const runtime = "edge"
 
@@ -22,13 +22,15 @@ export default async function CreateRoomPage() {
   
     async function search(query: string) {
       'use server'
-      // You can use the session here if needed
-      // For example, to filter characters based on user permissions
       const characters = await searchCharacters(query, 30);
-      // You might want to filter or process the results here
-      // based on the session or other server-side logic
       return characters;
     }
 
-    return <CreateRoomForm searchCharacters={search} />
+    async function createRoomFunc(roomName: string, roomTopic: string | null, selectedCharacterIds: string[]) {
+      'use server'
+      const res = await createRoom(roomName, roomTopic, selectedCharacterIds);
+      return res;
+    }
+
+    return <CreateRoomForm searchCharacters={search} createRoom={createRoomFunc} />
 }

@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 
 type Character = {
   id: string;
@@ -12,19 +12,27 @@ type Character = {
 };
 
 type SearchCharactersFunction = (query: string) => Promise<Character[]>;
+type CreateRoomFunction = (roomName: string, roomTopic: string | null, selectedCharacterIds: string[]) => Promise<any>;
 
-export default function CreateRoomForm({ searchCharacters }: { searchCharacters: SearchCharactersFunction }) {
-    const [roomName, setRoomName] = useState('');
+export default function CreateRoomForm({ 
+  searchCharacters, 
+  createRoom 
+}: { 
+  searchCharacters: SearchCharactersFunction,
+  createRoom: CreateRoomFunction
+}) {
+  const [roomName, setRoomName] = useState('');
   const [selectedCharacters, setSelectedCharacters] = useState<Character[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [suggestions, setSuggestions] = useState<Character[]>([]);
   const [roomTopic, setRoomTopic] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isCreatingRoom, setIsCreatingRoom] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const fetchSuggestions = async () => {
-      if (inputValue.length < 2) {
+      if (inputValue.length < 1) {
         setSuggestions([]);
         return;
       }
@@ -67,17 +75,28 @@ export default function CreateRoomForm({ searchCharacters }: { searchCharacters:
     }
   };
 
-  const handleCreateRoom = (e: React.FormEvent) => {
+  const handleCreateRoom = async (e: React.FormEvent) => {
     e.preventDefault();
     if (selectedCharacters.length < 2) {
       alert('Please select at least 2 characters.');
       return;
     }
-    console.log('Room created:', { 
-      roomName, 
-      characters: selectedCharacters, 
-      roomTopic 
-    });
+    setIsCreatingRoom(true);
+    try {
+      console.log('Room created:', { 
+        roomName, 
+        characters: selectedCharacters, 
+        roomTopic 
+      });
+      const res = await createRoom(roomName, roomTopic, selectedCharacters.map(c => c.id))
+      console.log("created room:", JSON.stringify(res));
+      return res;
+    } catch (error) {
+      console.error('Error creating room:', error);
+      alert('An error occurred while creating the room. Please try again.');
+    } finally {
+      setIsCreatingRoom(false);
+    }
   };
 
   return (
@@ -98,7 +117,7 @@ export default function CreateRoomForm({ searchCharacters }: { searchCharacters:
               value={roomName}
               onChange={(e) => setRoomName(e.target.value)}
               placeholder="e.g. Lincoln-Einstein, Music Lovers, Sci-Fi discuss"
-              className="w-full p-2 text-sm border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-neutral-900"
+              className="w-full p-2 text-sm border border-gray-200 dark:border-gray-700 rounded-md bg-neutral-900"
               required
             />
           </div>
@@ -151,7 +170,7 @@ export default function CreateRoomForm({ searchCharacters }: { searchCharacters:
               )}
             </div>
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              Please select at least 2 characters to add to this room. Note: Only the top 5000 public characters are available for now.
+              Please select at least 2 characters to add to this room. Max is 10 characters.
             </p>
           </div>
           
@@ -168,13 +187,20 @@ export default function CreateRoomForm({ searchCharacters }: { searchCharacters:
           
           <div className='w-full flex justify-end'>
             <button 
-                type="submit"
-                className="bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700 transition duration-200 text-sm font-medium"
+              type="submit"
+              className="bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700 transition duration-200 text-sm font-medium flex items-center"
+              disabled={isCreatingRoom}
             >
-                Create Room!
+              {isCreatingRoom ? (
+                <>
+                  <Loader2 className="animate-spin mr-2" size={16} />
+                  Creating...
+                </>
+              ) : (
+                'Create Room!'
+              )}
             </button>
           </div>
-
         </form>
       </div>
     </div>
