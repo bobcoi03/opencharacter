@@ -9,7 +9,8 @@
     "lint": "next lint",
     "pages:build": "bunx @cloudflare/next-on-pages",
     "preview": "bun pages:build && wrangler pages dev",
-    "deploy": "bun pages:build && wrangler pages deploy",
+    "deploy": "bun pages:build && wrangler pages deploy --project-name=open-character",
+    "deploy:testing": "bun pages:build && wrangler pages deploy --project-name=open-character --branch=testing",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv env.d.ts",
     "setup": "bun run scripts/setup.ts"
   },
