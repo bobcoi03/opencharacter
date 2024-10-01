@@ -2,6 +2,8 @@
 
 **_Create and run any characters locally with local models or use the hosted version._**
 
+![OpenCharacter Card](https://opencharacter.org/OpenCharacterCard.png)
+
 ## The stack includes:
 
 - [Next.js](https://nextjs.org/) for frontend
@@ -108,4 +110,3 @@ If you prefer manual setup:
 - Cost-effective scaling (e.g., $5/month for multiple high-traffic projects)
 
 Just change your Cloudflare account ID in the project settings, and you're good to go!
-
