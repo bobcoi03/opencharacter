@@ -8,7 +8,6 @@ import { auth } from "@/server/auth";
 import { searchCharacters } from "./actions";
 import NewSidebar from "@/components/new-sidebar";
 
-
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {

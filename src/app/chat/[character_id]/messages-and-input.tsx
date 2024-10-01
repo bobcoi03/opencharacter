@@ -15,8 +15,9 @@ import {
   Trash2,
   MoreHorizontal,
   Plus,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
-import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -42,6 +43,20 @@ import { useRouter } from "next/navigation";
 
 const MAX_TEXTAREA_HEIGHT = 450; // maximum height in pixels
 
+function Renegerate() {
+  return (
+    <div className="flex items-center justify-center space-x-2 mt-2">
+      <button className="p-1 rounded-full bg-gray-200 dark:bg-gray-700 disabled:opacity-50">
+        <ChevronLeft className="w-4 h-4" />
+      </button>
+      <span className="text-sm text-gray-500 dark:text-gray-400">1</span>
+      <button className="p-1 rounded-full bg-gray-200 dark:bg-gray-700 disabled:opacity-50">
+        <ChevronRight className="w-4 h-4" />
+      </button>
+    </div>
+  );
+}
+
 interface MessageContentProps {
   message: CoreMessage;
   index: number;
@@ -54,6 +69,10 @@ interface MessageContentProps {
   onRetry?: () => void;
   onEdit: (index: number, editedContent: string) => void;
   onDelete: (index: number) => void;
+  onGoBackRegenerate?: (toIndex: number) => void;
+  regenerations: number;
+  currentRegenerationIndex: number;
+
 }
 
 const UserAvatar = ({ userName }: { userName: string }) => {
@@ -80,6 +99,9 @@ const MessageContent: React.FC<MessageContentProps> = ({
   onRetry,
   onEdit,
   onDelete,
+  onGoBackRegenerate,
+  regenerations,
+  currentRegenerationIndex
 }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -230,13 +252,39 @@ const MessageContent: React.FC<MessageContentProps> = ({
               </ReactMarkdown>
             )}
           </div>
-          {!isUser && onRetry && !isEditing && (
+          {!isUser && onRetry && !isEditing && regenerations === 0 && (
             <button
               onClick={onRetry}
               className="text-neutral-500 hover:text-neutral-300 transition-colors duration-200 ml-2 mt-4"
             >
               <RotateCcw className="w-4 h-4" />
             </button>
+          )}
+         {!isUser && regenerations > 0 && (
+            <div className="flex items-center space-x-2 mt-4 ml-2">
+              <button 
+                className="p-1 rounded-full"
+                onClick={() => onGoBackRegenerate && onGoBackRegenerate(currentRegenerationIndex - 1)}
+                disabled={currentRegenerationIndex === 0}
+              >
+                <ChevronLeft className={`w-4 h-4 ${currentRegenerationIndex === 0 && "text-slate-700"}`} />
+              </button>
+              <span className="text-sm text-gray-500 dark:text-gray-400">
+                {currentRegenerationIndex} / 30
+              </span>
+              <button 
+                className="p-1 rounded-full"
+                onClick={() => {
+                  if (currentRegenerationIndex === regenerations - 1 && regenerations < 30) {
+                    onRetry && onRetry();
+                  } else {
+                    onGoBackRegenerate && onGoBackRegenerate(currentRegenerationIndex + 1);
+                  }
+                }}
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
           )}
         </div>
       </div>
@@ -285,7 +333,7 @@ export default function MessageAndInput({
       return content;
     }
     return content
-      .replace(/{{user}}/g, persona?.displayName || user?.name || "Guest")
+      .replace(/{{user}}/g, persona?.displayName || user?.name || "Guest")  
       .replace(/{{char}}/g, character.name || "");
   };
 
@@ -302,6 +350,8 @@ export default function MessageAndInput({
   const [error, setError] = useState<boolean>(false);
   const [isSignInDialogOpen, setIsSignInDialogOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [regenerations, setRegenerations] = useState<string[]>([]);
+  const [currentRegenerationIndex, setCurrentRegenerationIndex] = useState(0);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInput(e.target.value);
@@ -355,6 +405,25 @@ export default function MessageAndInput({
     } catch (error) {
       console.error("Failed to save edited message:", error);
       // Optionally, revert the change in the UI or show an error message to the user
+    }
+  };
+
+  const handleOnGoBackRegenerate = async (index: number) => {
+    if (index >= 0 && index < regenerations.length) {
+      const wantMessage = regenerations[index];
+      const newMessages = [...messagesState];
+      
+      // Find the last assistant message and replace its content
+      for (let i = newMessages.length - 1; i >= 0; i--) {
+        if (newMessages[i].role === "assistant") {
+          newMessages[i].content = wantMessage;
+          break;
+        }
+      }
+      
+      setMessagesState(newMessages);
+      await saveChat(newMessages, character, chat_session)
+      setCurrentRegenerationIndex(index);
     }
   };
 
@@ -429,12 +498,10 @@ export default function MessageAndInput({
       );
       console.log("result: " + JSON.stringify(result));
       if ("error" in result) {
-        console.error("Error: " + result.message);
         setError(true);
         return;
       }
       for await (const content of readStreamableValue(result)) {
-        console.log("content: " + content);
         setMessagesState([
           ...newMessages,
           {
@@ -442,12 +509,20 @@ export default function MessageAndInput({
             content: replacePlaceholders(content) as string,
           },
         ]);
+        setRegenerations([
+          ...regenerations,
+          replacePlaceholders(content) as string,
+        ]);
+        setCurrentRegenerationIndex(regenerations.length);  // This sets it to the new last index
       }
     } catch (err) {
-      console.error("Error in conversation:", err);
       setError(true);
     } finally {
       setIsLoading(false);
+      if (!regenerate && !error) {
+        setCurrentRegenerationIndex(0)
+        setRegenerations([])
+      }
     }
   };
 
@@ -457,18 +532,23 @@ export default function MessageAndInput({
   };
 
   const handleRetry = () => {
+    console.log("Attempting to retry the last message.");
     if (messagesState.length > 1) {
       // Ensure there are at least two messages
       const lastMessage = messagesState[messagesState.length - 1];
       const lastUserMessage = messagesState[messagesState.length - 2];
 
       if (lastMessage.role === "user") {
+        console.log("Retrying the user's message due to an error.");
         // Error case: retry the user's message
         handleSubmit(lastMessage.content as string, true);
       } else if (lastMessage.role === "assistant") {
+        console.log("Retrying the last user message to get a new assistant response.");
         // Regeneration case: retry the last user message to get a new assistant response
         handleSubmit(lastUserMessage.content as string, false, true);
       }
+    } else {
+      console.log("Not enough messages to retry.");
     }
   };
 
@@ -562,6 +642,17 @@ export default function MessageAndInput({
                     }
                     onEdit={handleEdit}
                     onDelete={handleDelete}
+                    regenerations={
+                      m.role === "assistant" &&
+                      i === messagesState.length - 2 &&
+                      messagesState.length > 2 &&
+                      !isLoading ?
+                        regenerations.length
+                         :
+                        0
+                    }
+                    currentRegenerationIndex={currentRegenerationIndex}
+                    onGoBackRegenerate={handleOnGoBackRegenerate}
                   />
                 ))}
               </>

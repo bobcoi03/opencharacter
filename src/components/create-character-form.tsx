@@ -140,7 +140,7 @@ export function CreateCharacterForm({
               </label>
               <textarea
                 name="description"
-                placeholder="How would your Character describe themselves?"
+                placeholder="Describe your character to the language model, how it should act, reply, etc..."
                 className="w-full p-2 text-sm border border-gray-200 dark:border-gray-700 rounded-md h-24 bg-white dark:bg-neutral-900"
                 required
                 defaultValue={character ? character.description : ""}
