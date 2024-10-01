@@ -1,21 +1,44 @@
-"use client"
+"use client";
 
-import React, { useEffect, useState } from 'react';
-import { ArrowLeft, Upload, Globe } from 'lucide-react';
-import Link from 'next/link';
-import { SubmitButton } from '@/app/new/submit-button';
-import { characters } from '@/server/db/schema';
+import React, { useEffect, useState } from "react";
+import { ArrowLeft, Upload, Globe, Lock } from "lucide-react";
+import Link from "next/link";
+import { SubmitButton } from "@/app/new/submit-button";
+import { characters } from "@/server/db/schema";
 
-export function CreateCharacterForm({ action, character, editMode = false }: { action: (formData: FormData) => void, character?: typeof characters.$inferSelect, editMode?: boolean }) {
+type CharacterVisibility = "public" | "private";
+
+export function CreateCharacterForm({
+  action,
+  character,
+  editMode = false,
+}: {
+  action: (formData: FormData) => void;
+  character?: typeof characters.$inferSelect;
+  editMode?: boolean;
+}) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
-  const [descriptionCharCount, setDescriptionCharCount] = useState<number>(character?.description.length ?? 0);
+  const [descriptionCharCount, setDescriptionCharCount] = useState<number>(
+    character?.description.length ?? 0,
+  );
+  const [visibility, setVisibility] = useState<CharacterVisibility>(
+    (character?.visibility as CharacterVisibility) ?? "public",
+  );
 
   useEffect(() => {
     if (character) {
-      setPreviewUrl(character.avatar_image_url ?? "/default-avatar.jpg")
+      setDescriptionCharCount(character.description.length);
+      setVisibility((character.visibility as CharacterVisibility) ?? "public");
     }
-  }, [character])
+  }, [character]);
+
+  useEffect(() => {
+    if (character) {
+      setPreviewUrl(character.avatar_image_url ?? "/default-avatar.jpg");
+      setVisibility(character.visibility as "public" | "private");
+    }
+  }, [character]);
 
   const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB in bytes
 
@@ -25,7 +48,7 @@ export function CreateCharacterForm({ action, character, editMode = false }: { a
       if (file.size > MAX_FILE_SIZE) {
         setFileError("File size exceeds 5MB limit");
         setPreviewUrl(null);
-        event.target.value = ''; // Reset the input
+        event.target.value = ""; // Reset the input
       } else {
         setFileError(null);
         const reader = new FileReader();
@@ -40,7 +63,10 @@ export function CreateCharacterForm({ action, character, editMode = false }: { a
   return (
     <div className="w-full bg-white dark:bg-neutral-900 min-h-screen p-6 overflow-y-auto mb-12">
       <header>
-        <Link href="/" className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-neutral-800 inline-block">
+        <Link
+          href="/"
+          className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-neutral-800 inline-block"
+        >
           <ArrowLeft size={16} />
         </Link>
       </header>
@@ -50,9 +76,16 @@ export function CreateCharacterForm({ action, character, editMode = false }: { a
           <div className="flex flex-col items-center mb-6">
             <div className="w-20 h-20 bg-gray-200 dark:bg-gray-700 rounded-full mb-2 flex items-center justify-center overflow-hidden relative">
               {previewUrl ? (
-                <img src={previewUrl} alt="Avatar preview" className="w-full h-full object-cover" />
+                <img
+                  src={previewUrl}
+                  alt="Avatar preview"
+                  className="w-full h-full object-cover"
+                />
               ) : (
-                <Upload size={32} className="text-gray-400 dark:text-gray-500" />
+                <Upload
+                  size={32}
+                  className="text-gray-400 dark:text-gray-500"
+                />
               )}
               <input
                 type="file"
@@ -63,13 +96,21 @@ export function CreateCharacterForm({ action, character, editMode = false }: { a
                 required={!editMode}
               />
             </div>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Character Avatar</h2>
-            {fileError && <p className="text-red-500 text-sm mt-1">{fileError}</p>}
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Max file size: 5MB</p>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+              Character Avatar
+            </h2>
+            {fileError && (
+              <p className="text-red-500 text-sm mt-1">{fileError}</p>
+            )}
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              Max file size: 5MB
+            </p>
           </div>
 
           <div className="space-y-3">
-            <label className="block mb-1 text-sm font-medium">Character Name</label>
+            <label className="block mb-1 text-sm font-medium">
+              Character Name
+            </label>
             <div>
               <input
                 type="text"
@@ -94,7 +135,9 @@ export function CreateCharacterForm({ action, character, editMode = false }: { a
             </div>
 
             <div>
-              <label className="block mb-1 text-sm font-medium">System Prompt</label>
+              <label className="block mb-1 text-sm font-medium">
+                System Prompt
+              </label>
               <textarea
                 name="description"
                 placeholder="How would your Character describe themselves?"
@@ -106,7 +149,9 @@ export function CreateCharacterForm({ action, character, editMode = false }: { a
                   setDescriptionCharCount(target.value.length);
                 }}
               />
-              <p className='text-xs font-light text-gray-500'>character length: {descriptionCharCount}</p>
+              <p className="text-xs font-light text-gray-500">
+                character length: {descriptionCharCount}
+              </p>
             </div>
 
             <div>
@@ -122,11 +167,36 @@ export function CreateCharacterForm({ action, character, editMode = false }: { a
             </div>
 
             <div>
-              <label className="block mb-1 text-sm font-medium">Visibility</label>
-              <div className="px-3 py-1 text-sm border border-gray-200 dark:border-gray-700 rounded-full flex items-center space-x-2 bg-white dark:bg-neutral-900">
-                <Globe size={14} />
-                <span>public (All characters are public for now)</span>
+              <label className="block mb-1 text-sm font-medium">
+                Visibility
+              </label>
+              <div className="flex space-x-4">
+                <button
+                  type="button"
+                  onClick={() => setVisibility("public")}
+                  className={`px-3 py-1 text-sm border rounded-full flex items-center space-x-2 ${
+                    visibility === "public"
+                      ? "border-blue-500 text-blue-500"
+                      : "border-gray-200 dark:border-gray-700"
+                  }`}
+                >
+                  <Globe size={14} />
+                  <span>Public</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setVisibility("private")}
+                  className={`px-3 py-1 text-sm border rounded-full flex items-center space-x-2 ${
+                    visibility === "private"
+                      ? "border-blue-500 text-blue-500"
+                      : "border-gray-200 dark:border-gray-700"
+                  }`}
+                >
+                  <Lock size={14} />
+                  <span>Private</span>
+                </button>
               </div>
+              <input type="hidden" name="visibility" value={visibility} />
             </div>
           </div>
 
@@ -134,7 +204,9 @@ export function CreateCharacterForm({ action, character, editMode = false }: { a
             <h3 className="text-sm font-medium">AI Behavior Configuration</h3>
 
             <div>
-              <label className="block mb-1 text-sm font-medium">Temperature</label>
+              <label className="block mb-1 text-sm font-medium">
+                Temperature
+              </label>
               <input
                 type="number"
                 name="temperature"
@@ -145,7 +217,8 @@ export function CreateCharacterForm({ action, character, editMode = false }: { a
                 className="w-full p-2 text-sm border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-neutral-900"
               />
               <p className="text-xs text-gray-500 mt-1">
-                Influences response variety. 0.0 to 2.0. Lower values: more predictable; Higher values: more diverse.
+                Influences response variety. 0.0 to 2.0. Lower values: more
+                predictable; Higher values: more diverse.
               </p>
             </div>
 
@@ -161,7 +234,8 @@ export function CreateCharacterForm({ action, character, editMode = false }: { a
                 className="w-full p-2 text-sm border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-neutral-900"
               />
               <p className="text-xs text-gray-500 mt-1">
-                Limits token choices to top percentage. 0.0 to 1.0. Lower values: more predictable; Higher values: more diverse.
+                Limits token choices to top percentage. 0.0 to 1.0. Lower
+                values: more predictable; Higher values: more diverse.
               </p>
             </div>
 
@@ -176,12 +250,15 @@ export function CreateCharacterForm({ action, character, editMode = false }: { a
                 className="w-full p-2 text-sm border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-neutral-900"
               />
               <p className="text-xs text-gray-500 mt-1">
-                Limits token choices to top K. 0 or above. Lower values: more predictable; 0: consider all choices.
+                Limits token choices to top K. 0 or above. Lower values: more
+                predictable; 0: consider all choices.
               </p>
             </div>
 
             <div>
-              <label className="block mb-1 text-sm font-medium">Frequency Penalty</label>
+              <label className="block mb-1 text-sm font-medium">
+                Frequency Penalty
+              </label>
               <input
                 type="number"
                 name="frequency_penalty"
@@ -192,12 +269,15 @@ export function CreateCharacterForm({ action, character, editMode = false }: { a
                 className="w-full p-2 text-sm border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-neutral-900"
               />
               <p className="text-xs text-gray-500 mt-1">
-                Controls token repetition based on frequency. -2.0 to 2.0. Positive: reduce repetition; Negative: encourage repetition.
+                Controls token repetition based on frequency. -2.0 to 2.0.
+                Positive: reduce repetition; Negative: encourage repetition.
               </p>
             </div>
 
             <div>
-              <label className="block mb-1 text-sm font-medium">Presence Penalty</label>
+              <label className="block mb-1 text-sm font-medium">
+                Presence Penalty
+              </label>
               <input
                 type="number"
                 name="presence_penalty"
@@ -208,12 +288,15 @@ export function CreateCharacterForm({ action, character, editMode = false }: { a
                 className="w-full p-2 text-sm border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-neutral-900"
               />
               <p className="text-xs text-gray-500 mt-1">
-                Adjusts repetition of used tokens. -2.0 to 2.0. Positive: reduce repetition; Negative: encourage repetition.
+                Adjusts repetition of used tokens. -2.0 to 2.0. Positive: reduce
+                repetition; Negative: encourage repetition.
               </p>
             </div>
 
             <div>
-              <label className="block mb-1 text-sm font-medium">Max Tokens</label>
+              <label className="block mb-1 text-sm font-medium">
+                Max Tokens
+              </label>
               <input
                 type="number"
                 name="max_tokens"
@@ -224,7 +307,8 @@ export function CreateCharacterForm({ action, character, editMode = false }: { a
                 className="w-full p-2 text-sm border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-neutral-900"
               />
               <p className="text-xs text-gray-500 mt-1">
-                Maximum number of tokens in the response. 1 or above. Limits the length of the generated text.
+                Maximum number of tokens in the response. 1 or above. Limits the
+                length of the generated text.
               </p>
             </div>
           </div>

@@ -1,33 +1,37 @@
-import { Suspense } from 'react';
-import Image from 'next/image';
-import { ChevronLeft } from 'lucide-react';
+import { Suspense } from "react";
+import Image from "next/image";
+import { ChevronLeft, Lock } from "lucide-react";
 import EllipsisButton from "@/components/chat-settings-button";
-import MessageAndInput from './messages-and-input';
-import { auth } from '@/server/auth';
-import { db } from '@/server/db';
-import { characters, chat_sessions, personas, users } from '@/server/db/schema';
-import { eq, and, desc } from 'drizzle-orm';
-import { CoreMessage } from 'ai';
-import ShareButton from '@/components/share-button';
-import Link from 'next/link';
-import { Metadata } from 'next'
+import MessageAndInput from "./messages-and-input";
+import { auth } from "@/server/auth";
+import { db } from "@/server/db";
+import { characters, chat_sessions, personas, users } from "@/server/db/schema";
+import { eq, and, desc, or } from "drizzle-orm";
+import { CoreMessage } from "ai";
+import ShareButton from "@/components/share-button";
+import Link from "next/link";
+import { Metadata } from "next";
 
-export const runtime = 'edge';
+export const runtime = "edge";
 
-export async function generateMetadata({ params }: { params: { character_id: string } }): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: {
+  params: { character_id: string };
+}): Promise<Metadata> {
   const character = await db.query.characters.findFirst({
     where: eq(characters.id, params.character_id),
   });
 
   if (!character) {
     return {
-      title: 'Character Not Found',
+      title: "Character Not Found",
     };
   }
 
   const title = `Chat with ${character.name}`;
   const description = character.description.substring(0, 200);
-  const imageUrl = character.avatar_image_url || '/default-avatar.png';
+  const imageUrl = character.avatar_image_url || "/default-avatar.png";
 
   return {
     title,
@@ -36,19 +40,19 @@ export async function generateMetadata({ params }: { params: { character_id: str
       title,
       description,
       images: [{ url: imageUrl }],
-      type: 'website',
+      type: "website",
     },
     twitter: {
-      card: 'summary_large_image',
+      card: "summary_large_image",
       title,
       description,
       images: [imageUrl],
-      creator: '@justwrapapi', // Replace with your Twitter handle
+      creator: "@justwrapapi", // Replace with your Twitter handle
     },
     other: {
-      'og:site_name': 'OpenCharacter',
-      'og:locale': 'en_US',
-      'og:url': `https://opencharacter.org/chat/${params.character_id}`, // Replace with your actual URL structure
+      "og:site_name": "OpenCharacter",
+      "og:locale": "en_US",
+      "og:url": `https://opencharacter.org/chat/${params.character_id}`, // Replace with your actual URL structure
     },
     alternates: {
       canonical: `https://opecharacter.org/chat/${params.character_id}`,
@@ -59,13 +63,13 @@ export async function generateMetadata({ params }: { params: { character_id: str
 // Function to resolve t.co URLs by following redirects
 async function resolveTwitterUrl(shortUrl: string): Promise<string> {
   try {
-    const response = await fetch(shortUrl, { 
-      method: 'HEAD',
-      redirect: 'manual'
+    const response = await fetch(shortUrl, {
+      method: "HEAD",
+      redirect: "manual",
     });
-    
+
     if (response.status === 301 || response.status === 302) {
-      const location = response.headers.get('location');
+      const location = response.headers.get("location");
       if (location) {
         return location;
       }
@@ -82,16 +86,18 @@ async function resolveTwitterUrl(shortUrl: string): Promise<string> {
 async function convertTwitterUrls(text: string): Promise<string> {
   // Regular expression to match Twitter-style URLs
   const twitterUrlRegex = /https?:\/\/t\.co\/\w+/g;
-  
+
   // Find all matches
   const matches = text.match(twitterUrlRegex) || [];
-  
+
   // Resolve all URLs concurrently
   const resolvedUrls = await Promise.all(matches.map(resolveTwitterUrl));
-  
+
   // Create a map of short URLs to resolved URLs
-  const urlMap = Object.fromEntries(matches.map((shortUrl, index) => [shortUrl, resolvedUrls[index]]));
-  
+  const urlMap = Object.fromEntries(
+    matches.map((shortUrl, index) => [shortUrl, resolvedUrls[index]]),
+  );
+
   // Replace each match with a Markdown link
   return text.replace(twitterUrlRegex, (match) => {
     const resolvedUrl = urlMap[match];
@@ -99,21 +105,29 @@ async function convertTwitterUrls(text: string): Promise<string> {
   });
 }
 
-async function TWITTER_CHARACTER_PROMPT(fullName: string, description: string, followerCount: number, recentTweets: string, followingCount: number) {
+async function TWITTER_CHARACTER_PROMPT(
+  fullName: string,
+  description: string,
+  followerCount: number,
+  recentTweets: string,
+  followingCount: number,
+) {
   // Function to convert Twitter-style URLs to real Markdown links
   async function convertTwitterUrls(text: string): Promise<string> {
     // Regular expression to match Twitter-style URLs
     const twitterUrlRegex = /https?:\/\/t\.co\/\w+/g;
-    
+
     // Find all matches
     const matches = text.match(twitterUrlRegex) || [];
-    
+
     // Resolve all URLs concurrently
     const resolvedUrls = await Promise.all(matches.map(resolveTwitterUrl));
-    
+
     // Create a map of short URLs to resolved URLs
-    const urlMap = Object.fromEntries(matches.map((shortUrl, index) => [shortUrl, resolvedUrls[index]]));
-    
+    const urlMap = Object.fromEntries(
+      matches.map((shortUrl, index) => [shortUrl, resolvedUrls[index]]),
+    );
+
     // Replace each match with a Markdown link
     return text.replace(twitterUrlRegex, (match) => {
       const resolvedUrl = urlMap[match];
@@ -182,142 +196,218 @@ interface TwitterUser {
   followingsCount: number;
 }
 
-export default async function ChatPage({ params, searchParams }: { params: { character_id: string }, searchParams: { [key: string]: string | string[] | undefined }
+export default async function ChatPage({
+  params,
+  searchParams,
+}: {
+  params: { character_id: string };
+  searchParams: { [key: string]: string | string[] | undefined };
 }) {
   const session = await auth();
+  const userId = session?.user?.id;
+
+  let whereClause;
+  if (userId) {
+    // If there's a session, allow access to public characters and user's private characters
+    whereClause = and(
+      eq(characters.id, params.character_id),
+      or(
+        eq(characters.visibility, "public"),
+        and(
+          eq(characters.visibility, "private"),
+          eq(characters.userId, userId),
+        ),
+      ),
+    );
+  } else {
+    // If there's no session, only allow access to public characters
+    whereClause = and(
+      eq(characters.id, params.character_id),
+      eq(characters.visibility, "public"),
+    );
+  }
 
   let character = await db.query.characters.findFirst({
-    where: eq(characters.id, params.character_id),
+    where: whereClause,
   });
-  
+
   if (!character) {
     // Check if it's a Twitter username
-    const response = await fetch(`https://rettiwt-server-production.up.railway.app/user/${params.character_id}`);
-    
+    const response = await fetch(
+      `https://rettiwt-server-production.up.railway.app/user/${params.character_id}`,
+    );
+
     if (response.ok) {
       const twitterUser: TwitterUser = await response.json();
-  
+
       // Fetch tweets
-      const tweetsResponse = await fetch(`https://rettiwt-server-production.up.railway.app/tweet/${params.character_id}`);
-      let tweetContent = '';
+      const tweetsResponse = await fetch(
+        `https://rettiwt-server-production.up.railway.app/tweet/${params.character_id}`,
+      );
+      let tweetContent = "";
       if (tweetsResponse.ok) {
         const tweets: string[] = await tweetsResponse.json();
-        tweetContent = tweets.join('\n\n'); // Get the first 20 tweets
+        tweetContent = tweets.join("\n\n"); // Get the first 20 tweets
       }
-      
+
       // Modify the profile image URL to use 400x400 size
-      const profileImageUrl = twitterUser.profileImage.replace('_normal.', '_400x400.');
-      let resolvedDescription = ""
+      const profileImageUrl = twitterUser.profileImage.replace(
+        "_normal.",
+        "_400x400.",
+      );
+      let resolvedDescription = "";
       if (twitterUser.description) {
         resolvedDescription = await convertTwitterUrls(twitterUser.description);
       }
       // Create a new character in the database
-      character = await db.insert(characters).values({
-        id: params.character_id,
-        name: twitterUser.fullName,
-        tagline: resolvedDescription,
-        description: await TWITTER_CHARACTER_PROMPT(twitterUser.fullName, twitterUser.description, twitterUser.followersCount, tweetContent, twitterUser.followingsCount),
-        greeting: `Hello! I'm ${twitterUser.fullName}`,
-        visibility: 'public',
-        userId: session?.user?.id!,
-        avatar_image_url: profileImageUrl, // Use the modified URL
-      }).returning().get();
+      character = await db
+        .insert(characters)
+        .values({
+          id: params.character_id,
+          name: twitterUser.fullName,
+          tagline: resolvedDescription,
+          description: await TWITTER_CHARACTER_PROMPT(
+            twitterUser.fullName,
+            twitterUser.description,
+            twitterUser.followersCount,
+            tweetContent,
+            twitterUser.followingsCount,
+          ),
+          greeting: `Hello! I'm ${twitterUser.fullName}`,
+          visibility: "public",
+          userId: session?.user?.id!,
+          avatar_image_url: profileImageUrl, // Use the modified URL
+        })
+        .returning()
+        .get();
     } else {
       return <div>Character not found</div>;
     }
   }
 
   let initialMessages: CoreMessage[] = [
-    { role: 'system', content: character.description },
-    { role: 'assistant', content: character.greeting }
+    { role: "system", content: character.description },
+    { role: "assistant", content: character.greeting },
   ];
-
 
   let persona;
   if (session?.user) {
     let chatSession;
-  
+
     if (searchParams.session) {
       // If a specific session ID is provided in the URL
-      console.log("searchParams: session: ", searchParams.session)
-      
+      console.log("searchParams: session: ", searchParams.session);
+
       chatSession = await db.query.chat_sessions.findFirst({
         where: and(
           eq(chat_sessions.id, searchParams.session as string),
           eq(chat_sessions.user_id, session.user.id!),
-          eq(chat_sessions.character_id, character.id)
-        )
+          eq(chat_sessions.character_id, character.id),
+        ),
       });
     } else {
       // If no specific session ID is provided, get the most recent session
       chatSession = await db.query.chat_sessions.findFirst({
         where: and(
           eq(chat_sessions.user_id, session.user.id!),
-          eq(chat_sessions.character_id, character.id)
+          eq(chat_sessions.character_id, character.id),
         ),
-        orderBy: [desc(chat_sessions.updated_at)]
+        orderBy: [desc(chat_sessions.updated_at)],
       });
     }
-    
+
     if (chatSession) {
       initialMessages = [
-        { role: 'system', content: character.description },
-        { role: 'assistant', content: character.greeting },
-        ...(chatSession.messages as CoreMessage[]).slice(2)
+        { role: "system", content: character.description },
+        { role: "assistant", content: character.greeting },
+        ...(chatSession.messages as CoreMessage[]).slice(2),
       ];
     }
 
     persona = await db.query.personas.findFirst({
-      where: and (
+      where: and(
         eq(personas.userId, session.user.id!),
-        eq(personas.isDefault, true)
-      )
-    })
+        eq(personas.isDefault, true),
+      ),
+    });
   }
 
-  console.log("persona: ", persona)
+  let madeByUsername = "anon";
+  if (character.userId === session?.user?.id) {
+    madeByUsername = "you";
+  }
 
   return (
     <div className="flex flex-col dark:bg-neutral-900 relative overflow-x-hidden max-w-full">
-      {/* Chat Header - Absolute Positioned */}
-      <div className="bg-white dark:bg-neutral-900 p-4 flex items-center justify-between dark:border-neutral-700 fixed md:fixed top-0 md:top-0 left-0 right-0 z-10">
-        <div className="flex items-center">
+      <ChatHeader character={character} madeByUsername={madeByUsername} />
 
-          <Link href={"/"} >
-            <ChevronLeft className='w-8 h-8 text-neutral-700'/>          
-          </Link>
+      {/* Chat Content */}
+      <div className="flex-grow overflow-y-auto pt-[72px] pb-4">
+        <MessageAndInput
+          user={session?.user}
+          character={character}
+          made_by_name={madeByUsername}
+          messages={initialMessages}
+          chat_session={(searchParams.session as string) ?? null}
+          persona={persona}
+        />
+      </div>
+    </div>
+  );
+}
 
+function ChatHeader({
+  character,
+  madeByUsername,
+}: {
+  character: typeof characters.$inferSelect;
+  madeByUsername: string;
+}) {
+  return (
+    <div className="bg-white dark:bg-neutral-900 p-4 flex items-center justify-between dark:border-neutral-700 fixed md:fixed top-0 md:top-0 left-0 right-0 z-10">
+      <div className="flex items-center">
+        <Link href={"/"}>
+          <ChevronLeft className="w-8 h-8 text-neutral-700" />
+        </Link>
 
-          <Link className="w-10 h-10 rounded-full overflow-hidden mr-3 ml-6" href={`/character/${character.id}/profile`}>
-            <Image src={character.avatar_image_url ?? "/default-avatar.jpg"} alt={`${character.name}'s avatar`} width={40} height={40} className="object-cover w-full h-full" />
-          </Link>
-          <div>
-            <h2 className="font-light text-black dark:text-white">{character.name}</h2>
-            <p className="text-xs font-light text-gray-600 dark:text-gray-400">by Anon</p>
+        <Link
+          className="w-10 h-10 rounded-full overflow-hidden mr-3 ml-6"
+          href={`/character/${character.id}/profile`}
+        >
+          <Image
+            src={character.avatar_image_url ?? "/default-avatar.jpg"}
+            alt={`${character.name}'s avatar`}
+            width={40}
+            height={40}
+            className="object-cover w-full h-full"
+          />
+        </Link>
+        <div className="flex items-start flex-col">
+          <div className="flex flex-row gap-2 items-center">
+            <h2 className="font-light text-black dark:text-white">
+              {character.name}
+            </h2>
+            {character.visibility === "private" && (
+              <Lock
+                size={12}
+                className="ml-2 text-gray-500 dark:text-gray-400"
+              />
+            )}
           </div>
-        </div>
-
-        <div className="flex items-center space-x-2">
-          <ShareButton />
-          <Suspense fallback={<div className="w-10 h-10" />}>
-            <EllipsisButton 
-              character={character}
-              made_by_username={'Anon'}
-            />
-          </Suspense>
+          <p className="text-xs font-light text-gray-600 dark:text-gray-400">
+            by {madeByUsername}
+          </p>
         </div>
       </div>
 
-      {/* Chat Content */}
-      <div className="flex-grow overflow-y-auto pt-[72px] pb-4"> {/* Adjust pt value based on your header height */}
-        <MessageAndInput 
-          user={session?.user} 
-          character={character}
-          made_by_name={'Anon'}
-          messages={initialMessages}
-          chat_session={searchParams.session as string ?? null}
-          persona={persona}
-        />
+      <div className="flex items-center space-x-2">
+        <ShareButton />
+        <Suspense fallback={<div className="w-10 h-10" />}>
+          <EllipsisButton
+            character={character}
+            made_by_username={madeByUsername}
+          />
+        </Suspense>
       </div>
     </div>
   );
