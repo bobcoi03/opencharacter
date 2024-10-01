@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Loader2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 type Character = {
   id: string;
@@ -29,6 +30,7 @@ export default function CreateRoomForm({
   const [isLoading, setIsLoading] = useState(false);
   const [isCreatingRoom, setIsCreatingRoom] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const router = useRouter()
 
   useEffect(() => {
     const fetchSuggestions = async () => {
@@ -90,7 +92,8 @@ export default function CreateRoomForm({
       });
       const res = await createRoom(roomName, roomTopic, selectedCharacters.map(c => c.id))
       console.log("created room:", JSON.stringify(res));
-      return res;
+      router.push(`/room?t=${new Date()}`);
+      return res; 
     } catch (error) {
       console.error('Error creating room:', error);
       alert('An error occurred while creating the room. Please try again.');
