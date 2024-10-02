@@ -58,7 +58,7 @@ export default async function RootLayout({
         <link rel="icon" href="/favicon.svg" sizes="any" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"></meta>
       </head>
-      <body className={`${inter.className} bg-white dark:bg-neutral-900`}>
+      <body className={`${inter.className} bg-neutral-900`}>
         <NewSidebar search={search} />
         <div className="flex flex-col min-h-screen pt-12">
           <main className="flex-1 p-4">
