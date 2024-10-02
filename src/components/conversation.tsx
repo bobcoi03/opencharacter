@@ -50,7 +50,6 @@ export default function Conversation() {
 
   return (
     <div className="container mx-auto px-4 py-8 mb-12 md:pl-16">
-      <h1 className="text-xl font-semibold mb-6">Your Conversations</h1>
       {conversations.length === 0 ? (
         <p>You haven{"'"}t started any conversations yet.</p>
       ) : (
