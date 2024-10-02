@@ -113,7 +113,7 @@ export default function CreateRoomForm({
       <div className="max-w-3xl mx-auto p-4">
         <form className="space-y-4" onSubmit={handleCreateRoom}>
           <div className="space-y-3">
-            <label htmlFor="roomName" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Room Name (FEATURE COMING SOON!)</label>
+            <label htmlFor="roomName" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Room Name (EXPERIMENTAL FEATURE!)</label>
             <input
               id="roomName"
               type="text"
