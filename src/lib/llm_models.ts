@@ -9,6 +9,10 @@ type Models = {
 
 // Create the models object
 export const models = {
+    "meta-llama/llama-3.1-405b-instruct:free": {
+        "id": "meta-llama/llama-3.1-405b-instruct:free",
+        "name": "meta-llama/llama-3.1-405b-instruct:free"
+    },
     "deepseek/deepseek-chat": {
         "id": "deepseek/deepseek-chat",
         "name": "DeepseekChat"
