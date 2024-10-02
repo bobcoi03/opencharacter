@@ -1,19 +1,81 @@
 "use client"
 
-import { useState } from "react";
-import { Cpu, Play, LoaderCircle, Loader } from "lucide-react";
+import { useState, KeyboardEvent, useRef, useEffect } from "react";
+import { Cpu, Play, LoaderCircle, Check } from "lucide-react";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "./ui/dropdown-menu";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 import SignInButton from "./signin-button";
+import { getModelArray, Model } from "@/lib/llm_models"
+import { CoreMessage } from "ai";
+import { ChatMessage, rooms } from "@/server/db/schema";
 
-export default function MessageBox() {
+interface MessageBoxProps {
+  action: (messages: CoreMessage[], room_id: string, chat_length: number, model_id: string) => Promise<any>;
+  room: typeof rooms.$inferSelect,
+  messages: CoreMessage[]
+}
+
+export default function MessageBox({ action, room,  }: MessageBoxProps) {
     const [playing, setPlaying] = useState<boolean>(false);
+    const [selectedModel, setSelectedModel] = useState<Model>({
+        id: "deepseek/deepseek-chat",
+        name: "DeepseekChat"
+    });
+    const [message, setMessage] = useState<string>("");
+    const models = getModelArray();
+    const [error, setError] = useState<boolean>(false);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+    useEffect(() => {
+        adjustTextareaHeight();
+    }, [message]);
 
+    const adjustTextareaHeight = () => {
+        const textarea = textareaRef.current;
+        if (textarea) {
+            textarea.style.height = '50px';
+            textarea.style.height = `${Math.min(textarea.scrollHeight, 450)}px`;
+        }
+    };
+
+    const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+        if (e.key === 'Enter') {
+            if (e.shiftKey || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+                // Shift+Enter on desktop or Enter on mobile: add new line
+                setTimeout(adjustTextareaHeight, 0);
+                return;
+            } else {
+                // Enter alone on desktop: send message
+                e.preventDefault();
+                handleSendMessage();
+            }
+        } else if (e.key === 'Escape') {
+            // Esc key pressed: return height to default
+            const textarea = textareaRef.current;
+            if (textarea) {
+                textarea.style.height = '50px';
+            }
+        }
+    };
+
+    const handleSendMessage = async () => {
+        if (message.trim()) {
+            // Handle sending the message here
+            console.log("Sending message:", message);
+            const res = await action([], room.id,  1, selectedModel.id)
+            console.log(res)
+            // Reset the message after sending
+            setMessage("");
+            if (textareaRef.current) {
+                textareaRef.current.style.height = '50px';
+            }
+        }
+    };
 
     return (
         <div className="fixed bottom-0 left-0 right-0 py-4 pointer-events-none w-full max-w-full">
             <div className="max-w-2xl mx-auto w-full">
+                {error && 
                 <div className="mb-2 p-2 bg-red-100 dark:bg-red-900 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-200 text-sm pointer-events-auto flex justify-between items-center">
                     <p className="flex items-center">
                     <svg
@@ -30,8 +92,12 @@ export default function MessageBox() {
                     Failed to send message, please try again
                     </p>
                 </div>
+                }
+
                 <form
                     onSubmit={(e) => {
+                        e.preventDefault();
+                        handleSendMessage();
                     }}
                     className="pointer-events-auto flex items-center space-x-2 max-w-full px-2"
                 >
@@ -48,26 +114,40 @@ export default function MessageBox() {
                             </button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent className="max-h-96 overflow-y-auto">
-                            <div>
-                                Menu
-                            </div>
+                            {models.map((model) => (
+                                <DropdownMenuItem
+                                    key={model.id}
+                                    onSelect={() => setSelectedModel(model)}
+                                    className="w-full flex justify-between"
+                                >
+                                    {model.name}
+                                    {selectedModel.id === model.id && (
+                                        <Check className="w-4 h-4 text-green-500" />
+                                    )}
+                                </DropdownMenuItem>
+                            ))}
                         </DropdownMenuContent>
                         </DropdownMenu>
                     </div>
                     <textarea
-                        placeholder={`Hey`}
-                        className="w-full py-3 pl-14 pr-12 bg-transparent relative z-10 outline-none text-black dark:text-white text-lg rounded-xl resize-none overflow-hidden"
-                        style={{
-                        minHeight: "50px",
-                        maxHeight: `400px`,
-                        overflowY: "auto",
-                        }}
-                        rows={1}
+                            ref={textareaRef}
+                            placeholder={`Hey (using ${selectedModel.name})`}
+                            className="w-full py-4 pl-14 pr-12 bg-transparent relative z-10 outline-none text-black dark:text-white text-lg rounded-xl resize-none overflow-hidden"
+                            style={{
+                                minHeight: "50px",
+                                maxHeight: `450px`,
+                                overflowY: "auto",
+                                height: '50px',
+                                lineHeight: '24px',
+                            }}
+                            value={message}
+                            onChange={(e) => setMessage(e.target.value)}
+                            onKeyDown={handleKeyDown}
                     />
                     <button
                         type="submit"
                         className="absolute right-3 top-1/2 transform -translate-y-1/2 bg-black dark:bg-white rounded-full p-2 z-20 transition-opacity opacity-70 hover:opacity-100 focus:opacity-100 hover:cursor-pointer"
-                        disabled={false}
+                        disabled={!message.trim()}
                     >
                         <svg
                         viewBox="0 0 24 24"
@@ -95,9 +175,7 @@ export default function MessageBox() {
                             :
                             <LoaderCircle className={`text-black ${playing ? 'animate-spin' : ''}`} />
                         }
-
                     </div>
-
                 </form>
 
                 <Dialog
@@ -112,7 +190,6 @@ export default function MessageBox() {
                     <SignInButton />
                     </DialogContent>
                 </Dialog>
-
             </div>
         </div>
     )

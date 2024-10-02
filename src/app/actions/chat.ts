@@ -5,13 +5,99 @@ import { CoreMessage, streamText } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
 import {
   characters,
-  chat_sessions,
   ChatMessageArray,
   personas,
+  rooms,
+  group_chat_session_characters,
+  chat_sessions,
 } from "@/server/db/schema";
 import { db } from "@/server/db";
 import { eq, and, desc, sql, or } from "drizzle-orm";
 import { auth } from "@/server/auth";
+
+export async function continueRoomChat(messages: CoreMessage[], room_id: string, chat_length: number, model_id: string) {
+  const session = await auth();
+  if (!session?.user?.id || !session.user || !session.user.email || !session.user) {
+    throw new Error("User must be logged in to continue chat");
+  }
+
+  // Fetch room details and check if created by user
+  const roomDetails = await db
+    .select()
+    .from(rooms)
+    .where(and(
+      eq(rooms.id, room_id),
+      eq(rooms.userId, session.user.id)
+    ))
+    .limit(1);
+
+  if (roomDetails.length === 0) {
+    throw new Error("Room not found or you don't have permission to access it");
+  }
+  const room = roomDetails[0];
+  console.log("room detail: ", room)
+  return room
+
+  // Fetch all characters in the room
+  const roomCharacters = await db
+    .select({
+      id: characters.id,
+      name: characters.name,
+      description: characters.description,
+    })
+    .from(group_chat_session_characters)
+    .innerJoin(
+      characters,
+      eq(group_chat_session_characters.characterId, characters.id)
+    )
+    .where(eq(group_chat_session_characters.sessionId, room_id));
+
+  // Select a random character
+  const selectedCharacter = roomCharacters[Math.floor(Math.random() * roomCharacters.length)];
+
+  // Prepare system prompt
+  let systemPrompt = `${selectedCharacter.description}\n\n`;
+  systemPrompt += "You are in a group chat with the following characters:\n\n";
+  
+  for (const char of roomCharacters) {
+    const truncatedDescription = char.description.split(' ').slice(0, 200).join(' ');
+    systemPrompt += `${char.name}: ${truncatedDescription}\n\n`;
+  }
+
+  systemPrompt += `The chat room is called ${room.name}\n\n`;
+  systemPrompt += `The topic of discussion is ${room.topic}\n\n`;
+  systemPrompt += "Please try to stay on topic and answer in short sentences or paragraphs like in a text conversation.";
+
+  // Add system prompt to messages
+  const updatedMessages: CoreMessage[] = [
+    { role: "system", content: systemPrompt },
+    ...messages
+  ];
+
+  // Initialize OpenAI client
+  const openrouter = createOpenAI({
+    baseURL: "https://openrouter.helicone.ai/api/v1",
+    apiKey: process.env.OPENROUTER_API_KEY,
+    headers: {
+      Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+      "Helicone-Auth": `Bearer ${process.env.HELICONE_API_KEY}`,
+      "HTTP-Referer": "https://opencharacter.org",
+      "X-Title": "OpenCharacter",
+      "Helicone-User-Id": session.user.email ?? "guest",
+    },
+  });
+  const model = openrouter(model_id)
+
+  // Generate and stream response
+  const result = await streamText({
+    model: model,
+    messages: updatedMessages,
+  });
+
+  const stream = createStreamableValue(result.textStream);
+  console.log("Successfully created streamable value");
+  return stream.value;
+}
 
 export async function saveChat(
   messages: CoreMessage[],

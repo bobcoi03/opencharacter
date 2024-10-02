@@ -1,4 +1,4 @@
-type Model = {
+export type Model = {
     id: string;
     name: string;
 };
