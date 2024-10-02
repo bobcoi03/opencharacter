@@ -57,6 +57,8 @@ const NewSidebarContent: React.FC<NewSidebarProps> = ({ search }) => {
   const pathname = usePathname();
 
   const isChatRoute = pathname.startsWith("/chat/");
+  const isRoomChatRoute = pathname.startsWith("/room/") && pathname.endsWith("/chat");
+  const shouldHideSidebar = isChatRoute || isRoomChatRoute;
 
   const handleSearch = async (query: string): Promise<void> => {
     setSearchQuery(query);
@@ -78,7 +80,7 @@ const NewSidebarContent: React.FC<NewSidebarProps> = ({ search }) => {
   return (
     <>
       {/* Fixed Top Navbar */}
-      {!isChatRoute && (
+      {!shouldHideSidebar && (
         <div className="fixed top-0 left-0 right-0 h-12 bg-white dark:bg-neutral-900 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-4 z-50">
           <Link
             href="/"
@@ -203,7 +205,7 @@ const NewSidebarContent: React.FC<NewSidebarProps> = ({ search }) => {
       )}
 
       {/* Desktop Sidebar */}
-      {!isChatRoute && (
+      {!shouldHideSidebar && (
         <div className="hidden md:flex flex-col items-center fixed left-0 top-12 bottom-0 w-16 bg-neutral-900 py-4 z-40">
           <SidebarContent
             isCreateOpen={isCreateOpen}
@@ -213,7 +215,7 @@ const NewSidebarContent: React.FC<NewSidebarProps> = ({ search }) => {
       )}
 
       {/* Mobile Bottom Navigation */}
-      {!isChatRoute && (
+      {!shouldHideSidebar && (
         <div className="md:hidden fixed bottom-0 left-0 right-0 bg-neutral-900 flex justify-around items-center h-16 z-[9999]">
           <SidebarContent
             isCreateOpen={isCreateOpen}

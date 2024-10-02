@@ -2,7 +2,7 @@ import { auth } from "@/server/auth"
 import Link from "next/link"
 import { db } from "@/server/db"
 import { rooms, roomCharacters, characters } from "@/server/db/schema"
-import { eq, and } from "drizzle-orm"
+import { eq, and, desc } from "drizzle-orm"
 
 export const runtime = "edge"
 
@@ -40,7 +40,7 @@ export default async function RoomPage() {
                 characters,
                 eq(roomCharacters.characterId, characters.id)
             )
-            .orderBy(rooms.createdAt)
+            .orderBy(desc(rooms.createdAt))
 
         // Group characters by room
         const roomsMap = new Map()
@@ -58,7 +58,7 @@ export default async function RoomPage() {
         console.error("Failed to fetch rooms:", error)
         return (
             <div className="md:ml-16 p-4">
-                <h1 className="text-2xl font-bold mb-4">Your Rooms</h1>
+                <h1 className="text-2xl font-bold mb-4">Rooms</h1>
                 <p className="text-red-500">Failed to load rooms. Please try again later.</p>
             </div>
         )
@@ -66,7 +66,7 @@ export default async function RoomPage() {
 
     return (
         <div className="md:ml-16 p-4">
-            <h1 className="text-2xl font-bold mb-4">Your Rooms</h1>
+            <h1 className="text-2xl font-bold mb-4">Rooms</h1>
             {userRoomsWithCharacters.length === 0 ? (
                 <p>You haven't created any rooms yet.</p>
             ) : (
@@ -79,7 +79,7 @@ export default async function RoomPage() {
                                 Created: {new Date(room.createdAt).toLocaleDateString()}
                             </p>
                             <div className="mt-2 flex space-x-2">
-                                {room.characters.map((character) => (
+                                {room.characters.map((character: typeof characters.$inferSelect) => (
                                     <img 
                                         key={character.id}
                                         src={character.avatar_image_url || '/default-avatar.png'}
@@ -89,7 +89,7 @@ export default async function RoomPage() {
                                     />
                                 ))}
                             </div>
-                            <Link href={`/room/${room.id}`} className="mt-2 inline-block text-blue-500 hover:underline">
+                            <Link href={`/room/${room.id}/chat`} className="mt-2 inline-block text-blue-500 hover:underline">
                                 Enter Room
                             </Link>
                         </li>
