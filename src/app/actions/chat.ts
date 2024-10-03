@@ -237,6 +237,7 @@ export async function continueConversation(
       frequencyPenalty: character.frequency_penalty ?? 0.0,
       presencePenalty: character.presence_penalty ?? 0.0,
       maxTokens: character.max_tokens ?? 1000,
+      maxRetries: 5,
       onFinish: async (completion) => {
         if (session?.user) {
           try {
