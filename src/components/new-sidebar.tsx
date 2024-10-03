@@ -306,7 +306,7 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
       </Link>
 
       <Link
-        href="https://discord.gg/kQz5XeJc"
+        href="https://discord.gg/PG4KXHXXa4"
         target="_blank"
         className={buttonClass}
       >
