@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, KeyboardEvent, useRef, useEffect } from "react";
-import { Cpu, Play, LoaderCircle, Check } from "lucide-react";
+import { Cpu, Play, LoaderCircle, Check, RotateCcw } from "lucide-react";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "./ui/dropdown-menu";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 import SignInButton from "./signin-button";
@@ -9,29 +9,38 @@ import { getModelArray, Model } from "@/lib/llm_models"
 import { CoreMessage } from "ai";
 import { ChatMessage, rooms } from "@/server/db/schema";
 import { readStreamableValue } from "ai/rsc";
+import { characters } from "@/server/db/schema";
 
 interface MessageBoxProps {
-  action: (messages: CoreMessage[], room_id: string, chat_length: number, model_id: string) => Promise<any>;
+  action: (messages: CoreMessage[], room_id: string, model_id: string, character_id: string) => Promise<any>;
   room: typeof rooms.$inferSelect,
-  initialMessages: CoreMessage[]
+  initialMessages: ChatMessage[],
+  charactersArray: typeof characters.$inferSelect[],
 }
 
-export default function MessageBox({ action, room, initialMessages }: MessageBoxProps) {
+export default function MessageBox({ action, room, initialMessages, charactersArray }: MessageBoxProps) {
     const [playing, setPlaying] = useState<boolean>(false);
     const [selectedModel, setSelectedModel] = useState<Model>({
-        id: "deepseek/deepseek-chat",
-        name: "DeepseekChat"
+        id: "gryphe/mythomax-l2-13b",
+        name: "gryphe/mythomax-l2-13b"
     });
     const [message, setMessage] = useState<string>("");
-    const [messages, setMessages] = useState<CoreMessage[]>(initialMessages);
+    const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
     const models = getModelArray();
     const [error, setError] = useState<boolean>(false);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const [currentCharacter, setCurrentCharacter] = useState<typeof characters.$inferSelect | null>(null);
     
-
     useEffect(() => {
         adjustTextareaHeight();
     }, [message]);
+
+    useEffect(() => {
+        if (charactersArray.length > 0 && !currentCharacter) {
+            const randomCharacter = charactersArray[Math.floor(Math.random() * charactersArray.length)];
+            setCurrentCharacter(randomCharacter);
+        }
+    }, [charactersArray, currentCharacter]);
 
     const adjustTextareaHeight = () => {
         const textarea = textareaRef.current;
@@ -62,17 +71,18 @@ export default function MessageBox({ action, room, initialMessages }: MessageBox
     };
 
     const handleSendMessage = async () => {
-        if (message.trim()) {
+        setError(false)
+        if (message.trim() && currentCharacter) {
             const newUserMessage: CoreMessage = { role: "user", content: message };
             const newMessages = [...messages, newUserMessage];
-            setMessages(newMessages);
+            setMessages(newMessages as ChatMessage[]);
             setMessage("");
             if (textareaRef.current) {
                 textareaRef.current.style.height = '50px';
             }
 
             try {
-                const result = await action(newMessages, room.id, 0, selectedModel.id);
+                const result = await action(newMessages as CoreMessage[], room.id, selectedModel.id, currentCharacter.id);
                 console.log("result: " + JSON.stringify(result));
                 if ("error" in result) {
                     setError(true);
@@ -80,14 +90,18 @@ export default function MessageBox({ action, room, initialMessages }: MessageBox
                 }
                 for await (const content of readStreamableValue(result)) {
                     console.log("content: " + content);
-                    setMessages([
-                        ...newMessages,
+                    setMessages(prevMessages => [
+                        ...prevMessages,
                         {
                             role: "assistant",
                             content: content as string,
+                            character_id: currentCharacter.id
                         },
                     ]);
                 }
+                // Select a new random character for the next message
+                const newRandomCharacter = charactersArray[Math.floor(Math.random() * charactersArray.length)];
+                setCurrentCharacter(newRandomCharacter);
             } catch (err) {
                 console.error("Error sending message:", err);
                 setError(true);
@@ -95,12 +109,20 @@ export default function MessageBox({ action, room, initialMessages }: MessageBox
         }
     };
 
+    const getCharacterName = (characterId: string | undefined) => {
+        if (!characterId) return "Unknown";
+        const character = charactersArray.find(c => c.id === characterId);
+        return character ? character.name : "Unknown";
+    };
+
     return (
         <div className="w-full border border-red-300 min-h-screen">
         <div className="space-y-4 mb-20">
             {messages.map((message, index) => (
                 <div key={index} className="p-4 shadow rounded-lg">
-                    <p className="text-left"><strong>{message.role}:</strong> {message.content as string}</p>
+                    <p className="text-left">
+                        <strong>{message.character_id ? getCharacterName(message.character_id) : (message.role === "user" ? "You" : "Assistant")}</strong> {message.content as string}
+                    </p>
                 </div>
             ))}
         </div>
@@ -123,6 +145,7 @@ export default function MessageBox({ action, room, initialMessages }: MessageBox
                     </svg>
                     Failed to send message, please try again
                     </p>
+                    <RotateCcw className="w-4 h-4 hover:cursor-pointer" onClick={() => handleSendMessage()} />
                 </div>
                 }
 

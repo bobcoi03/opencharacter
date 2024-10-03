@@ -119,9 +119,10 @@ export const characters = sqliteTable("character", {
 export type ChatMessage = {
   // Define the structure of a single chat message
   // For example:
-  id: string;
+  id?: string;
   content: string;
   role: 'user' | 'assistant' | 'system';
+  character_id?: string;
 };
 
 export type ChatMessageArray = ChatMessage[];

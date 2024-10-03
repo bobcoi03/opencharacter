@@ -88,9 +88,9 @@ async function getGroupChatSessionCharacters(roomId: string): Promise<Character[
   return sessionCharacters
 }
 
-async function continueRoomChatFunc(messages: CoreMessage[], room_id: string, chat_length: number, model_id: string) {
+async function continueRoomChatFunc(messages: CoreMessage[], room_id: string, model_id: string, character_id: string) {
   "use server"
-  const res = await continueRoomChat(messages, room_id, chat_length, model_id)
+  const res = await continueRoomChat(messages, room_id, model_id, character_id)
   return res;
 }
 
@@ -103,6 +103,7 @@ export default async function RoomChat({
     const roomDetails = await getRoomDetails(params.room_id)
     const messages = await getLatestSessionMessages(params.room_id)
     const sessionCharacters = await getGroupChatSessionCharacters(params.room_id)
+    console.log("messages: ", messages)
 
     return (
       <div className="mx-auto text-center">
@@ -130,7 +131,7 @@ export default async function RoomChat({
           </div>
         </div>
 
-        <MessageBox action={continueRoomChatFunc} room={roomDetails} initialMessages={messages} />
+        <MessageBox action={continueRoomChatFunc} room={roomDetails} initialMessages={messages} charactersArray={sessionCharacters as typeof characters.$inferSelect[]} />
       </div>
     )
   } catch (error) {

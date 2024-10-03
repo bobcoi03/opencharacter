@@ -3,7 +3,37 @@
 import { db } from "@/server/db"
 import { auth } from "@/server/auth"
 import { group_chat_session_characters, group_chat_sessions, roomCharacters, rooms } from "@/server/db/schema"
-import { eq } from "drizzle-orm"
+import { eq, sql } from "drizzle-orm"
+
+export async function getRandomCharacterFromRoom(room: typeof rooms.$inferSelect) {
+  // Ensure the user is authenticated
+  const session = await auth()
+  if (!session?.user?.id) {
+    throw new Error("User not authenticated")
+  }
+
+  try {
+    // Query to get a random character ID from the room
+    const randomCharacter = await db
+      .select({ characterId: roomCharacters.characterId })
+      .from(roomCharacters)
+      .where(eq(roomCharacters.roomId, room.id))
+      .orderBy(sql`RANDOM()`)
+      .limit(1)
+      .execute()
+
+    // Check if a character was found
+    if (randomCharacter.length === 0) {
+      throw new Error("No characters found in this room")
+    }
+
+    // Return the random character ID
+    return randomCharacter[0]
+  } catch (error) {
+    console.error("Error fetching random character from room:", error)
+    throw error
+  }
+}
 
 export async function createRoom(
   roomName: string,
