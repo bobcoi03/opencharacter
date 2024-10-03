@@ -8,18 +8,32 @@ import {
   ChatMessageArray,
   personas,
   rooms,
-  group_chat_session_characters,
+  roomCharacters,
   chat_sessions,
+  group_chat_sessions
 } from "@/server/db/schema";
 import { db } from "@/server/db";
 import { eq, and, desc, sql, or } from "drizzle-orm";
 import { auth } from "@/server/auth";
 
+// Define the type for room characters
+type RoomCharacter = {
+  id: string;
+  name: string;
+  description: string;
+};
+
 export async function continueRoomChat(messages: CoreMessage[], room_id: string, chat_length: number, model_id: string) {
+  console.log("Starting continueRoomChat with room_id:", room_id, "chat_length:", chat_length, "model_id:", model_id);
   const session = await auth();
-  if (!session?.user?.id || !session.user || !session.user.email || !session.user) {
+  console.log("Session fetched:", session);
+  
+  if (!session?.user?.id || !session.user.email) {
     throw new Error("User must be logged in to continue chat");
   }
+
+  const userId = session.user.id;
+  const userEmail = session.user.email;
 
   // Fetch room details and check if created by user
   const roomDetails = await db
@@ -27,40 +41,46 @@ export async function continueRoomChat(messages: CoreMessage[], room_id: string,
     .from(rooms)
     .where(and(
       eq(rooms.id, room_id),
-      eq(rooms.userId, session.user.id)
+      eq(rooms.userId, userId)
     ))
     .limit(1);
 
+  console.log("Room details fetched:", roomDetails);
   if (roomDetails.length === 0) {
     throw new Error("Room not found or you don't have permission to access it");
   }
   const room = roomDetails[0];
-  console.log("room detail: ", room)
-  return room
+  console.log("Room detail: ", room)
 
   // Fetch all characters in the room
-  const roomCharacters = await db
+  const charactersInRoom: RoomCharacter[] = await db
     .select({
       id: characters.id,
       name: characters.name,
       description: characters.description,
     })
-    .from(group_chat_session_characters)
+    .from(roomCharacters)
     .innerJoin(
       characters,
-      eq(group_chat_session_characters.characterId, characters.id)
+      eq(roomCharacters.characterId, characters.id)
     )
-    .where(eq(group_chat_session_characters.sessionId, room_id));
+    .innerJoin(
+      rooms,
+      eq(roomCharacters.roomId, rooms.id)
+    )
+    .where(eq(rooms.id, room_id));
 
+  console.log("Room characters fetched:", charactersInRoom);
   // Select a random character
-  const selectedCharacter = roomCharacters[Math.floor(Math.random() * roomCharacters.length)];
+  const selectedCharacter = charactersInRoom[Math.floor(Math.random() * charactersInRoom.length)];
+  console.log("selected character: ", selectedCharacter)
 
   // Prepare system prompt
-  let systemPrompt = `${selectedCharacter.description}\n\n`;
+  let systemPrompt = `You are ${selectedCharacter.description}\n\n`;
   systemPrompt += "You are in a group chat with the following characters:\n\n";
   
-  for (const char of roomCharacters) {
-    const truncatedDescription = char.description.split(' ').slice(0, 200).join(' ');
+  for (const char of charactersInRoom) {
+    const truncatedDescription = char.description.split(' ').slice(0, 1500).join(' ');
     systemPrompt += `${char.name}: ${truncatedDescription}\n\n`;
   }
 
@@ -68,12 +88,14 @@ export async function continueRoomChat(messages: CoreMessage[], room_id: string,
   systemPrompt += `The topic of discussion is ${room.topic}\n\n`;
   systemPrompt += "Please try to stay on topic and answer in short sentences or paragraphs like in a text conversation.";
 
+  console.log("System prompt prepared:", systemPrompt);
   // Add system prompt to messages
   const updatedMessages: CoreMessage[] = [
     { role: "system", content: systemPrompt },
     ...messages
   ];
 
+  console.log("Messages updated with system prompt:", updatedMessages);
   // Initialize OpenAI client
   const openrouter = createOpenAI({
     baseURL: "https://openrouter.helicone.ai/api/v1",
@@ -83,19 +105,70 @@ export async function continueRoomChat(messages: CoreMessage[], room_id: string,
       "Helicone-Auth": `Bearer ${process.env.HELICONE_API_KEY}`,
       "HTTP-Referer": "https://opencharacter.org",
       "X-Title": "OpenCharacter",
-      "Helicone-User-Id": session.user.email ?? "guest",
+      "Helicone-User-Id": userEmail,
     },
   });
   const model = openrouter(model_id)
 
+  console.log("OpenAI client initialized:", model);
   // Generate and stream response
   const result = await streamText({
     model: model,
     messages: updatedMessages,
-  });
+    onFinish: async (completion) => {
+      
+      // Save the message to the group_chat_sessions table
+      try {
+        // First, check if a session exists for this room and user
+        const existingSession = await db
+          .select()
+          .from(group_chat_sessions)
+          .where(
+            and(
+              eq(group_chat_sessions.roomId, room_id),
+              eq(group_chat_sessions.userId, userId)
+            )
+          )
+          .limit(1);
 
+        if (existingSession.length > 0) {
+          // Update existing session
+          const currentMessages = existingSession[0].messages;
+          const updatedMessages = [
+            ...currentMessages,
+            {
+              role: "assistant",
+              content: completion.text,
+              character_id: selectedCharacter.id
+            }
+          ];
+
+          await db
+            .update(group_chat_sessions)
+            .set({
+              messages: updatedMessages as ChatMessageArray,
+              updatedAt: new Date()
+            })
+            .where(eq(group_chat_sessions.id, existingSession[0].id));
+        } else {
+          // Create new session
+          await db.insert(group_chat_sessions).values({
+            roomId: room_id,
+            userId: userId,
+            messages: [{
+              role: "assistant",
+              content: completion.text,
+            }] as ChatMessageArray
+          });
+        }
+
+        console.log("Message saved to group_chat_sessions");
+      } catch (error) {
+        console.error("Error saving message to group_chat_sessions:", error);
+      }
+    }
+  });
   const stream = createStreamableValue(result.textStream);
-  console.log("Successfully created streamable value");
   return stream.value;
 }
 

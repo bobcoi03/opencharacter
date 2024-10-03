@@ -1,6 +1,6 @@
 import { db } from "@/server/db"
 import { auth } from "@/server/auth"
-import { group_chat_sessions, rooms, characters, group_chat_session_characters } from "@/server/db/schema"
+import { group_chat_sessions, rooms, characters, group_chat_session_characters, ChatMessageArray } from "@/server/db/schema"
 import { eq, desc, and } from "drizzle-orm"
 import MessageBox from "@/components/message-box"
 import { CoreMessage } from "ai"
@@ -13,10 +13,9 @@ interface Character {
   name: string;
   description: string;
   avatar_image_url: string | null;
-  // Add other properties from your character schema as needed
 }
 
-async function getLatestSessionMessages(roomId: string): Promise<CoreMessage[]> {
+async function getLatestSessionMessages(roomId: string): Promise<ChatMessageArray> {
   const session = await auth()
   if (!session?.user?.id) {
     throw new Error("User must be logged in to fetch messages")
@@ -33,7 +32,7 @@ async function getLatestSessionMessages(roomId: string): Promise<CoreMessage[]> 
     return []
   }
 
-  return JSON.parse(latestSession[0].messages)
+  return latestSession[0].messages
 }
 
 async function getRoomDetails(roomId: string) {
@@ -89,6 +88,12 @@ async function getGroupChatSessionCharacters(roomId: string): Promise<Character[
   return sessionCharacters
 }
 
+async function continueRoomChatFunc(messages: CoreMessage[], room_id: string, chat_length: number, model_id: string) {
+  "use server"
+  const res = await continueRoomChat(messages, room_id, chat_length, model_id)
+  return res;
+}
+
 export default async function RoomChat({
   params,
 }: {
@@ -99,41 +104,33 @@ export default async function RoomChat({
     const messages = await getLatestSessionMessages(params.room_id)
     const sessionCharacters = await getGroupChatSessionCharacters(params.room_id)
 
-    async function continueRoomChatFunc(messages: CoreMessage[], room_id: string, chat_length: number, model_id: string) {
-      "use server"
-      const res = await continueRoomChat(messages, room_id, chat_length, model_id)
-      return res;
-    }
-
     return (
       <div className="mx-auto text-center">
         <h1 className="text-2xl font-bold mb-4">{roomDetails.name}</h1>
-        {roomDetails.topic && <p className="mb-4">Topic: {roomDetails.topic}</p>}
         
-        <div className="mb-4">
-          <h2 className="text-xl font-semibold mb-2">Characters in this session:</h2>
-          <ul className="list-disc list-inside">
+        {roomDetails.topic && (
+          <div className="mb-6 p-4 rounded-lg">
+            <h2 className="text-md font-semibold mb-2">Topic:</h2>
+            <p>{roomDetails.topic}</p>
+          </div>
+        )}
+        
+        <div className="mb-6">
+          <div className="flex flex-row justify-center space-x-4">
             {sessionCharacters.map((character) => (
-              <li key={character.id} className="flex items-center justify-center mb-2">
-                {character.avatar_image_url && (
-                  <img src={character.avatar_image_url} alt={character.name} className="w-8 h-8 rounded-full mr-2" />
-                )}
-                <span className="text-xs">{character.name} - {character.description}</span>
-              </li>
+              <div key={character.id} className="flex flex-col items-center">
+                <img 
+                  src={character.avatar_image_url || '/default-avatar.png'} 
+                  alt={character.name} 
+                  className="w-16 h-16 rounded-full mb-2"
+                />
+                <span className="text-sm font-medium">{character.name}</span>
+              </div>
             ))}
-          </ul>
+          </div>
         </div>
 
-        <div className="mb-4">
-          <h2 className="text-xl font-semibold mb-2">Messages:</h2>
-          {messages.map((message, index) => (
-            <div key={index} className="mb-2">
-              <strong>{message.content as string}:</strong> 
-            </div>
-          ))}
-        </div>
-
-        <MessageBox action={continueRoomChatFunc} room={roomDetails} messages={messages} />
+        <MessageBox action={continueRoomChatFunc} room={roomDetails} initialMessages={messages} />
       </div>
     )
   } catch (error) {

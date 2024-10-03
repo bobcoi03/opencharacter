@@ -15,11 +15,12 @@
     "setup": "bun run scripts/setup.ts"
   },
   "dependencies": {
-    "@ai-sdk/openai": "^0.0.58",
+    "@ai-sdk/openai": "^0.0.63",
     "@auth/drizzle-adapter": "^1.4.2",
     "@clack/prompts": "^0.7.0",
     "@iarna/toml": "^2.2.5",
     "@libsql/client": "^0.10.0",
+    "@nanostores/react": "ai/react",
     "@next/third-parties": "^14.2.13",
     "@radix-ui/react-avatar": "^1.1.0",
     "@radix-ui/react-dialog": "^1.1.1",
@@ -33,7 +34,8 @@
     "@t3-oss/env-nextjs": "^0.11.1",
     "@tailwindcss/typography": "^0.5.15",
     "@use-gesture/react": "^10.3.1",
-    "ai": "^3.3.30",
+    "add": "^2.0.6",
+    "ai": "^3.4.7",
     "aws-sdk": "^2.1691.0",
     "aws4fetch": "^1.0.20",
     "better-sqlite3": "^11.2.1",

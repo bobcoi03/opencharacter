@@ -8,23 +8,26 @@ import SignInButton from "./signin-button";
 import { getModelArray, Model } from "@/lib/llm_models"
 import { CoreMessage } from "ai";
 import { ChatMessage, rooms } from "@/server/db/schema";
+import { readStreamableValue } from "ai/rsc";
 
 interface MessageBoxProps {
   action: (messages: CoreMessage[], room_id: string, chat_length: number, model_id: string) => Promise<any>;
   room: typeof rooms.$inferSelect,
-  messages: CoreMessage[]
+  initialMessages: CoreMessage[]
 }
 
-export default function MessageBox({ action, room,  }: MessageBoxProps) {
+export default function MessageBox({ action, room, initialMessages }: MessageBoxProps) {
     const [playing, setPlaying] = useState<boolean>(false);
     const [selectedModel, setSelectedModel] = useState<Model>({
         id: "deepseek/deepseek-chat",
         name: "DeepseekChat"
     });
     const [message, setMessage] = useState<string>("");
+    const [messages, setMessages] = useState<CoreMessage[]>(initialMessages);
     const models = getModelArray();
     const [error, setError] = useState<boolean>(false);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
+    
 
     useEffect(() => {
         adjustTextareaHeight();
@@ -60,20 +63,49 @@ export default function MessageBox({ action, room,  }: MessageBoxProps) {
 
     const handleSendMessage = async () => {
         if (message.trim()) {
-            // Handle sending the message here
-            console.log("Sending message:", message);
-            const res = await action([], room.id,  1, selectedModel.id)
-            console.log(res)
-            // Reset the message after sending
+            const newUserMessage: CoreMessage = { role: "user", content: message };
+            const newMessages = [...messages, newUserMessage];
+            setMessages(newMessages);
             setMessage("");
             if (textareaRef.current) {
                 textareaRef.current.style.height = '50px';
+            }
+
+            try {
+                const result = await action(newMessages, room.id, 0, selectedModel.id);
+                console.log("result: " + JSON.stringify(result));
+                if ("error" in result) {
+                    setError(true);
+                    return;
+                }
+                for await (const content of readStreamableValue(result)) {
+                    console.log("content: " + content);
+                    setMessages([
+                        ...newMessages,
+                        {
+                            role: "assistant",
+                            content: content as string,
+                        },
+                    ]);
+                }
+            } catch (err) {
+                console.error("Error sending message:", err);
+                setError(true);
             }
         }
     };
 
     return (
-        <div className="fixed bottom-0 left-0 right-0 py-4 pointer-events-none w-full max-w-full">
+        <div className="w-full border border-red-300 min-h-screen">
+        <div className="space-y-4 mb-20">
+            {messages.map((message, index) => (
+                <div key={index} className="p-4 shadow rounded-lg">
+                    <p className="text-left"><strong>{message.role}:</strong> {message.content as string}</p>
+                </div>
+            ))}
+        </div>
+
+        <div className="fixed bottom-0 left-0 right-0 py-4 pointer-events-none w-full max-w-full ">
             <div className="max-w-2xl mx-auto w-full">
                 {error && 
                 <div className="mb-2 p-2 bg-red-100 dark:bg-red-900 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-200 text-sm pointer-events-auto flex justify-between items-center">
@@ -190,6 +222,7 @@ export default function MessageBox({ action, room,  }: MessageBoxProps) {
                     <SignInButton />
                     </DialogContent>
                 </Dialog>
+                </div>
             </div>
         </div>
     )

@@ -49,7 +49,7 @@ export async function createRoom(
       .values({
         roomId: newRoom.id,
         userId: userId,
-        messages: JSON.stringify([]) // Initialize with an empty array of messages
+        messages: [] // Initialize with an empty array of messages
       })
       .returning()
 
