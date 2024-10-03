@@ -1,7 +1,4 @@
-import { auth } from "@/server/auth";
-import CreateCharacterCardMarketing from "@/components/create-character-card-marketing";
 import { searchCharacters } from "./actions/index";
-import Navbar from "@/components/navbar";
 import { db } from "@/server/db";
 import { desc, eq } from "drizzle-orm";
 import { characters } from "@/server/db/schema";
@@ -10,7 +7,6 @@ import AICharacterGrid from "@/components/ai-character-grid";
 export const runtime = "edge";
 
 export default async function Page() {
-  const session = await auth();
   const popularCharacters = await getPopularCharacters();
 
   async function getPopularCharacters() {
