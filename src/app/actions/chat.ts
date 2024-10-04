@@ -75,11 +75,10 @@ export async function continueRoomChat(messages: CoreMessage[], room_id: string,
   systemPrompt += "You are in a group chat with the following characters:\n\n";
   
   for (const char of charactersInRoom) {
-    const truncatedDescription = char.description.split(' ').slice(0, 300).join(' ');
-    systemPrompt += `Character name: ${char.name}: ${truncatedDescription}\n\n`;
+    systemPrompt += `Character name: ${char.name}`
   }
 
-  systemPrompt += `The chat room is called ${room.name}\n\n`;
+  systemPrompt += `\n\nThe chat room is called ${room.name}\n\n`;
   systemPrompt += `The topic of discussion is ${room.topic}\n\n`;
   systemPrompt += "Please try to stay on topic and answer in short sentences or paragraphs like in a text conversation.";
 
