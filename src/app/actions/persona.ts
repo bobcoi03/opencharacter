@@ -137,3 +137,75 @@ export async function getDefaultPersona() {
         return { success: false, error: "Failed to retrieve default persona. Please try again." };
     }
 }
+
+export interface GetAllUserPersonasResult {
+    success: boolean;
+    personas: typeof personas.$inferSelect[];
+    message?: string;
+    error?: string;
+  }
+  
+  export async function getAllUserPersonas(): Promise<GetAllUserPersonasResult> {
+      const session = await auth();
+      if (!session?.user) {
+          throw new Error("You must be logged in to get your personas.");
+      }
+  
+      try {
+          const userPersonas = await db.query.personas.findMany({
+              where: eq(personas.userId, session.user.id!),
+              orderBy: (personas, { desc }) => [desc(personas.createdAt)],
+          });
+  
+          if (userPersonas.length === 0) {
+              return { success: true, personas: [], message: "No personas found for this user." };
+          }
+  
+          return { success: true, personas: userPersonas };
+      } catch (error) {
+          console.error("Failed to get user personas:", error);
+          return { success: false, personas: [], error: "Failed to retrieve user personas. Please try again." };
+      }
+}
+
+interface SetDefaultPersonaResult {
+    success: boolean;
+    message?: string;
+    error?: string;
+}
+
+export async function setDefaultPersona(personaId: string): Promise<SetDefaultPersonaResult> {
+    const session = await auth();
+    if (!session?.user) {
+        return { success: false, error: "You must be logged in to set a default persona." };
+    }
+
+    try {
+        // Check if the persona belongs to the user
+        const persona = await db.query.personas.findFirst({
+            where: and(
+                eq(personas.id, personaId),
+                eq(personas.userId, session.user.id!)
+            ),
+        });
+
+        if (!persona) {
+            return { success: false, error: "Persona not found or doesn't belong to the user." };
+        }
+
+        // Unset any existing default persona
+        await db.update(personas)
+            .set({ isDefault: false })
+            .where(eq(personas.userId, session.user.id!));
+
+        // Set the new default persona
+        await db.update(personas)
+            .set({ isDefault: true })
+            .where(eq(personas.id, personaId));
+
+        return { success: true, message: "Default persona set successfully." };
+    } catch (error) {
+        console.error("Failed to set default persona:", error);
+        return { success: false, error: "Failed to set default persona. Please try again." };
+    }
+}

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Ellipsis, Share, Flag, Edit, MessageSquarePlus } from 'lucide-react';
+import { Ellipsis, Share, Flag, Edit, MessageSquarePlus, UserPlus, MoreVertical } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import Image from 'next/image';
 import { Button } from "@/components/ui/button";
@@ -9,12 +9,26 @@ import { characters } from '@/server/db/schema';
 import { format } from 'date-fns';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { createChatSession, getAllConversationsByCharacter } from '@/app/actions/index';
+import { createChatSession, getAllConversationsByCharacter, getAllUserPersonas, getDefaultPersona, setDefaultPersona } from '@/app/actions/index';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { personas as PersonaType } from '@/server/db/schema';
+import { toast, useToast } from "@/hooks/use-toast"
 
 export default function EllipsisButton({ character, made_by_username }: { character: typeof characters.$inferSelect, made_by_username: string }) {
   const [shareMessage, setShareMessage] = useState('');
   const [isCreatingSession, setIsCreatingSession] = useState(false);
   const [conversations, setConversations] = useState<any[]>([]);
+  const [personas, setPersonas] = useState<typeof PersonaType.$inferSelect[]>([]);
+  const [defaultPersona, setDefaultPersonaState] = useState<typeof PersonaType.$inferSelect | null>(null);
+  const [isLoadingPersonas, setIsLoadingPersonas] = useState(false);
+  const [isSettingDefault, setIsSettingDefault] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -23,11 +37,19 @@ export default function EllipsisButton({ character, made_by_username }: { charac
       setConversations(fetchedConversations);
     };
     fetchConversations();
+    fetchDefaultPersona();
   }, [character.id]);
 
   useEffect(() => {
     console.log(conversations)
   }, [conversations])
+
+  const fetchDefaultPersona = async () => {
+    const result = await getDefaultPersona();
+    if (result.success && result.persona) {
+      setDefaultPersonaState(result.persona);
+    }
+  };
 
   const handleShare = async () => {
     const url = window.location.href;
@@ -62,6 +84,49 @@ export default function EllipsisButton({ character, made_by_username }: { charac
     window.location.href = `/chat/${character.id}?session=${conversationId}&t=${timestamp}`;
   };
 
+  const fetchPersonas = async () => {
+    setIsLoadingPersonas(true);
+    try {
+      const result = await getAllUserPersonas();
+      if (result.success) {
+        setPersonas(result.personas);
+      } else {
+        console.error(result.error);
+        // You might want to show an error message to the user here
+      }
+    } catch (error) {
+      console.error("Failed to fetch personas:", error);
+      // You might want to show an error message to the user here
+    } finally {
+      setIsLoadingPersonas(false);
+    }
+  };
+
+  const handleSetDefaultPersona = async (persona: typeof PersonaType.$inferSelect) => {
+    setIsSettingDefault(true);
+    try {
+      const result = await setDefaultPersona(persona.id);
+      if (result.success) {
+        // Update the local state to reflect the change
+        setDefaultPersonaState(persona);
+        setPersonas(prevPersonas => prevPersonas.map(p => ({
+          ...p,
+          isDefault: p.id === persona.id
+        })));
+        toast({
+          title: `Set ${persona.displayName} as default character`,
+        })
+        setTimeout(() => window.location.reload(), 1000)
+      } else {
+        console.error(result.error);
+      }
+    } catch (error) {
+      console.error("Failed to set default persona:", error);
+    } finally {
+      setIsSettingDefault(false);
+    }
+  };
+
   return (
     <Sheet>
       <SheetTrigger asChild>
@@ -70,7 +135,7 @@ export default function EllipsisButton({ character, made_by_username }: { charac
         </Button>
       </SheetTrigger>
       <SheetContent className="w-80 bg-white dark:bg-neutral-800 border-l border-gray-200 dark:border-neutral-700 overflow-y-auto">
-        <div className="p-4">
+        <div className="py-4">
           <div className="flex items-center mb-4 gap-4">
             <div className="w-16 h-16 overflow-hidden rounded-full">
               <div className="w-full h-full relative">
@@ -118,6 +183,65 @@ export default function EllipsisButton({ character, made_by_username }: { charac
               )}
             </Button>
           </Link>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button 
+                className="w-full mb-4 bg-gray-100 hover:bg-gray-200 dark:bg-neutral-700 dark:hover:bg-neutral-600 text-gray-800 dark:text-gray-200 flex items-center justify-between py-2 px-4 rounded-full transition-colors"
+                onClick={fetchPersonas}
+              >
+                <div className="flex items-center textpxs">
+                  <UserPlus className="w-4 h-4 mr-2" />
+                  Personas
+                </div>
+                {defaultPersona && (
+                  <span className="text-xs text-gray-600 dark:text-gray-400">{defaultPersona.displayName}</span>
+                )}
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px] bg-neutral-900 text-white h-[30rem] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Personas</DialogTitle>
+                <DialogDescription>
+                  Select a default persona
+                </DialogDescription>
+              </DialogHeader>
+              <div className="mt-4">
+                {isLoadingPersonas ? (
+                  <p>Loading personas...</p>
+                ) : personas.length > 0 ? (
+                  <div className="space-y-4 mb-6">
+                    {personas.map((persona) => (
+                      <div
+                        key={persona.id}
+                        className="flex items-center justify-between hover:cursor-pointer hover:bg-neutral-800 p-2 hover:rounded-xl max-w-sm"
+                        onClick={() => handleSetDefaultPersona(persona)}
+                      >
+                        <div className="flex items-center space-x-3 min-w-0">
+                          <div className="w-8 h-8 rounded-full flex items-center justify-center text-lg font-bold bg-gradient-to-br from-black via-black to-purple-300">
+                            {persona.displayName[0]}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <h2 className="font-semibold flex items-center text-sm">
+                              <span className="truncate">{persona.displayName}</span>
+                              {persona.isDefault && (
+                                <span className="ml-2 flex-shrink-0 text-xs bg-neutral-700 text-neutral-300 px-2 py-1 rounded">Default</span>
+                              )}
+                            </h2>
+                            <p className="text-xs text-neutral-400 truncate break-words text-wrap ">{persona.background.slice(0, 100)}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p>No personas found. Create one to get started!</p>
+                )}
+                <Link href={"/profile/persona/create"}>
+                  <Button className="mt-4 w-full max-w-sm">Create New Persona</Button>                
+                </Link>
+              </div>
+            </DialogContent>
+          </Dialog>
           {shareMessage && (
             <p className="text-sm text-green-500 mb-4">{shareMessage}</p>
           )}
