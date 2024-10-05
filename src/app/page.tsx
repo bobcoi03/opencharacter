@@ -3,6 +3,7 @@ import { db } from "@/server/db";
 import { desc, eq } from "drizzle-orm";
 import { characters } from "@/server/db/schema";
 import AICharacterGrid from "@/components/ai-character-grid";
+import Link from "next/link";
 
 export const runtime = "edge";
 
@@ -29,6 +30,17 @@ export default async function Page() {
   return (
     <div className="text-white w-full overflow-y-auto overflow-x-hidden md:pl-16">
       <AICharacterGrid characters={popularCharacters} />
+      <div className="text-gray-500 flex gap-4 mb-24">
+        <Link href={"/about"}>
+          About 
+        </Link>
+        <Link href={"/privacy-policy"}>
+          Privacy Policy         
+        </Link>
+        <Link href={"https://github.com/bobcoi03/opencharacter"} target="_blank">
+          Github
+        </Link>
+      </div>
     </div>
   );
 }
