@@ -4,7 +4,7 @@ import { db } from "@/server/db";
 import { characters } from "@/server/db/schema";
 import { auth } from "@/server/auth";
 import { z } from "zod";
-import FileStorage from "@/lib/r2_storage";
+import FileStorage, { uploadToR2 } from "@/lib/r2_storage";
 import { eq, like, or, desc, sql, and } from "drizzle-orm";
 
 const CreateCharacterSchema = z.object({
@@ -24,22 +24,6 @@ const CreateCharacterSchema = z.object({
   top_a: z.coerce.number().min(0).max(1).optional().default(0.0),
   max_tokens: z.coerce.number().int().min(1).optional().default(600),
 });
-
-async function uploadToR2(file: File): Promise<string> {
-  try {
-    const arrayBuffer = await file.arrayBuffer();
-    const uint8Array = new Uint8Array(arrayBuffer); // Convert ArrayBuffer to Uint8Array
-    const uniqueFilename = `${Date.now()}-${file.name}`; // Generate a unique filename
-    const res = await FileStorage.put(uniqueFilename, uint8Array); // Use Uint8Array with unique filename
-    if (res.status === 200) {
-      return `https://pub-ee9c36333afb4a8abe1e26dcc310f8ec.r2.dev/${uniqueFilename}`; // Return the file URL
-    }
-  } catch (e) {
-    console.error(e);
-    throw new Error(String(e));
-  }
-  return "";
-}
 
 export async function createCharacter(formData: FormData) {
   const session = await auth();
