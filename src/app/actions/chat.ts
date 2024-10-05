@@ -12,6 +12,7 @@ import {
 import { db } from "@/server/db";
 import { eq, and, desc, sql, or } from "drizzle-orm";
 import { auth } from "@/server/auth";
+import { isValidModel } from "@/lib/llm_models";
 
 export async function saveChat(
   messages: CoreMessage[],
@@ -176,11 +177,11 @@ export async function continueConversation(
     },
   });
 
-  if (model_name != "gryphe/mythomax-l2-13b") {
-    throw new Error("TEMPORARY: Only mythomax-l2-13b is available");
-  }
-
   const model = openrouter(model_name);
+
+  if (!isValidModel(model_name)) {
+    throw new Error("Invalid model: " + model_name);
+  }
 
   // Fetch the default persona for the user
   const defaultPersona = await db

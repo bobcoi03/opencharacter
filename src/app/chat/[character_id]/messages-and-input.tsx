@@ -17,6 +17,7 @@ import {
   Plus,
   ChevronLeft,
   ChevronRight,
+  Loader2Icon,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -755,22 +756,26 @@ export default function MessageAndInput({
               />
               <button
                 type="submit"
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 bg-black dark:bg-white rounded-full p-2 z-20 transition-opacity opacity-70 hover:opacity-100 focus:opacity-100 hover:cursor-pointer"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 bg-blue-500 rounded-full p-2 z-20 transition-opacity opacity-70 hover:opacity-100 focus:opacity-100 hover:cursor-pointer"
                 disabled={!input.trim() || isLoading}
               >
-                <svg
-                  viewBox="0 0 24 24"
-                  className="w-5 h-5 text-white dark:text-black"
-                  fill="none"
-                  stroke="currentColor"
-                >
-                  <path
-                    d="M5 12h14M12 5l7 7-7 7"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
+                {!isLoading ?
+                  <svg
+                    viewBox="0 0 24 24"
+                    className="w-5 h-5 text-white"
+                    fill="none"
+                    stroke="currentColor"
+                  >
+                    <path
+                      d="M5 12h14M12 5l7 7-7 7"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                  :
+                  <Loader2Icon className="w-5 h-5 animate-spin text-white"/>
+                }
               </button>
             </div>
           </form>
@@ -788,9 +793,6 @@ export default function MessageAndInput({
             </DialogContent>
           </Dialog>
 
-          <p className="text-xs text-center mt-2 text-gray-500 dark:text-gray-400 pointer-events-auto">
-            {!user && "Sign in to save messages"}
-          </p>
         </div>
       </div>
     </div>
