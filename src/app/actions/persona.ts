@@ -20,8 +20,8 @@ export async function CreatePersona(formData: FormData) {
     if (!displayName || displayName.length > 20) {
         throw new Error("Display name is required and must be 20 characters or less.");
     }
-    if (!background || background.length > 728*2) {
-        throw new Error("Background is required and must be 728 characters or less.");
+    if (!background || background.length > 1456) {
+        throw new Error("Background is required and must be 1456 characters or less.");
     }
 
     try {
@@ -68,7 +68,7 @@ export async function updatePersona(formData: FormData) {
     if (!displayName || displayName.length > 20) {
         throw new Error("Display name is required and must be 20 characters or less.");
     }
-    if (!background || background.length > 728) {
+    if (!background || background.length > 1456) {
         throw new Error("Background is required and must be 728 characters or less.");
     }
 
