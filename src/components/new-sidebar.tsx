@@ -14,6 +14,7 @@ import {
   LogOut,
   HandCoins,
   Github,
+  Plus,
 } from "lucide-react";
 import { useSession, signIn, signOut } from "next-auth/react";
 import {
@@ -253,7 +254,7 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
         <PopoverTrigger asChild>
           <div className={`${buttonClass}`}>
             <Button variant={"ghost"} size={"icon"} className="h-10 w-10">
-              <PlusCircle className={iconClass} />
+              <Plus className={iconClass} />
             </Button>
             <span className={textClass}>Create</span>
           </div>

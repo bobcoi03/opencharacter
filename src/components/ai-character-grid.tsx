@@ -1,17 +1,15 @@
-import React from "react";
+"use client"
+
+import React, { useState, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Card, CardContent } from "@/components/ui/card";
 import { MessageCircle } from "lucide-react";
+import { characters } from "@/server/db/schema";
 
-type Character = {
-  id: string;
-  name: string;
-  tagline: string;
-  avatar_image_url: string | null;
-  userId: string;
-  interactionCount: number;
-};
+type Character = typeof characters.$inferSelect;
+
+type SortOption = "popular" | "new" | "old";
 
 const safeTruncate = (str: string, n: number) => {
   if (str.length <= n) return str;
@@ -67,11 +65,50 @@ const AICharacterCard: React.FC<{ character: Character }> = ({ character }) => {
 const AICharacterGrid: React.FC<{ characters: Character[] }> = ({
   characters,
 }) => {
+  const [sortOption, setSortOption] = useState<SortOption>("popular");
+
+  const sortedCharacters = useMemo(() => {
+    switch (sortOption) {
+      case "popular":
+        return [...characters].sort((a, b) => (b.interactionCount ?? 0) - (a.interactionCount ?? 0));
+      case "new":
+        return [...characters].sort((a, b) => {
+          const dateA = a.createdAt instanceof Date ? a.createdAt.getTime() : 0;
+          const dateB = b.createdAt instanceof Date ? b.createdAt.getTime() : 0;
+          return dateB - dateA;
+        });
+      case "old":
+        return [...characters].sort((a, b) => {
+          const dateA = a.createdAt instanceof Date ? a.createdAt.getTime() : 0;
+          const dateB = b.createdAt instanceof Date ? b.createdAt.getTime() : 0;
+          return dateA - dateB;
+        });
+      default:
+        return characters;
+    }
+  }, [characters, sortOption]);
+
+  const SortButton: React.FC<{ option: SortOption; label: string }> = ({ option, label }) => (
+    <div
+      className={`text-sm font-semibold text-white rounded-lg p-3 max-w-24 text-center hover:cursor-pointer ${
+        sortOption === option ? "bg-black" : "bg-neutral-800 hover:bg-gray-700"
+      }`}
+      onClick={() => setSortOption(option)}
+    >
+      {label}
+    </div>
+  );
+
   return (
-    <div className="py-6 bg-neutral-900">
-      <h2 className="text-sm font-medium text-gray-100 mb-4">Popular</h2>
+    <div className="bg-neutral-900">
+      <div className="w-full flex gap-2 mb-3">
+        <SortButton option="popular" label="Popular" />
+        <SortButton option="new" label="New" />
+        <SortButton option="old" label="Old" />
+      </div>
+    
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
-        {characters.map((character) => (
+        {sortedCharacters.map((character) => (
           <AICharacterCard key={character.id} character={character} />
         ))}
       </div>
