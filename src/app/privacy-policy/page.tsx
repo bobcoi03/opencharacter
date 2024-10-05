@@ -9,7 +9,7 @@ export default function PrivacyPolicy() {
       <p className="mb-4"><strong>Effective Date: 04/10/2024</strong></p>
 
       <p className="mb-6">
-        Welcome to OpenCharacter, we're creating the old c.ai site and open-sourcing it. We respect your privacy and are committed to protecting the personal information you share with us. This Privacy Policy outlines how we collect, use, and safeguard your information.
+        Welcome to OpenCharacter, we&apos;re creating the old c.ai site and open-sourcing it. We respect your privacy and are committed to protecting the personal information you share with us. This Privacy Policy outlines how we collect, use, and safeguard your information.
       </p>
 
       {[
