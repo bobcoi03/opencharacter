@@ -329,6 +329,10 @@ export async function continueConversation(
     },
   });
 
+  if (model_name != "gryphe/mythomax-l2-13b") {
+    throw new Error("TEMPORARY: Only mythomax-l2-13b is available");
+  }
+
   const model = openrouter(model_name);
 
   // Fetch the default persona for the user
@@ -386,6 +390,7 @@ export async function continueConversation(
       frequencyPenalty: character.frequency_penalty ?? 0.0,
       presencePenalty: character.presence_penalty ?? 0.0,
       maxTokens: character.max_tokens ?? 1000,
+      maxRetries: 5,
       onFinish: async (completion) => {
         if (session?.user) {
           try {

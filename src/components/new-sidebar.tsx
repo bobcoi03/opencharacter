@@ -82,12 +82,17 @@ const NewSidebarContent: React.FC<NewSidebarProps> = ({ search }) => {
       {/* Fixed Top Navbar */}
       {!shouldHideSidebar && (
         <div className="fixed top-0 left-0 right-0 h-12 bg-white dark:bg-neutral-900 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-4 z-50">
-          <Link
-            href="/"
-            className="text-2xl font-bold text-black dark:text-white"
-          >
-            OpenCharacter
-          </Link>
+          <div className="w-full items-center gap-4 flex">
+            <Link
+              href="/"
+              className="text-2xl font-bold text-black dark:text-white"
+            >
+              OpenCharacter
+            </Link>
+            <Link href={"https://buymeacoffee.com/luongquangn"} target="_blank" className="bg-blue-500 text-white px-2 py-1 rounded">
+              Donate
+            </Link>
+          </div>
           <div className="flex items-center space-x-4">
             <div className="relative">
               {isSearchExpanded ? (
@@ -173,16 +178,7 @@ const NewSidebarContent: React.FC<NewSidebarProps> = ({ search }) => {
                       <span>Github </span>
                     </Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem className="text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">
-                    <Link
-                      href={"https://buymeacoffee.com/luongquangn"}
-                      target="_blank"
-                      className="flex w-full"
-                    >
-                      <HandCoins className="mr-2 h-4 w-4" />
-                      <span>Donate </span>
-                    </Link>
-                  </DropdownMenuItem>
+                  
                   <DropdownMenuItem
                     onClick={() => signOut()}
                     className="text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -317,7 +313,7 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
       </Link>
 
       <Link
-        href="https://discord.gg/kQz5XeJc"
+        href="https://discord.gg/PG4KXHXXa4"
         target="_blank"
         className={buttonClass}
       >
