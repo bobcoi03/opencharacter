@@ -87,7 +87,7 @@ const NewSidebarContent: React.FC<NewSidebarProps> = ({ search }) => {
             >
               OpenCharacter
             </Link>
-            <Link href={"https://buymeacoffee.com/luongquangn"} target="_blank" className="bg-blue-500 text-white px-2 py-1 rounded">
+            <Link href={"https://buymeacoffee.com/luongquangn"} target="_blank" className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 text-xs">
               Donate
             </Link>
           </div>

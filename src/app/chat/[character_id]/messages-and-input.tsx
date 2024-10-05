@@ -72,7 +72,7 @@ interface MessageContentProps {
   onGoBackRegenerate?: (toIndex: number) => void;
   regenerations: number;
   currentRegenerationIndex: number;
-
+  onNewChatFromHere: (index: number) => void;
 }
 
 const UserAvatar = ({ userName }: { userName: string }) => {
@@ -101,7 +101,8 @@ const MessageContent: React.FC<MessageContentProps> = ({
   onDelete,
   onGoBackRegenerate,
   regenerations,
-  currentRegenerationIndex
+  currentRegenerationIndex,
+  onNewChatFromHere,
 }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -207,10 +208,14 @@ const MessageContent: React.FC<MessageContentProps> = ({
                     <MoreHorizontal className="w-4 h-4" />
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
+                <DropdownMenuContent align="end" className="flex flex-col gap-2">
                   <DropdownMenuItem onClick={handleEdit}>
                     <Edit className="w-4 h-4 mr-2" />
                     Edit
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onNewChatFromHere(index) } >
+                    <ChevronRight className="w-4 h-4 mr-2" />
+                    New chat from here
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={handleDelete}>
                     <Trash2 className="w-4 h-4 mr-2" />
@@ -552,6 +557,16 @@ export default function MessageAndInput({
     }
   };
 
+  const handleNewChatFromHere = async (index: number) => {
+    try {
+      const sessionId = await createChatSession(character, messages.slice(0, index + 1));
+      router.push(`/chat/${character.id}?session=${sessionId}`);
+      window.location.reload()
+    } catch (error) {
+      console.error('Failed to create chat session:', error);
+    } 
+  };
+
   return (
     <div className="flex flex-col h-full relative max-w-full overflow-x-hidden">
       <style jsx global>{`
@@ -653,6 +668,7 @@ export default function MessageAndInput({
                     }
                     currentRegenerationIndex={currentRegenerationIndex}
                     onGoBackRegenerate={handleOnGoBackRegenerate}
+                    onNewChatFromHere={handleNewChatFromHere}
                   />
                 ))}
               </>

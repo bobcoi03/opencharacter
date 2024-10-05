@@ -40,6 +40,9 @@ export default async function Page() {
         <Link href={"https://github.com/bobcoi03/opencharacter"} target="_blank">
           Github
         </Link>
+        <Link href={"https://buymeacoffee.com/luongquangn"} target="_blank">
+          Donate
+        </Link>
       </div>
     </div>
   );
