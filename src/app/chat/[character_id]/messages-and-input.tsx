@@ -47,11 +47,11 @@ const MAX_TEXTAREA_HEIGHT = 450; // maximum height in pixels
 function Renegerate() {
   return (
     <div className="flex items-center justify-center space-x-2 mt-2">
-      <button className="p-1 rounded-full bg-gray-200 dark:bg-gray-700 disabled:opacity-50">
+      <button className="p-1 rounded-full bg-gray-700 disabled:opacity-50">
         <ChevronLeft className="w-4 h-4" />
       </button>
-      <span className="text-sm text-gray-500 dark:text-gray-400">1</span>
-      <button className="p-1 rounded-full bg-gray-200 dark:bg-gray-700 disabled:opacity-50">
+      <span className="text-sm text-gray-400">1</span>
+      <button className="p-1 rounded-full bg-gray-700 disabled:opacity-50">
         <ChevronRight className="w-4 h-4" />
       </button>
     </div>
@@ -251,7 +251,7 @@ const MessageContent: React.FC<MessageContentProps> = ({
               </div>
             ) : (
               <ReactMarkdown
-                className="text-md text-black dark:text-white text-wrap break-words"
+                className="text-md text-white text-wrap break-words"
                 components={markdownComponents}
               >
                 {message.content as string}
@@ -275,7 +275,7 @@ const MessageContent: React.FC<MessageContentProps> = ({
               >
                 <ChevronLeft className={`w-4 h-4 ${currentRegenerationIndex === 0 && "text-slate-700"}`} />
               </button>
-              <span className="text-sm text-gray-500 dark:text-gray-400">
+              <span className="text-sm text-gray-400">
                 {currentRegenerationIndex} / 30
               </span>
               <button 
@@ -288,7 +288,7 @@ const MessageContent: React.FC<MessageContentProps> = ({
                   }
                 }}
               >
-                <ChevronRight className="w-4 h-4" />
+                <ChevronRight className="w-4 h-4 text-slate-700" />
               </button>
             </div>
           )}
@@ -624,13 +624,13 @@ export default function MessageAndInput({
                 />
               </Link>
             </div>
-            <p className="font-light text-md text-black dark:text-white">
+            <p className="font-light text-md text-white">
               {character.name}
             </p>
-            <ReactMarkdown className="font-light text-md text-slate-600 dark:text-slate-200">
+            <ReactMarkdown className="font-light text-md text-slate-200">
               {character.tagline}
             </ReactMarkdown>
-            <p className="font-light text-xs text-slate-600 dark:text-slate-200">
+            <p className="font-light text-xs text-slate-200">
               by {made_by_name}
             </p>
           </div>
@@ -683,7 +683,7 @@ export default function MessageAndInput({
       <div className="fixed bottom-0 left-0 right-0 py-4 pointer-events-none w-full max-w-full">
         <div className="max-w-2xl mx-auto w-full">
           {error && (
-            <div className="mb-2 p-2 bg-red-100 dark:bg-red-900 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-200 text-sm pointer-events-auto flex justify-between items-center">
+            <div className="mb-2 p-2 bg-red-900 border border-red-800 rounded-lg text-red-200 text-sm pointer-events-auto flex justify-between items-center">
               <p className="flex items-center">
                 <svg
                   className="w-4 h-4 mr-2 flex-shrink-0"
@@ -712,15 +712,15 @@ export default function MessageAndInput({
             className="pointer-events-auto flex items-center space-x-2 max-w-full px-2"
           >
             <div className="relative flex-grow">
-              <div className="absolute inset-0 bg-gray-300 dark:bg-neutral-700 bg-opacity-20 dark:bg-opacity-20 backdrop-blur-md rounded-xl dark:border-neutral-700"></div>
+              <div className="absolute inset-0 bg-neutral-700 bg-opacity-20 backdrop-blur-md rounded-xl border-neutral-700"></div>
               <div className="absolute left-3 top-1/2 transform -translate-y-1/2 z-20">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <button
                       type="button"
-                      className="bg-gray-200 dark:bg-neutral-600 rounded-full p-2 transition-opacity opacity-70 hover:opacity-100 focus:opacity-100 hover:cursor-pointer"
+                      className="bg-neutral-600 rounded-full p-2 transition-opacity opacity-70 hover:opacity-100 focus:opacity-100 hover:cursor-pointer"
                     >
-                      <Cpu className="w-4 h-4 text-gray-700 dark:text-gray-300" />
+                      <Cpu className="w-4 h-4 text-gray-300" />
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="max-h-96 overflow-y-auto">
@@ -746,7 +746,7 @@ export default function MessageAndInput({
                 onKeyDown={handleKeyDown}
                 onFocus={handleInputFocus}
                 placeholder={`Message ${character.name}...`}
-                className="w-full py-3 pl-14 pr-12 bg-transparent relative z-10 outline-none text-black dark:text-white text-lg rounded-xl resize-none overflow-hidden"
+                className="w-full py-3 pl-14 pr-12 bg-transparent relative z-10 outline-none text-white text-lg rounded-xl resize-none overflow-hidden"
                 style={{
                   minHeight: "50px",
                   maxHeight: `${MAX_TEXTAREA_HEIGHT}px`,

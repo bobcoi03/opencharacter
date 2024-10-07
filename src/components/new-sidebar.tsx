@@ -80,7 +80,7 @@ const NewSidebarContent: React.FC<NewSidebarProps> = ({ search }) => {
     <>
       {/* Fixed Top Navbar */}
       {!isChatRoute && (
-        <div className="fixed top-0 left-0 right-0 h-12 bg-neutral-900 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-4 z-50">
+        <div className="fixed top-0 left-0 right-0 h-12 bg-neutral-900 border-b border-gray-700 flex items-center justify-between px-4 z-50">
           <div className="w-full items-center gap-4 flex">
             <Link
               href="/"

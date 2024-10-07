@@ -130,8 +130,8 @@ export default function EllipsisButton({ character, made_by_username }: { charac
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <Button variant="ghost" size="icon" className="p-2 w-[24] h-[24] rounded-full hover:bg-gray-200 dark:hover:bg-neutral-800 transition-colors border border-gray-200 dark:border-neutral-700">
-          <Ellipsis className='text-gray-600 dark:text-gray-400' />
+        <Button variant="ghost" size="icon" className="p-2 w-[24] h-[24] rounded-full hover:bg-neutral-800 transition-colors border border-neutral-700">
+          <Ellipsis className='text-gray-400' />
         </Button>
       </SheetTrigger>
       <SheetContent className="w-80 bg-white dark:bg-neutral-800 border-l border-gray-200 dark:border-neutral-700 overflow-y-auto">

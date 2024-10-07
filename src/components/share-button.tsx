@@ -22,7 +22,7 @@ export default function ShareButton({ url }: { url?: string }) {
     <div className="relative">
       <button
         onClick={handleShare}
-        className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-200 dark:hover:bg-neutral-800 transition-colors border border-gray-200 dark:border-neutral-700 text-gray-600 dark:text-gray-400"
+        className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-200 hover:bg-neutral-800 transition-colors border border-neutral-700 text-gray-400"
         aria-label="Share"
       >
         <Upload size={18} />

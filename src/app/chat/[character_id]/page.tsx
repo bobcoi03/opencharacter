@@ -364,7 +364,7 @@ function ChatHeader({
   madeByUsername: string;
 }) {
   return (
-    <div className="bg-white dark:bg-neutral-900 p-4 flex items-center justify-between dark:border-neutral-700 fixed md:fixed top-0 md:top-0 left-0 right-0 z-10">
+    <div className="bg-neutral-900 p-4 flex items-center justify-between border-neutral-700 fixed md:fixed top-0 md:top-0 left-0 right-0 z-10">
       <div className="flex items-center">
         <Link href={"/"}>
           <ChevronLeft className="w-8 h-8 text-neutral-700" />
@@ -384,17 +384,17 @@ function ChatHeader({
         </Link>
         <div className="flex items-start flex-col">
           <div className="flex flex-row gap-2 items-center">
-            <h2 className="font-light text-black dark:text-white">
+            <h2 className="font-light text-white">
               {character.name}
             </h2>
             {character.visibility === "private" && (
               <Lock
                 size={12}
-                className="ml-2 text-gray-500 dark:text-gray-400"
+                className="ml-2 text-gray-400"
               />
             )}
           </div>
-          <p className="text-xs font-light text-gray-600 dark:text-gray-400">
+          <p className="text-xs font-light text-gray-400">
             by {madeByUsername}
           </p>
         </div>
