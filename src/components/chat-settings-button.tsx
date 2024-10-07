@@ -134,7 +134,7 @@ export default function EllipsisButton({ character, made_by_username }: { charac
           <Ellipsis className='text-gray-400' />
         </Button>
       </SheetTrigger>
-      <SheetContent className="w-80 bg-white dark:bg-neutral-800 border-l border-gray-200 dark:border-neutral-700 overflow-y-auto">
+      <SheetContent className="w-80 bg-neutral-800 border-l border-neutral-700 overflow-y-auto">
         <div className="py-4">
           <div className="flex items-center mb-4 gap-4">
             <div className="w-16 h-16 overflow-hidden rounded-full">
@@ -149,21 +149,21 @@ export default function EllipsisButton({ character, made_by_username }: { charac
               </div>
             </div>
             <div>
-              <h2 className="font-bold text-xl text-black dark:text-white">{character.name}</h2>
-              <p className="text-xs text-gray-600 dark:text-gray-400">By {made_by_username}</p>
-              <p className="text-xs text-gray-600 dark:text-gray-400">{character.interactionCount} chats</p>
+              <h2 className="font-bold text-xl text-white">{character.name}</h2>
+              <p className="text-xs text-gray-400">By {made_by_username}</p>
+              <p className="text-xs text-gray-400">{character.interactionCount} chats</p>
             </div>
           </div>
           <div className="flex justify-between mb-4 items-center">
-            <Button variant="ghost" size="icon" className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-neutral-700" onClick={handleShare}>
-              <Share className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+            <Button variant="ghost" size="icon" className="p-2 rounded-full hover:bg-neutral-700" onClick={handleShare}>
+              <Share className="w-5 h-5 text-gray-400" />
             </Button>
-            <Button variant="ghost" size="icon" className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-neutral-700">
-              <Flag className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+            <Button variant="ghost" size="icon" className="p-2 rounded-full hover:bg-neutral-700">
+              <Flag className="w-5 h-5 text-gray-400" />
             </Button>
             <Link href={`/character/${character.id}/edit`} passHref>
-              <Button variant="ghost" size="icon" className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-neutral-700">
-                <Edit className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+              <Button variant="ghost" size="icon" className="p-2 rounded-full hover:bg-neutral-700">
+                <Edit className="w-5 h-5 text-gray-400" />
               </Button>
             </Link>
           </div>
@@ -171,7 +171,7 @@ export default function EllipsisButton({ character, made_by_username }: { charac
             <Button 
               onClick={handleNewChat}
               disabled={isCreatingSession}
-              className="w-full mb-4 bg-gray-100 hover:bg-gray-200 dark:bg-neutral-700 dark:hover:bg-neutral-600 text-gray-800 dark:text-gray-200 flex items-center justify-center py-2 rounded-full transition-colors"
+              className="w-full mb-4 bg-gray-100 bg-neutral-700 hover:bg-neutral-600 text-gray-200 flex items-center justify-center py-2 rounded-full transition-colors"
             >
               {isCreatingSession ? (
                 'Creating...'
@@ -186,7 +186,7 @@ export default function EllipsisButton({ character, made_by_username }: { charac
           <Dialog>
             <DialogTrigger asChild>
               <Button 
-                className="w-full mb-4 bg-gray-100 hover:bg-gray-200 dark:bg-neutral-700 dark:hover:bg-neutral-600 text-gray-800 dark:text-gray-200 flex items-center justify-between py-2 px-4 rounded-full transition-colors"
+                className="w-full mb-4 bg-neutral-700 hover:bg-neutral-600 text-gray-200 flex items-center justify-between py-2 px-4 rounded-full transition-colors"
                 onClick={fetchPersonas}
               >
                 <div className="flex items-center textpxs">
@@ -194,7 +194,7 @@ export default function EllipsisButton({ character, made_by_username }: { charac
                   Personas
                 </div>
                 {defaultPersona && (
-                  <span className="text-xs text-gray-600 dark:text-gray-400">{defaultPersona.displayName}</span>
+                  <span className="text-xs text-gray-400">{defaultPersona.displayName}</span>
                 )}
               </Button>
             </DialogTrigger>
@@ -247,20 +247,20 @@ export default function EllipsisButton({ character, made_by_username }: { charac
           )}
 
           <div className="mt-6">
-            <h3 className="font-semibold text-lg mb-2 text-black dark:text-white">Recent Conversations</h3>
+            <h3 className="font-semibold text-lg mb-2 text-white">Recent Conversations</h3>
             {conversations.map((conversation) => {
               const latestMessage = conversation.messages[conversation.messages.length - 1];
               return (
-                <div key={conversation.id} className="mb-4 p-3 bg-gray-100 dark:bg-neutral-700 rounded-lg">
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                <div key={conversation.id} className="mb-4 p-3 bg-neutral-700 rounded-lg">
+                  <p className="text-sm text-gray-400">
                     {format(new Date(conversation.last_message_timestamp), 'MMM d, yyyy')}
                   </p>
-                  <p className="text-sm font-medium text-black dark:text-white mt-1">
+                  <p className="text-sm font-medium text-white mt-1">
                     {latestMessage.role === 'assistant' ? character.name : 'You'}: {latestMessage.content}
                   </p>
                   <Button 
                     variant="link" 
-                    className="mt-2 p-0 h-auto text-blue-500 dark:text-blue-400"
+                    className="mt-2 p-0 h-auto text-blue-400"
                     onClick={() => handleContinueChat(conversation.id)}
                   >
                     Continue Chat

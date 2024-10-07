@@ -52,7 +52,7 @@ export default async function RootLayout({
   }
 
   return (
-    <html lang="en">
+    <html lang="en" className="dark">
       <head>
         <ThemeScript/>
         <link rel="icon" href="/favicon.svg" sizes="any" />
