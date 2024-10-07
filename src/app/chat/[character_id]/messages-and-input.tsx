@@ -74,6 +74,7 @@ interface MessageContentProps {
   regenerations: number;
   currentRegenerationIndex: number;
   onNewChatFromHere: (index: number) => void;
+  onRewindHere: (index: number) => void;
 }
 
 const UserAvatar = ({ userName }: { userName: string }) => {
@@ -104,6 +105,7 @@ const MessageContent: React.FC<MessageContentProps> = ({
   regenerations,
   currentRegenerationIndex,
   onNewChatFromHere,
+  onRewindHere,
 }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -213,6 +215,10 @@ const MessageContent: React.FC<MessageContentProps> = ({
                   <DropdownMenuItem onClick={handleEdit}>
                     <Edit className="w-4 h-4 mr-2" />
                     Edit
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onRewindHere(index) } >
+                    <RotateCcw className="w-4 h-4 mr-2" />
+                    Rewind to here
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => onNewChatFromHere(index) } >
                     <ChevronRight className="w-4 h-4 mr-2" />
@@ -568,6 +574,12 @@ export default function MessageAndInput({
     } 
   };
 
+  const handleOnRewindHere = async (index: number) => {
+    const m = await saveChat(messages.slice(0, index +1), character)
+    setMessagesState(m.messages)
+    window.location.reload()
+  }
+
   return (
     <div className="flex flex-col h-full relative max-w-full overflow-x-hidden">
       <style jsx global>{`
@@ -670,6 +682,7 @@ export default function MessageAndInput({
                     currentRegenerationIndex={currentRegenerationIndex}
                     onGoBackRegenerate={handleOnGoBackRegenerate}
                     onNewChatFromHere={handleNewChatFromHere}
+                    onRewindHere={handleOnRewindHere}
                   />
                 ))}
               </>
