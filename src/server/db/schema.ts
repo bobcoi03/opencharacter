@@ -150,6 +150,7 @@ export const chat_sessions = sqliteTable("chat_session", {
     .$defaultFn(() => sql`CURRENT_TIMESTAMP`),
 }, (table) => ({
   userCharacterIndex: index('user_character_idx').on(table.user_id, table.character_id),
+  
 }));
 
 export const rooms = sqliteTable("room", {
