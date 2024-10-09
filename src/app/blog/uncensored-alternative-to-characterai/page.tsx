@@ -4,7 +4,7 @@ export const runtime = "edge"
 
 export default function UncensoredAlternativeBlogPage() {
     return (
-        <div className="md:ml-16 bg-neutral-900 text-white p-6 rounded-lg mx-auto flex flex-col gap-12">
+        <div className="md:ml-16 bg-neutral-900 text-white p-6 rounded-lg mx-auto flex flex-col gap-12 mb-24">
 
             <div className='gap-6 flex flex-col text-center mx-auto'>
                 <p className="text-xs mb-4 text-center">Published on October 9th, 2024</p>
