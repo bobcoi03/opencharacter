@@ -34,6 +34,9 @@ export default async function Page() {
         <Link href={"/about"}>
           About 
         </Link>
+        <Link href={"/blog"}>
+          Blog
+        </Link>
         <Link href={"/privacy-policy"}>
           Privacy Policy         
         </Link>
