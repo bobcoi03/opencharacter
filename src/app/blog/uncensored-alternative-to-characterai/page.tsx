@@ -18,7 +18,7 @@ export default function UncensoredAlternativeBlogPage() {
                     controls
                     preload="metadata"
                 >
-                    <source src="/opencharacter_short.mp4" type="video/mp4" />
+                    <source src="https://random-stuff-everythingcompany.s3.us-west-1.amazonaws.com/opencharacter_short.mp4" type="video/mp4" />
                     Your browser does not support the video tag.
                 </video>
                 <p className="mt-4 text-sm italic text-center max-w-2xl">
