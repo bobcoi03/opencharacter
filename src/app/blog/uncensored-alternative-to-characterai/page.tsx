@@ -9,14 +9,14 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Introducing OpenCharacter',
     description: 'Open source, uncensored, maximum customizability alternative to c.ai',
-    images: [{ url: '/c.ai-preview.png' }],
+    images: [{ url: 'https://opencharacter.org/c.ai-preview.png' }],
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Introducing OpenCharacter',
     description: 'Open source, uncensored, maximum customizability alternative to c.ai',
-    images: ['/c.ai-preview.png'],
+    images: ['https://opencharacter.org/c.ai-preview.png'],
     creator: '@justwrapapi',
   },
 };
