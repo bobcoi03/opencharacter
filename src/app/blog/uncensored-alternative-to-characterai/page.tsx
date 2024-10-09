@@ -22,7 +22,7 @@ export default function UncensoredAlternativeBlogPage() {
                     Your browser does not support the video tag.
                 </video>
                 <p className="mt-4 text-sm italic text-center max-w-2xl">
-                "The only way to deal with an unfree world is to become so absolutely free that your very existence is an act of rebellion." - Albert Camus                </p>
+                &mdash; The only way to deal with an unfree world is to become so absolutely free that your very existence is an act of rebellion. &mdash; Albert Camus                </p>
             </div>
         </div>
     )
