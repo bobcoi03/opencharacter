@@ -30,6 +30,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import AuthProvider from "./auth-provider";
+import Image from "next/image";
 
 type Character = {
   id: string;
@@ -152,8 +153,12 @@ const NewSidebarContent: React.FC<NewSidebarProps> = ({ search }) => {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <div className="flex items-center space-x-2 cursor-pointer">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-black via-black to-purple-300 flex items-center justify-center text-md text-white font-semibold">
-                      <span>{session?.user?.name?.charAt(0)}</span>
+                    <div className="w-8 h-8 rounded-full overflow-hidden">
+                      <img
+                        src={session?.user?.image || '/default-avatar.jpg'}
+                        alt="User Avatar"
+                        className="w-full h-full object-cover"
+                      />
                     </div>
                   </div>
                 </DropdownMenuTrigger>

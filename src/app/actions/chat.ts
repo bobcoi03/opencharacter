@@ -125,7 +125,6 @@ export async function createChatSession(
       })
       .returning({ id: chat_sessions.id });
 
-    console.log(`Created new chat session: ${newSession[0].id}`);
     return newSession[0].id;
   } catch (error) {
     console.error("Error creating chat session:", error);
@@ -202,8 +201,6 @@ export async function continueConversation(
       content: `${messages[0].content}\n\n${personaInfo}`,
     };
   }
-
-  console.log("messages: " + messages[0]);
 
   try {
     // Update character interaction count

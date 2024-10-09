@@ -5,6 +5,7 @@ import { personas } from "@/server/db/schema";
 import { auth } from "@/server/auth";
 import { revalidatePath } from "next/cache";
 import { eq, and } from "drizzle-orm";
+import { uploadToR2 } from "@/lib/r2_storage";
 
 export async function CreatePersona(formData: FormData) {
     const session = await auth();
@@ -15,6 +16,7 @@ export async function CreatePersona(formData: FormData) {
     const displayName = formData.get("displayName") as string;
     const background = formData.get("background") as string;
     const isDefault = formData.get("isDefault") === "on";
+    const avatarFile = formData.get("avatar") as File | null;
 
     // Validate input
     if (!displayName || displayName.length > 20) {
@@ -25,6 +27,12 @@ export async function CreatePersona(formData: FormData) {
     }
 
     try {
+        // Upload avatar if provided
+        let avatarImageUrl = null;
+        if (avatarFile && avatarFile.size > 0) {
+            avatarImageUrl = await uploadToR2(avatarFile);
+        }
+
         // If this persona is set as default, unset any existing default
         if (isDefault) {
             await db.update(personas)
@@ -38,6 +46,7 @@ export async function CreatePersona(formData: FormData) {
             displayName,
             background,
             isDefault,
+            image: avatarImageUrl, // Add the image URL to the persona
         }).returning().get();
 
         // Revalidate the profile page to show the new persona
@@ -60,6 +69,7 @@ export async function updatePersona(formData: FormData) {
     const displayName = formData.get("displayName") as string;
     const background = formData.get("background") as string;
     const isDefault = formData.get("isDefault") === "on";
+    const avatarFile = formData.get("avatar") as File | null;
 
     // Validate input
     if (!personaId) {
@@ -69,7 +79,7 @@ export async function updatePersona(formData: FormData) {
         throw new Error("Display name is required and must be 20 characters or less.");
     }
     if (!background || background.length > 1456) {
-        throw new Error("Background is required and must be 728 characters or less.");
+        throw new Error("Background is required and must be 1456 characters or less.");
     }
 
     try {
@@ -92,12 +102,19 @@ export async function updatePersona(formData: FormData) {
                 .where(eq(personas.userId, session.user.id!));
         }
 
+        // Upload avatar if provided
+        let avatarImageUrl = existingPersona.image;
+        if (avatarFile && avatarFile.size > 0) {
+            avatarImageUrl = await uploadToR2(avatarFile);
+        }
+
         // Update the persona
         const updatedPersona = await db.update(personas)
             .set({
                 displayName,
                 background,
                 isDefault,
+                image: avatarImageUrl,
             })
             .where(eq(personas.id, personaId))
             .returning()

@@ -217,9 +217,13 @@ export default function EllipsisButton({ character, made_by_username }: { charac
                         onClick={() => handleSetDefaultPersona(persona)}
                       >
                         <div className="flex items-center space-x-3 min-w-0">
-                          <div className="w-8 h-8 rounded-full flex items-center justify-center text-lg font-bold bg-gradient-to-br from-black via-black to-purple-300">
-                            {persona.displayName[0]}
-                          </div>
+                          {persona.image ? (
+                            <img src={persona.image} alt={persona.displayName} className="w-8 h-8 rounded-full" />
+                          ) : (
+                            <div className="w-8 h-8 rounded-full flex items-center justify-center text-lg font-bold bg-gradient-to-br from-black via-black to-purple-300">
+                              {persona.displayName[0]}
+                            </div>
+                          )}
                           <div className="min-w-0 flex-1">
                             <h2 className="font-semibold flex items-center text-sm">
                               <span className="truncate">{persona.displayName}</span>

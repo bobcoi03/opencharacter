@@ -57,6 +57,20 @@
       "when": 1727390877192,
       "tag": "0007_big_wendell_vaughn",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1728489520051,
+      "tag": "0008_parallel_firedrake",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1728491507744,
+      "tag": "0009_sad_invisible_woman",
+      "breakpoints": true
     }
   ]
 }

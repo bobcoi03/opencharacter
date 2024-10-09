@@ -1,0 +1,1 @@
+ALTER TABLE `persona` ADD `image` text;

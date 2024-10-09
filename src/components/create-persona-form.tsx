@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { Clock, Repeat2, Loader2 } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Clock, Repeat2, Loader2, Camera } from 'lucide-react';
 import { CreatePersona, updatePersona } from "@/app/actions/index"
 import { useRouter } from 'next/navigation';
 import { personas } from '@/server/db/schema';
@@ -15,18 +15,32 @@ export default function CreatePersonaForm({ edit = false, persona }: CreatePerso
     const [displayName, setDisplayName] = useState(persona?.displayName || '');
     const [background, setBackground] = useState(persona?.background || '');
     const [isDefault, setIsDefault] = useState(persona?.isDefault || false);
+    const [avatarPreview, setAvatarPreview] = useState<string | null>(persona?.image || null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(false);
     const router = useRouter()
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         if (persona) {
             setDisplayName(persona.displayName);
             setBackground(persona.background);
             setIsDefault(persona.isDefault);
+            setAvatarPreview(persona.image || null);
         }
     }, [persona]);
+
+    const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setAvatarPreview(reader.result as string);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -39,6 +53,10 @@ export default function CreatePersonaForm({ edit = false, persona }: CreatePerso
         formData.append('background', background);
         formData.append('isDefault', isDefault ? 'on' : 'off');
 
+        if (fileInputRef.current?.files?.[0]) {
+            formData.append('avatar', fileInputRef.current.files[0]);
+        }
+
         if (edit && persona) {
             formData.append('personaId', persona.id);
         }
@@ -50,7 +68,7 @@ export default function CreatePersonaForm({ edit = false, persona }: CreatePerso
 
             if (result.success) {
                 setSuccess(true);
-                router.push(`/profile/persona?t=${new Date()}`)
+                router.push(`/profile/persona?t=${new Date().getTime()}`);
             } else {
                 setError(result.error || 'An unexpected error occurred');
             }
@@ -62,7 +80,32 @@ export default function CreatePersonaForm({ edit = false, persona }: CreatePerso
     };
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4" encType="multipart/form-data">
+            <div className="flex justify-center mb-6">
+                <div 
+                    className="relative w-24 h-24 cursor-pointer"
+                    onClick={() => fileInputRef.current?.click()}
+                >
+                    <div className="w-full h-full rounded-full overflow-hidden">
+                        <img
+                            src={avatarPreview || '/default-avatar.jpg'}
+                            alt="Persona Avatar"
+                            className="w-full h-full object-cover"
+                        />
+                    </div>
+                    <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center rounded-full opacity-0 hover:opacity-100 transition-opacity">
+                        <Camera className="w-8 h-8 text-white" />
+                    </div>
+                </div>
+                <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarChange}
+                    ref={fileInputRef}
+                    className="hidden"
+                />
+            </div>
+
             <div className="bg-neutral-800 rounded-lg p-4">
                 <div className="flex items-start mb-4">
                     <Clock className="w-6 h-6 mr-2 text-neutral-400" />

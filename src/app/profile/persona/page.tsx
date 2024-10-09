@@ -1,5 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { MoreVertical } from 'lucide-react';
 import { auth } from '@/server/auth';
 import { db } from '@/server/db';
@@ -26,9 +27,21 @@ export default async function PersonaPage() {
                 {userPersonas.map((persona) => (
                     <Link key={persona.id} href={`/profile/persona/${persona.id}/edit`} className="flex items-center justify-between hover:cursor-pointer hover:bg-neutral-800 p-2 hover:rounded-xl">
                         <div className="flex items-center space-x-3 min-w-0">
-                            <div className="w-8 h-8 rounded-full flex items-center justify-center text-lg font-bold bg-gradient-to-br from-black via-black to-purple-300">
-                                {persona.displayName[0]}
-                            </div>
+                            {persona.image ? (
+                                <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
+                                    <Image
+                                        src={persona.image}
+                                        alt={persona.displayName}
+                                        width={32}
+                                        height={32}
+                                        className="w-full h-full object-cover"
+                                    />
+                                </div>
+                            ) : (
+                                <div className="w-8 h-8 rounded-full flex items-center justify-center text-lg font-bold bg-gradient-to-br from-black via-black to-purple-300 flex-shrink-0">
+                                    {persona.displayName[0]}
+                                </div>
+                            )}
                             <div className="min-w-0 flex-1">
                                 <h2 className="font-semibold flex items-center text-sm">
                                     <span className="truncate">{persona.displayName}</span>
@@ -39,9 +52,6 @@ export default async function PersonaPage() {
                                 <p className="text-xs text-neutral-400 truncate">{persona.background}</p>
                             </div>
                         </div>
-                        <button className="text-neutral-400 flex-shrink-0 ml-2">
-                            <MoreVertical className="w-5 h-5" />
-                        </button>
                     </Link>
                 ))}
             </div>

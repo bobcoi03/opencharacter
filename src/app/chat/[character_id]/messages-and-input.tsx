@@ -59,6 +59,7 @@ function Renegerate() {
 }
 
 interface MessageContentProps {
+  userImage?: string | undefined | null;
   message: CoreMessage;
   index: number;
   isUser: boolean;
@@ -91,6 +92,7 @@ const UserAvatar = ({ userName }: { userName: string }) => {
 };
 
 const MessageContent: React.FC<MessageContentProps> = ({
+  userImage,
   message,
   index,
   isUser,
@@ -182,9 +184,13 @@ const MessageContent: React.FC<MessageContentProps> = ({
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
-        <div className="w-10 h-10 rounded-full mr-4 flex-shrink-0">
+        <div className="w-10 h-10 rounded-full mr-4 flex-shrink-0 overflow-hidden">
           {isUser ? (
-            <UserAvatar userName={userName ?? "Guest"} />
+            <img 
+              src={userImage ?? "/default-avatar.jpg"} 
+              alt={userName ?? "Guest"} 
+              className="w-full h-full rounded-full object-cover"
+            />          
           ) : (
             <Image
               src={characterAvatarUrl || "/default-avatar.jpg"}
@@ -508,7 +514,6 @@ export default function MessageAndInput({
         character,
         chat_session,
       );
-      console.log("result: " + JSON.stringify(result));
       if ("error" in result) {
         setError(true);
         return;
@@ -652,6 +657,7 @@ export default function MessageAndInput({
               <>
                 {messagesState.slice(1).map((m, i) => (
                   <MessageContent
+                    userImage={persona?.image || user?.image}
                     key={i}
                     message={m}
                     index={i + 1}

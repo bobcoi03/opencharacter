@@ -10,6 +10,7 @@ export const users = sqliteTable("user", {
   email: text("email").unique(),
   emailVerified: integer("emailVerified", { mode: "timestamp_ms" }),
   image: text("image"),
+  bio: text("bio")
 })
  
 export const accounts = sqliteTable(
@@ -238,4 +239,5 @@ export const personas = sqliteTable("persona", {
   updatedAt: integer("updatedAt", { mode: "timestamp_ms" })
     .notNull()
     .$defaultFn(() => sql`CURRENT_TIMESTAMP`),
+  image: text("image")
 });
