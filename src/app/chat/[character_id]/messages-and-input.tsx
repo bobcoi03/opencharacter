@@ -206,12 +206,10 @@ const MessageContent: React.FC<MessageContentProps> = ({
                 className={`w-full h-full object-cover ${roundedStyle}`}
               />          
             ) : (
-              <Image
+              <img
                 src={characterAvatarUrl || "/default-avatar.jpg"}
                 alt={characterName}
-                width={iconSize}
-                height={iconSize}
-                className={`object-cover ${roundedStyle}`}
+                className={`w-full h-full object-cover ${roundedStyle}`}
               />
             )}
           </div>
