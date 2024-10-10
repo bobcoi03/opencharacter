@@ -226,3 +226,38 @@ export async function setDefaultPersona(personaId: string): Promise<SetDefaultPe
         return { success: false, error: "Failed to set default persona. Please try again." };
     }
 }
+
+export async function deletePersona(personaId: string) {
+    // Step 1: Authenticate the user
+    const session = await auth();
+    if (!session?.user) {
+        return { success: false, error: "You must be logged in to delete a persona." };
+    }
+
+    try {
+        // Step 2: Find the persona and verify ownership
+        const personaToDelete = await db.query.personas.findFirst({
+            where: and(
+                eq(personas.id, personaId),
+                eq(personas.userId, session.user.id!)
+            ),
+        });
+
+        if (!personaToDelete) {
+            return { success: false, error: "Persona not found or you don't have permission to delete it." };
+        }
+
+        // Step 3: Delete the persona
+        await db.delete(personas).where(eq(personas.id, personaId));
+
+        // Step 5: Revalidate the profile page
+        revalidatePath("/profile/persona");
+
+        // Step 6: Return success result
+        return { success: true, message: "Persona deleted successfully." };
+    } catch (error) {
+        // Step 4: Handle any errors
+        console.error("Failed to delete persona:", error);
+        return { success: false, error: "Failed to delete persona. Please try again." };
+    }
+}

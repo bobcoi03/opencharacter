@@ -399,5 +399,34 @@ export async function getAllConversationsByCharacter(character_id: string) {
     orderBy: [desc(chat_sessions.updated_at)],
   });
 
-  return conversations;
+  return conversations as typeof chat_sessions.$inferSelect[];
+}
+
+export async function deleteChatSession(chatSessionId: string) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return { success: false, error: "User not authenticated" };
+  }
+
+  try {
+    // Check if the chat session exists and belongs to the user
+    const chatSession = await db.query.chat_sessions.findFirst({
+      where: and(
+        eq(chat_sessions.id, chatSessionId),
+        eq(chat_sessions.user_id, session.user.id)
+      ),
+    });
+
+    if (!chatSession) {
+      return { success: false, error: "Chat session not found or you don't have permission to delete it" };
+    }
+
+    // Delete the chat session
+    await db.delete(chat_sessions).where(eq(chat_sessions.id, chatSessionId));
+
+    return { success: true, message: "Chat session deleted successfully" };
+  } catch (error) {
+    console.error("Failed to delete chat session:", error);
+    return { success: false, error: "Failed to delete chat session. Please try again." };
+  }
 }

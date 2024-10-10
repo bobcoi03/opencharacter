@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Ellipsis, Share, Flag, Edit, MessageSquarePlus, UserPlus, MoreVertical } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import Image from 'next/image';
 import { Button } from "@/components/ui/button";
-import { characters } from '@/server/db/schema';
+import { characters, chat_sessions } from '@/server/db/schema';
 import { format } from 'date-fns';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -20,11 +20,12 @@ import {
 } from "@/components/ui/dialog";
 import { personas as PersonaType } from '@/server/db/schema';
 import { toast, useToast } from "@/hooks/use-toast"
+import ChatSessionDeleteButton from './chat-session-delete-button';
 
 export default function EllipsisButton({ character, made_by_username }: { character: typeof characters.$inferSelect, made_by_username: string }) {
   const [shareMessage, setShareMessage] = useState('');
   const [isCreatingSession, setIsCreatingSession] = useState(false);
-  const [conversations, setConversations] = useState<any[]>([]);
+  const [conversations, setConversations] = useState<typeof chat_sessions.$inferSelect[]>([]);
   const [personas, setPersonas] = useState<typeof PersonaType.$inferSelect[]>([]);
   const [defaultPersona, setDefaultPersonaState] = useState<typeof PersonaType.$inferSelect | null>(null);
   const [isLoadingPersonas, setIsLoadingPersonas] = useState(false);
@@ -39,10 +40,6 @@ export default function EllipsisButton({ character, made_by_username }: { charac
     fetchConversations();
     fetchDefaultPersona();
   }, [character.id]);
-
-  useEffect(() => {
-    console.log(conversations)
-  }, [conversations])
 
   const fetchDefaultPersona = async () => {
     const result = await getDefaultPersona();
@@ -126,6 +123,16 @@ export default function EllipsisButton({ character, made_by_username }: { charac
       setIsSettingDefault(false);
     }
   };
+
+  const handleDeleteSuccess = useCallback((deletedSessionId: string) => {
+    setConversations(prevConversations => 
+      prevConversations.filter(conversation => conversation.id !== deletedSessionId)
+    );
+    toast({
+      title: "Chat session deleted",
+      description: "The chat session has been successfully deleted.",
+    });
+  }, []);
 
   return (
     <Sheet>
@@ -256,9 +263,16 @@ export default function EllipsisButton({ character, made_by_username }: { charac
               const latestMessage = conversation.messages[conversation.messages.length - 1];
               return (
                 <div key={conversation.id} className="mb-4 p-3 bg-neutral-700 rounded-lg">
-                  <p className="text-sm text-gray-400">
-                    {format(new Date(conversation.last_message_timestamp), 'MMM d, yyyy')}
-                  </p>
+                  <div className='w-full flex justify-between items-center'>
+                    <p className="text-sm text-gray-400">
+                      {format(new Date(conversation.last_message_timestamp), 'MMM d, yyyy')}
+                    </p>
+                    <ChatSessionDeleteButton 
+                      chatSession={conversation} 
+                      onDeleteSuccess={() => handleDeleteSuccess(conversation.id)}
+                    />
+                  </div>
+
                   <p className="text-sm font-medium text-white mt-1">
                     {latestMessage.role === 'assistant' ? character.name : 'You'}: {latestMessage.content}
                   </p>

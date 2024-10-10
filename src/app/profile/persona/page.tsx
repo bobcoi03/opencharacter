@@ -1,11 +1,11 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { MoreVertical } from 'lucide-react';
 import { auth } from '@/server/auth';
 import { db } from '@/server/db';
 import { personas } from '@/server/db/schema';
 import { eq } from 'drizzle-orm';
+import PersonaOptions from '@/components/persona-options';
 
 export const runtime = "edge"
 
@@ -25,8 +25,8 @@ export default async function PersonaPage() {
         <div className="bg-neutral-900 text-white w-full mx-auto mb-24">
             <div className="space-y-4 mb-6">
                 {userPersonas.map((persona) => (
-                    <Link key={persona.id} href={`/profile/persona/${persona.id}/edit`} className="flex items-center justify-between hover:cursor-pointer hover:bg-neutral-800 p-2 hover:rounded-xl">
-                        <div className="flex items-center space-x-3 min-w-0">
+                    <div key={persona.id} className="flex items-center justify-between hover:bg-neutral-800 p-2 hover:rounded-xl">
+                        <Link href={`/profile/persona/${persona.id}/edit`} className="flex items-center space-x-3 min-w-0 flex-grow">
                             {persona.image ? (
                                 <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
                                     <Image
@@ -51,8 +51,9 @@ export default async function PersonaPage() {
                                 </h2>
                                 <p className="text-xs text-neutral-400 truncate">{persona.background}</p>
                             </div>
-                        </div>
-                    </Link>
+                        </Link>
+                        <PersonaOptions persona={persona} />
+                    </div>
                 ))}
             </div>
 
