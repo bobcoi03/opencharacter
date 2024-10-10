@@ -98,7 +98,7 @@ const PersonaOptions: React.FC<PersonaOptionsProps> = ({ persona }) => {
                   <AlertDialogTitle>Are you sure you want to delete this persona?</AlertDialogTitle>
                   <AlertDialogDescription>
                     This action cannot be undone. This will permanently delete the persona
-                    "{persona.displayName}" and remove all associated data.
+                    {persona.displayName} and remove all associated data.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter className="flex flex-col space-y-2 sm:flex-row sm:justify-between sm:space-y-0 sm:space-x-2">
