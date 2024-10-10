@@ -115,6 +115,17 @@ const MessageContent: React.FC<MessageContentProps> = ({
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(message.content as string);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [iconStyle, setIconStyle] = useState('circle');
+  const [iconSize, setIconSize] = useState(40);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setIconStyle(localStorage.getItem('character_icon_style') || 'circle');
+      setIconSize(parseInt(localStorage.getItem('character_icon_size') || '40', 10));
+    }
+  }, []);
+
+  const roundedStyle = iconStyle === 'circle' ? 'rounded-full' : 'rounded-lg';
 
   const markdownComponents: Partial<Components> = {
     p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
@@ -184,23 +195,26 @@ const MessageContent: React.FC<MessageContentProps> = ({
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
-        <div className="w-10 h-10 rounded-full mr-4 flex-shrink-0 overflow-hidden">
-          {isUser ? (
-            <img 
-              src={userImage ?? "/default-avatar.jpg"} 
-              alt={userName ?? "Guest"} 
-              className="w-full h-full rounded-full object-cover"
-            />          
-          ) : (
-            <Image
-              src={characterAvatarUrl || "/default-avatar.jpg"}
-              alt={characterName}
-              width={24}
-              height={24}
-              className="rounded-full w-full h-full object-cover"
-            />
-          )}
-        </div>
+        <div 
+            className={`mr-4 flex-shrink-0 overflow-hidden ${roundedStyle}`}
+            style={{ width: `${iconSize}px`, height: `${iconSize}px` }}
+          >
+            {isUser ? (
+              <img 
+                src={userImage ?? "/default-avatar.jpg"} 
+                alt={userName ?? "Guest"} 
+                className={`w-full h-full object-cover ${roundedStyle}`}
+              />          
+            ) : (
+              <Image
+                src={characterAvatarUrl || "/default-avatar.jpg"}
+                alt={characterName}
+                width={iconSize}
+                height={iconSize}
+                className={`object-cover ${roundedStyle}`}
+              />
+            )}
+          </div>
         <div className="flex flex-col max-w-full flex-grow">
           <div className="flex justify-between items-center mb-2">
             <span className="text-xs text-neutral-400">

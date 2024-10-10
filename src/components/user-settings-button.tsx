@@ -1,11 +1,12 @@
 "use client"
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Settings, User, Sliders } from 'lucide-react';
+import { Settings, User, Sliders, Circle, Square } from 'lucide-react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Slider } from '@/components/ui/slider';
 import { users } from '@/server/db/schema';
 import Image from 'next/image';
 import { saveUser } from '@/app/actions/index';
@@ -22,9 +23,33 @@ const SettingsButton = ({ user }: SettingsButtonProps) => {
   const [previewImage, setPreviewImage] = useState<string | null>(user.image);
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [characterIcon, setCharacterIcon] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('character_icon_style') || 'circle';
+    }
+    return 'circle';
+  });
+  const [iconSize, setIconSize] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return parseInt(localStorage.getItem('character_icon_size') || '40', 10);
+    }
+    return 40;
+  });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
   const bioInputRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (characterIcon === 'square') {
+      localStorage.setItem('character_icon_style', 'square');
+    } else {
+      localStorage.removeItem('character_icon_style');
+    }
+  }, [characterIcon]);
+
+  useEffect(() => {
+    localStorage.setItem('character_icon_size', iconSize.toString());
+  }, [iconSize]);
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -44,6 +69,8 @@ const SettingsButton = ({ user }: SettingsButtonProps) => {
     const formData = new FormData();
     formData.append("name", nameInputRef.current?.value || "");
     formData.append("bio", bioInputRef.current?.value || "");
+    formData.append("characterIcon", characterIcon);
+    formData.append("iconSize", iconSize.toString());
     
     if (fileInputRef.current?.files?.[0]) {
       formData.append("avatar", fileInputRef.current.files[0]);
@@ -78,11 +105,11 @@ const SettingsButton = ({ user }: SettingsButtonProps) => {
       </Button>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="sm:max-w-[800px] bg-neutral-900 text-white p-0 rounded-xl overflow-hidden max-h-[90vh] flex flex-col">
+        <DialogContent className="sm:max-w-[800px] bg-neutral-900 text-white p-0 rounded-xl overflow-hidden max-h-[90vh] flex flex-col min-h-[70vh]">
           <div className="flex flex-col sm:flex-row flex-grow overflow-hidden">
             <div className="sm:w-1/4 bg-neutral-800 p-4 flex flex-row sm:flex-col justify-between sm:justify-start">
               <nav className="flex flex-row sm:flex-col gap-2 sm:gap-0">
-                {['Profile'].map((tab) => (
+                {['Profile', 'Preferences'].map((tab) => (
                   <Button
                     key={tab}
                     variant="ghost"
@@ -90,6 +117,7 @@ const SettingsButton = ({ user }: SettingsButtonProps) => {
                     onClick={() => setActiveTab(tab)}
                   >
                     {tab === 'Profile' && <User className="mr-2 h-4 w-4" />}
+                    {tab === 'Preferences' && <Sliders className="mr-2 h-4 w-4" />}
                     {tab}
                   </Button>
                 ))}
@@ -142,10 +170,59 @@ const SettingsButton = ({ user }: SettingsButtonProps) => {
                       placeholder='Bio max 500 characters'
                     />
                   </div>
-                  {errorMessage && (
-                    <div className="text-red-500 mt-2">{errorMessage}</div>
-                  )}
                 </div>
+              )}
+              {activeTab === 'Preferences' && (
+                <div className="space-y-6">
+                  <div>
+                    <label className="block mb-2">Character Icon</label>
+                    <div className="flex gap-4">
+                      <Button
+                        variant={characterIcon === 'circle' ? 'default' : 'outline'}
+                        className="rounded-xl flex items-center gap-2"
+                        onClick={() => setCharacterIcon('circle')}
+                      >
+                        <Circle className="h-4 w-4" />
+                        Circle
+                      </Button>
+                      <Button
+                        variant={characterIcon === 'square' ? 'default' : 'outline'}
+                        className="rounded-xl flex items-center gap-2"
+                        onClick={() => setCharacterIcon('square')}
+                      >
+                        <Square className="h-4 w-4" />
+                        Square
+                      </Button>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block mb-2">Icon Size</label>
+                    <Slider
+                      min={24}
+                      max={64}
+                      step={1}
+                      value={[iconSize]}
+                      onValueChange={(value) => setIconSize(value[0])}
+                      className="w-full"
+                    />
+                    <div className="text-sm text-neutral-400 mt-1">{iconSize}px</div>
+                  </div>
+                  <div className="flex items-center justify-center">
+                    <div 
+                      className={`overflow-hidden ${characterIcon === 'circle' ? 'rounded-full' : 'rounded-lg'}`}
+                      style={{ width: `${iconSize}px`, height: `${iconSize}px` }}
+                    >
+                      <img
+                        src={previewImage ?? '/default-avatar.jpg'}
+                        alt={user.name ?? 'User'}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+              {errorMessage && (
+                <div className="text-red-500 mt-2">{errorMessage}</div>
               )}
             </div>
           </div>
@@ -159,14 +236,19 @@ const SettingsButton = ({ user }: SettingsButtonProps) => {
               Join Discord
             </Button>
             <div className="flex gap-2">
-              <Button variant="ghost" onClick={() => setIsOpen(false)} disabled={isSaving}>Cancel</Button>
-              <Button 
-                onClick={handleSave} 
-                className="rounded-xl bg-white text-black hover:bg-neutral-200"
-                disabled={isSaving}
-              >
-                {isSaving ? 'Saving...' : 'Save'}
-              </Button>
+            {activeTab == "Profile" && 
+                <>
+                <Button variant="ghost" onClick={() => setIsOpen(false)} disabled={isSaving}>Cancel</Button>
+                <Button 
+                    onClick={handleSave} 
+                    className="rounded-xl bg-white text-black hover:bg-neutral-200"
+                    disabled={isSaving}
+                >
+                    {isSaving ? 'Saving...' : 'Save'}
+                </Button>
+                </>
+            }
+              
             </div>
           </div>
         </DialogContent>
