@@ -826,6 +826,15 @@ export default function MessageAndInput({
 
         </div>
       </div>
+
+      <Link 
+        className="fixed bottom-0 text-center left-0 right-0 text-[9px] text-light text-slate-200 underline" 
+        href={"https://buymeacoffee.com/luongquangn"}
+        target="_blank"
+      >
+        If you like the site, consider donating
+      </Link>
+
     </div>
   );
 }
