@@ -105,7 +105,7 @@ const SettingsButton = ({ user }: SettingsButtonProps) => {
       </Button>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="sm:max-w-[800px] bg-neutral-900 text-white p-0 rounded-xl overflow-hidden max-h-[90vh] flex flex-col min-h-[70vh]">
+        <DialogContent className="sm:max-w-[800px] bg-neutral-900 text-white p-0 rounded-xl overflow-hidden max-h-[90vh] flex flex-col min-h-[30vh] z-[9999]">
           <div className="flex flex-col sm:flex-row flex-grow overflow-hidden">
             <div className="sm:w-1/4 bg-neutral-800 p-4 flex flex-row sm:flex-col justify-between sm:justify-start">
               <nav className="flex flex-row sm:flex-col gap-2 sm:gap-0">
@@ -126,8 +126,8 @@ const SettingsButton = ({ user }: SettingsButtonProps) => {
             <div className="flex-grow p-6 bg-neutral-900 overflow-y-auto">
               <h2 className="text-2xl font-bold mb-6">{activeTab}</h2>
               {activeTab === 'Profile' && (
-                <div className="space-y-4">
-                  <div className="flex justify-center mb-6">
+                <div className="space-y-2">
+                  <div className="flex justify-center mb-2">
                     <div 
                       className="relative w-32 h-32 cursor-pointer"
                       onClick={() => fileInputRef.current?.click()}
