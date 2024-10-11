@@ -483,6 +483,7 @@ export default function MessageAndInput({
     if (savedModel) {
       setSelectedModel(savedModel);
     }
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messagesState]);
 
   
