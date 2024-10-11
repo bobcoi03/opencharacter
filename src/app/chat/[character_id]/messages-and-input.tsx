@@ -1,7 +1,7 @@
 "use client";
 
 import { type CoreMessage } from "ai";
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { readStreamableValue } from "ai/rsc";
 import { continueConversation } from "@/app/actions/chat";
 import { saveChat, createChatSession } from "@/app/actions/index";
@@ -384,7 +384,7 @@ export default function MessageAndInput({
   const [currentRegenerationIndex, setCurrentRegenerationIndex] = useState(0);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setInput(e.target.value);
+    setInput(e.target.value)
     adjustTextareaHeight();
   };
 
@@ -484,9 +484,8 @@ export default function MessageAndInput({
       setSelectedModel(savedModel);
     }
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    console.log("len: ", messagesState.length)
   }, [messagesState]);
-
-  
 
   const handleInputFocus = () => {
     if (!user) {
@@ -603,6 +602,61 @@ export default function MessageAndInput({
     window.location.reload()
   }
 
+  const memoizedMessageList = useMemo(() => {
+    if (messagesState.length <= 1) return null;
+
+    return messagesState.slice(1).map((m, i) => (
+      <MessageContent
+        key={`${m.role}-${i}`} // Using a more unique key
+        userImage={persona?.image || user?.image}
+        message={m}
+        index={i + 1}
+        isUser={m.role === "user"}
+        userName={persona?.displayName ?? user?.name ?? "Guest"}
+        characterName={character.name}
+        characterAvatarUrl={character.avatar_image_url}
+        isError={error && i === messagesState.length - 2}
+        onRetry={
+          m.role === "assistant" &&
+          i === messagesState.length - 2 &&
+          messagesState.length > 2 &&
+          !isLoading
+            ? handleRetry
+            : undefined
+        }
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        regenerations={
+          m.role === "assistant" &&
+          i === messagesState.length - 2 &&
+          messagesState.length > 2 &&
+          !isLoading
+            ? regenerations.length
+            : 0
+        }
+        currentRegenerationIndex={currentRegenerationIndex}
+        onGoBackRegenerate={handleOnGoBackRegenerate}
+        onNewChatFromHere={handleNewChatFromHere}
+        onRewindHere={handleOnRewindHere}
+      />
+    ));
+  }, [
+    messagesState,
+    persona,
+    user,
+    character,
+    error,
+    isLoading,
+    regenerations.length,
+    currentRegenerationIndex,
+    handleRetry,
+    handleEdit,
+    handleDelete,
+    handleOnGoBackRegenerate,
+    handleNewChatFromHere,
+    handleOnRewindHere
+  ]);
+
   return (
     <div className="flex flex-col h-full relative max-w-full overflow-x-hidden">
       <style jsx global>{`
@@ -671,46 +725,7 @@ export default function MessageAndInput({
           </div>
 
           <div className="pb-32 max-w-2xl mx-auto px-2">
-            {messagesState.length > 1 && (
-              <>
-                {messagesState.slice(1).map((m, i) => (
-                  <MessageContent
-                    userImage={persona?.image || user?.image}
-                    key={i}
-                    message={m}
-                    index={i + 1}
-                    isUser={m.role === "user"}
-                    userName={persona?.displayName ?? user?.name ?? "Guest"}
-                    characterName={character.name}
-                    characterAvatarUrl={character.avatar_image_url}
-                    isError={error && i === messagesState.length - 2}
-                    onRetry={
-                      m.role === "assistant" &&
-                      i === messagesState.length - 2 &&
-                      messagesState.length > 2 &&
-                      !isLoading
-                        ? handleRetry
-                        : undefined
-                    }
-                    onEdit={handleEdit}
-                    onDelete={handleDelete}
-                    regenerations={
-                      m.role === "assistant" &&
-                      i === messagesState.length - 2 &&
-                      messagesState.length > 2 &&
-                      !isLoading ?
-                        regenerations.length
-                         :
-                        0
-                    }
-                    currentRegenerationIndex={currentRegenerationIndex}
-                    onGoBackRegenerate={handleOnGoBackRegenerate}
-                    onNewChatFromHere={handleNewChatFromHere}
-                    onRewindHere={handleOnRewindHere}
-                  />
-                ))}
-              </>
-            )}
+            {memoizedMessageList}
             <div ref={messagesEndRef} />
           </div>
         </div>
