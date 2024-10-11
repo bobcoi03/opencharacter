@@ -471,16 +471,21 @@ export default function MessageAndInput({
   };
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    messagesEndRef.current?.scrollIntoView({ behavior: "instant" });
   };
+
+  useEffect(() => {
+    scrollToBottom()
+  }, [])
 
   useEffect(() => {
     const savedModel = localStorage.getItem("selectedModel");
     if (savedModel) {
       setSelectedModel(savedModel);
     }
-    scrollToBottom();
   }, [messagesState]);
+
+  
 
   const handleInputFocus = () => {
     if (!user) {
