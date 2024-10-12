@@ -334,8 +334,13 @@ export default async function ChatPage({
   }
 
   let madeByUsername = "anon";
-  if (character.userId === session?.user?.id) {
-    madeByUsername = "you";
+  if (character.userId) {
+    // Fetch the username of the character creator
+    const characterCreator = await db.query.users.findFirst({
+      where: eq(users.id, character.userId),
+      columns: { name: true }
+    });
+    madeByUsername = characterCreator?.name ?? "anon";
   }
 
   return (
