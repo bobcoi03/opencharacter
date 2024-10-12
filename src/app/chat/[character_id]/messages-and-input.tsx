@@ -44,20 +44,6 @@ import { useRouter } from "next/navigation";
 
 const MAX_TEXTAREA_HEIGHT = 450; // maximum height in pixels
 
-function Renegerate() {
-  return (
-    <div className="flex items-center justify-center space-x-2 mt-2">
-      <button className="p-1 rounded-full bg-gray-700 disabled:opacity-50">
-        <ChevronLeft className="w-4 h-4" />
-      </button>
-      <span className="text-sm text-gray-400">1</span>
-      <button className="p-1 rounded-full bg-gray-700 disabled:opacity-50">
-        <ChevronRight className="w-4 h-4" />
-      </button>
-    </div>
-  );
-}
-
 interface MessageContentProps {
   userImage?: string | undefined | null;
   message: CoreMessage;
@@ -77,19 +63,6 @@ interface MessageContentProps {
   onNewChatFromHere: (index: number) => void;
   onRewindHere: (index: number) => void;
 }
-
-const UserAvatar = ({ userName }: { userName: string }) => {
-  const firstLetter = (userName || "U")[0].toUpperCase();
-  const gradientClass = `bg-gradient-to-br from-black via-black to-purple-300`;
-
-  return (
-    <div
-      className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold ${gradientClass}`}
-    >
-      {firstLetter}
-    </div>
-  );
-};
 
 const MessageContent: React.FC<MessageContentProps> = ({
   userImage,
@@ -503,10 +476,6 @@ export default function MessageAndInput({
       return;
     }
 
-    if (input === "") {
-      return;
-    }
-
     let newMessages: CoreMessage[];
 
     if (regenerate && !error) {
@@ -514,8 +483,11 @@ export default function MessageAndInput({
       newMessages = messagesState.slice(0, -1);
     } else if (error) {
       newMessages = [...messagesState];
-    } else {
+    } else if (input) {
       newMessages = [...messagesState, { content: input, role: "user" }];
+    } else {
+      // if !input, 
+      newMessages = [...messagesState];
     }
 
     setMessagesState(newMessages);
@@ -809,7 +781,7 @@ export default function MessageAndInput({
               <button
                 type="submit"
                 className="absolute right-3 top-1/2 transform -translate-y-1/2 bg-blue-500 rounded-full p-2 z-20 transition-opacity opacity-70 hover:opacity-100 focus:opacity-100 hover:cursor-pointer"
-                disabled={!input.trim() || isLoading}
+                disabled={isLoading}
               >
                 {!isLoading ?
                   <svg
