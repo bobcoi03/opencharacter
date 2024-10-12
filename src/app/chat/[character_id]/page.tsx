@@ -11,6 +11,7 @@ import { CoreMessage } from "ai";
 import ShareButton from "@/components/share-button";
 import Link from "next/link";
 import { Metadata } from "next";
+import CharacterAvatar from "@/components/ai-avatar";
 
 export const runtime = "edge";
 
@@ -370,18 +371,8 @@ function ChatHeader({
           <ChevronLeft className="w-8 h-8 text-neutral-700" />
         </Link>
 
-        <Link
-          className="w-10 h-10 rounded-full overflow-hidden mr-3 ml-6"
-          href={`/character/${character.id}/profile`}
-        >
-          <Image
-            src={character.avatar_image_url ?? "/default-avatar.jpg"}
-            alt={`${character.name}'s avatar`}
-            width={40}
-            height={40}
-            className="object-cover w-full h-full"
-          />
-        </Link>
+        <CharacterAvatar character={character} />
+
         <div className="flex items-start flex-col">
           <div className="flex flex-row gap-2 items-center">
             <h2 className="font-light text-white">

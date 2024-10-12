@@ -7,6 +7,7 @@ import { GoogleAnalytics } from '@next/third-parties/google'
 import { auth } from "@/server/auth";
 import { searchCharacters } from "./actions";
 import NewSidebar from "@/components/new-sidebar";
+import IconStyleInitializer from "@/components/icon-style-onmount";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -59,6 +60,7 @@ export default async function RootLayout({
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"></meta>
       </head>
       <body className={`${inter.className} bg-neutral-900`}>
+        <IconStyleInitializer />
         <NewSidebar search={search} />
         <div className="flex flex-col min-h-screen pt-12">
           <main className="flex-1 p-4">

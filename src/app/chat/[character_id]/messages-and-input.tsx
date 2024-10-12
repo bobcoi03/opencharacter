@@ -674,7 +674,7 @@ export default function MessageAndInput({
         <div id="messages-container" className="w-full mx-auto max-w-2xl">
           {/* Character Information Header */}
           <div className="mx-auto pt-12 pb-6 flex flex-col gap-2 text-center items-center overflow-hidden">
-            <div className="w-24 h-24 rounded-full overflow-hidden mr-3">
+            <div className={`w-24 h-24 ${localStorage.getItem('character_icon_style') === "circle" ? "rounded-full" : "rounded-lg"} overflow-hidden mr-3`}>
               <Link href={`/character/${character.id}/profile`}>
                 <Image
                   src={character.avatar_image_url ?? "/default-avatar.jpg"}

@@ -7,7 +7,15 @@ import { Card, CardContent } from "@/components/ui/card";
 import { MessageCircle } from "lucide-react";
 import { characters } from "@/server/db/schema";
 
-type Character = typeof characters.$inferSelect;
+type Character = {
+  id: string;
+  name: string;
+  tagline: string;
+  avatar_image_url: string | null;
+  interactionCount: number;
+  createdAt: Date;
+  userName: string | null;
+};
 
 type SortOption = "popular" | "new" | "old";
 
@@ -32,8 +40,8 @@ const AICharacterCard: React.FC<{ character: Character }> = ({ character }) => {
       passHref
       className="block w-full h-full"
     >
-      <Card className="bg-neutral-800 border-none overflow-hidden rounded-lg h-full flex flex-col">
-        <CardContent className="px-6 py-3 flex flex-col flex-grow">
+      <Card className="bg-neutral-800 overflow-hidden rounded-lg h-full flex flex-col">
+        <CardContent className="px-6 py-3 flex flex-col">
           <div className="relative w-full pb-[100%] rounded-lg overflow-hidden max-h-24 h-full">
             <Image
               src={character.avatar_image_url ?? "/default-avatar.jpg"}
@@ -46,17 +54,17 @@ const AICharacterCard: React.FC<{ character: Character }> = ({ character }) => {
           <h3 className="mt-2 text-sm font-semibold text-gray-200 truncate text-center">
             {character.name}
           </h3>
-          <p className="text-xs text-gray-400 line-clamp-2 mt-1 flex-grow">
-            {truncatedTagline}
-          </p>
-          <div className="flex items-center text-xs text-gray-500 mt-2 w-full justify-between">
-            <span className="mr-1">@anon</span>
-            <div className="flex items-center">
-              <MessageCircle className="w-3 h-3 ml-2 mr-1" />
-              <span>{character.interactionCount}</span>
-            </div>
-          </div>
         </CardContent>
+        <p className="text-xs text-gray-400 text-center w-full px-2 flex-grow">
+          {truncatedTagline}
+        </p>
+        <div className="flex items-center text-xs text-gray-500 mt-1 w-full justify-between px-2 py-2">
+          <span>@{character.userName}</span>
+          <div className="flex items-center">
+            <MessageCircle className="w-3 h-3 mr-1" />
+            <span>{character.interactionCount}</span>
+          </div>
+        </div>
       </Card>
     </Link>
   );

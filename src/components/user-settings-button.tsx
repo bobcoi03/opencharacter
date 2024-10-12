@@ -41,11 +41,12 @@ const SettingsButton = ({ user }: SettingsButtonProps) => {
 
   useEffect(() => {
     if (characterIcon === 'square') {
-      localStorage.setItem('character_icon_style', 'square');
-    } else {
-      localStorage.removeItem('character_icon_style');
+      localStorage.setItem('character_icon_style', 'square') 
     }
-  }, [characterIcon]);
+    if (characterIcon === 'circle') {
+      localStorage.setItem('character_icon_style', 'circle');
+    }
+  }, [characterIcon])
 
   useEffect(() => {
     localStorage.setItem('character_icon_size', iconSize.toString());
