@@ -164,7 +164,7 @@ export async function continueConversation(
     };
   }
 
-  const openrouter = createOpenAI({
+  let llm_provider = createOpenAI({
     baseURL: "https://openrouter.helicone.ai/api/v1",
     apiKey: process.env.OPENROUTER_API_KEY,
     headers: {
@@ -176,7 +176,8 @@ export async function continueConversation(
     },
   });
 
-  const model = openrouter(model_name);
+
+  const model = llm_provider(model_name);
 
   if (!isValidModel(model_name)) {
     throw new Error("Invalid model: " + model_name);
@@ -228,7 +229,7 @@ export async function continueConversation(
   try {
     const result = await streamText({
       model: model,
-      messages,
+      messages: messages,
       temperature: character.temperature ?? 1.0,
       topP: character.top_p ?? 1.0,
       topK: character.top_k ?? 0,

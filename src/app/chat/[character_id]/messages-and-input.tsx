@@ -1,7 +1,7 @@
 "use client";
 
 import { type CoreMessage } from "ai";
-import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { readStreamableValue } from "ai/rsc";
 import { continueConversation } from "@/app/actions/chat";
 import { saveChat, createChatSession } from "@/app/actions/index";
@@ -14,7 +14,6 @@ import {
   Edit,
   Trash2,
   MoreHorizontal,
-  Plus,
   ChevronLeft,
   ChevronRight,
   Loader2Icon,
@@ -25,7 +24,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { characters, personas } from "@/server/db/schema";
 import ReactMarkdown from "react-markdown";
@@ -41,10 +39,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/hooks/use-toast";
 
 const MAX_TEXTAREA_HEIGHT = 450; // maximum height in pixels
 
 interface MessageContentProps {
+  showRetries: boolean;
   userImage?: string | undefined | null;
   message: CoreMessage;
   index: number;
@@ -58,13 +58,14 @@ interface MessageContentProps {
   onEdit: (index: number, editedContent: string) => void;
   onDelete: (index: number) => void;
   onGoBackRegenerate?: (toIndex: number) => void;
-  regenerations: number;
+  regenerations: string[];
   currentRegenerationIndex: number;
   onNewChatFromHere: (index: number) => void;
   onRewindHere: (index: number) => void;
 }
 
 const MessageContent: React.FC<MessageContentProps> = ({
+  showRetries,
   userImage,
   message,
   index,
@@ -82,23 +83,12 @@ const MessageContent: React.FC<MessageContentProps> = ({
   onNewChatFromHere,
   onRewindHere,
 }) => {
-  const [isHovered, setIsHovered] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [deleted, setDeleted] = useState<boolean>(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(message.content as string);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const [iconStyle, setIconStyle] = useState('circle');
-  const [iconSize, setIconSize] = useState(40);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setIconStyle(localStorage.getItem('character_icon_style') || 'circle');
-      setIconSize(parseInt(localStorage.getItem('character_icon_size') || '40', 10));
-    }
-  }, []);
-
-  const roundedStyle = iconStyle === 'circle' ? 'rounded-full' : 'rounded-lg';
 
   const markdownComponents: Partial<Components> = {
     p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
@@ -110,31 +100,10 @@ const MessageContent: React.FC<MessageContentProps> = ({
     ),
   };
 
-  useEffect(() => {
-    if (isEditing && textareaRef.current) {
-      adjustTextareaHeight();
-    }
-  }, [isEditing, editedContent]);
-
-  useEffect(() => {
-    setEditedContent(message.content as string);
-  }, [message.content]);
-
   const handleEdit = () => {
     setIsEditing(true);
     setEditedContent(message.content as string);
-  };
-
-  const adjustTextareaHeight = () => {
-    const textarea = textareaRef.current;
-    if (textarea) {
-      textarea.style.height = "auto";
-      textarea.style.height = `${textarea.scrollHeight}px`;
-    }
-  };
-
-  const handleDelete = () => {
-    setIsDeleteDialogOpen(true);
+    setIsDropdownOpen(false);
   };
 
   const handleSave = () => {
@@ -142,176 +111,159 @@ const MessageContent: React.FC<MessageContentProps> = ({
     setIsEditing(false);
   };
 
-  const confirmDelete = () => {
-    onDelete(index);
-    setIsDeleteDialogOpen(false);
-  };
-
   const handleCancel = () => {
     setEditedContent(message.content as string);
     setIsEditing(false);
   };
 
-  const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setEditedContent(e.target.value);
-    adjustTextareaHeight();
+  const handleDelete = () => {
+    setIsDeleting(true);
+    setIsDropdownOpen(false);
   };
 
-  if (deleted) {
-    return null;
+  const confirmDelete = () => {
+    onDelete(index);
+    setIsDeleting(false);
+  };
+
+  const cancelDelete = () => {
+    setIsDeleting(false);
+  };
+
+  const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setEditedContent(e.target.value);
+  };
+
+  const handleDropdownOpenChange = (open: boolean) => {
+    setIsDropdownOpen(open);
+  };
+
+  if (isDeleting) {
+    return (
+      <dialog className="fixed bottom-0 top-0 flex flex-col items-center justify-center p-4 bg-black rounded-lg shadow-lg">
+        <p className="mb-4 text-white">Are you sure you want to delete this message?</p>
+        <div className="flex gap-4 w-full flex justify-between">
+          <Button onClick={cancelDelete}>Cancel</Button>
+          <Button onClick={confirmDelete} variant="destructive">Delete</Button>
+        </div>
+      </dialog>
+    );
   }
 
   return (
-    <>
-      <div
-        className="flex items-start mb-8 w-full overflow-hidden group"
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-      >
-        <div 
-            className={`mr-4 flex-shrink-0 overflow-hidden ${roundedStyle}`}
-            style={{ width: `${iconSize}px`, height: `${iconSize}px` }}
-          >
-            {isUser ? (
-              <img 
-                src={userImage ?? "/default-avatar.jpg"} 
-                alt={userName ?? "Guest"} 
-                className={`w-full h-full object-cover ${roundedStyle}`}
-              />          
-            ) : (
-              <img
-                src={characterAvatarUrl || "/default-avatar.jpg"}
-                alt={characterName}
-                className={`w-full h-full object-cover ${roundedStyle}`}
-              />
-            )}
-          </div>
-        <div className="flex flex-col max-w-full flex-grow">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-xs text-neutral-400">
-              {isUser ? userName || "You" : characterName}
-            </span>
-            {!isEditing && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button
-                    className={`text-neutral-400 hover:text-neutral-300 focus:outline-none transition-opacity duration-200 ${
-                      isHovered ? "opacity-100" : "opacity-0"
-                    }`}
-                  >
-                    <MoreHorizontal className="w-4 h-4" />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="flex flex-col gap-2">
-                  <DropdownMenuItem onClick={handleEdit}>
-                    <Edit className="w-4 h-4 mr-2" />
-                    Edit
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => onRewindHere(index) } >
-                    <RotateCcw className="w-4 h-4 mr-2" />
-                    Rewind to here
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => onNewChatFromHere(index) } >
-                    <ChevronRight className="w-4 h-4 mr-2" />
-                    New chat from here
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleDelete}>
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    Delete
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
-          </div>
-          <div className="max-w-xl text-wrap break-words">
-            {isEditing ? (
-              <div className="flex flex-col gap-2">
-                <Textarea
-                  ref={textareaRef}
-                  value={editedContent}
-                  onChange={handleTextareaChange}
-                  className="min-h-[100px] text-sm text-slate-300 overflow-hidden"
-                  rows={1}
-                />
-                <div className="flex justify-start gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={handleCancel}
-                    className="rounded-full"
-                  >
-                    Cancel
-                  </Button>
-                  <Button onClick={handleSave} className="rounded-full">
-                    Save
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <ReactMarkdown
-                className="text-md text-white text-wrap break-words"
-                components={markdownComponents}
-              >
-                {message.content as string}
-              </ReactMarkdown>
-            )}
-          </div>
-          {!isUser && onRetry && !isEditing && regenerations === 0 && (
-            <button
-              onClick={onRetry}
-              className="text-neutral-500 hover:text-neutral-300 transition-colors duration-200 ml-2 mt-4"
-            >
-              <RotateCcw className="w-4 h-4" />
-            </button>
+    <div 
+      className="flex items-start mb-8 w-full overflow-hidden"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => {
+        setIsHovered(false);
+        if (!isDropdownOpen) {
+          setIsDropdownOpen(false);
+        }
+      }}
+    >
+      <div className="mr-4 flex-shrink-0 overflow-hidden" style={{ width: `${localStorage.getItem("character_icon_size") ?? '40'}px`, height: `${localStorage.getItem("character_icon_size") ?? '40'}px` }}>
+        <img 
+          src={isUser ? (userImage ?? "/default-avatar.jpg") : (characterAvatarUrl || "/default-avatar.jpg")}
+          alt={isUser ? (userName ?? "Guest") : characterName}
+          className={`w-full h-full object-cover ${localStorage.getItem("character_icon_style") === "circle" ? "rounded-full" : "rounded-lg"}`}
+        />
+      </div>
+      <div className="flex flex-col max-w-full flex-grow">
+        <div className="flex justify-between items-center mb-2">
+          <span className="text-xs text-neutral-400">
+            {isUser ? userName || "You" : characterName}
+          </span>
+          {!isEditing && (isHovered || isDropdownOpen) && (
+            <DropdownMenu open={isDropdownOpen} onOpenChange={handleDropdownOpenChange}>
+              <DropdownMenuTrigger asChild>
+                <button className="text-neutral-400 hover:text-neutral-300 focus:outline-none">
+                  <MoreHorizontal className="w-4 h-4" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="flex flex-col gap-2">
+                <DropdownMenuItem onClick={handleEdit}>
+                  <Edit className="w-4 h-4 mr-2" />
+                  Edit
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => { onRewindHere(index); setIsDropdownOpen(false); }}>
+                  <RotateCcw className="w-4 h-4 mr-2" />
+                  Rewind to here
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => { onNewChatFromHere(index); setIsDropdownOpen(false); }}>
+                  <ChevronRight className="w-4 h-4 mr-2" />
+                  New chat from here
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleDelete}>
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
-         {!isUser && regenerations > 0 && (
+        </div>
+        <div className="max-w-xl text-wrap break-words">
+          {isEditing ? (
+            <div className="flex flex-col gap-2">
+              <Textarea
+                ref={textareaRef}
+                value={editedContent}
+                onChange={handleTextareaChange}
+                className="min-h-[100px] text-sm text-slate-300 overflow-hidden"
+                rows={1}
+              />
+              <div className="flex justify-start gap-2">
+                <Button variant="outline" onClick={handleCancel} className="rounded-full">
+                  Cancel
+                </Button>
+                <Button onClick={handleSave} className="rounded-full">
+                  Save
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <ReactMarkdown className="text-md text-white text-wrap break-words"
+              components={markdownComponents}
+            >
+              {message.content as string}
+            </ReactMarkdown>
+          )}
+        </div>
+        <div className="w-full flex justify-end">
+          {!isUser && showRetries && (
             <div className="flex items-center space-x-2 mt-4 ml-2">
               <button 
                 className="p-1 rounded-full"
-                onClick={() => onGoBackRegenerate && onGoBackRegenerate(currentRegenerationIndex - 1)}
-                disabled={currentRegenerationIndex === 0}
+                onClick={() => {
+                    if (currentRegenerationIndex - 1 <= 0) {
+                      currentRegenerationIndex = 1;
+                    }
+                    onGoBackRegenerate && onGoBackRegenerate(currentRegenerationIndex - 1);
+                }}
+                disabled={currentRegenerationIndex == 0}
               >
-                <ChevronLeft className={`w-4 h-4 ${currentRegenerationIndex === 0 && "text-slate-700"}`} />
+                <ChevronLeft className={`w-4 h-4 ${currentRegenerationIndex <= 0 ? "text-slate-700" : ""}`} />
               </button>
               <span className="text-sm text-gray-400">
-                {currentRegenerationIndex} / 30
+                {currentRegenerationIndex} / {30}
               </span>
               <button 
                 className="p-1 rounded-full"
                 onClick={() => {
-                  if (currentRegenerationIndex === regenerations - 1 && regenerations < 30) {
-                    onRetry && onRetry();
-                  } else {
+                  if (currentRegenerationIndex < regenerations.length - 1) {
                     onGoBackRegenerate && onGoBackRegenerate(currentRegenerationIndex + 1);
+                  } else {
+                    onRetry && onRetry();
                   }
                 }}
+                disabled={regenerations.length >= 30}
               >
-                <ChevronRight className="w-4 h-4 text-slate-700" />
+                <ChevronRight className={`w-4 h-4 ${regenerations.length >= 30 ? "text-slate-700" : ""}`} />
               </button>
             </div>
           )}
         </div>
       </div>
-
-      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent className="rounded-2xl flex flex-col gap-4">
-          <DialogHeader>
-            <DialogTitle>Delete message</DialogTitle>
-          </DialogHeader>
-          <p>Are you sure you want to delete this message?</p>
-          <DialogFooter className="flex gap-4 justify-between w-full mt-6">
-            <Button
-              variant="outline"
-              onClick={() => setIsDeleteDialogOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button variant="destructive" onClick={confirmDelete}>
-              Delete
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
+    </div>
   );
 };
 
@@ -353,13 +305,18 @@ export default function MessageAndInput({
   const [error, setError] = useState<boolean>(false);
   const [isSignInDialogOpen, setIsSignInDialogOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const [regenerations, setRegenerations] = useState<string[]>([]);
+  const [regenerations, setRegenerations] = useState<string[]>([messagesState[messagesState.length -1].content as string]);
   const [currentRegenerationIndex, setCurrentRegenerationIndex] = useState(0);
+  const { toast } = useToast()
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInput(e.target.value)
     adjustTextareaHeight();
   };
+
+  useEffect(() => {
+    console.log(regenerations)
+  }, [regenerations])
 
   const adjustTextareaHeight = () => {
     if (textareaRef.current) {
@@ -412,22 +369,20 @@ export default function MessageAndInput({
   };
 
   const handleOnGoBackRegenerate = async (index: number) => {
-    if (index >= 0 && index < regenerations.length) {
-      const wantMessage = regenerations[index];
-      const newMessages = [...messagesState];
-      
-      // Find the last assistant message and replace its content
-      for (let i = newMessages.length - 1; i >= 0; i--) {
-        if (newMessages[i].role === "assistant") {
-          newMessages[i].content = wantMessage;
-          break;
-        }
+    const wantMessage = regenerations[index];
+    const newMessages = [...messagesState];
+    
+    // Find the last assistant message and replace its content
+    for (let i = newMessages.length - 1; i >= 0; i--) {
+      if (newMessages[i].role === "assistant") {
+        newMessages[i].content = wantMessage;
+        break;
       }
-      
-      setMessagesState(newMessages);
-      await saveChat(newMessages, character, chat_session)
-      setCurrentRegenerationIndex(index);
     }
+    
+    setMessagesState(newMessages);
+    await saveChat(newMessages, character, chat_session)
+    setCurrentRegenerationIndex(index);
   };
 
   const handleDelete = async (index: number) => {
@@ -437,9 +392,12 @@ export default function MessageAndInput({
 
     try {
       await saveChat(newMessages, character, chat_session);
+      toast({
+        title: "Deleted Message",
+        className: "text-xs"
+      })
     } catch (error) {
       console.error("Failed to save after deleting message:", error);
-      // Optionally, revert the change in the UI or show an error message to the user
     }
   };
 
@@ -519,15 +477,18 @@ export default function MessageAndInput({
           ...regenerations,
           replacePlaceholders(content) as string,
         ]);
-        setCurrentRegenerationIndex(regenerations.length);  // This sets it to the new last index
+        if (!regenerate && !error) {
+          setCurrentRegenerationIndex(0)
+          setRegenerations([replacePlaceholders(content) as string])
+        }
       }
     } catch (err) {
       setError(true);
     } finally {
       setIsLoading(false);
-      if (!regenerate && !error) {
-        setCurrentRegenerationIndex(0)
-        setRegenerations([])
+
+      if (regenerate) {
+        setCurrentRegenerationIndex(prev => prev + 1)
       }
     }
   };
@@ -540,17 +501,15 @@ export default function MessageAndInput({
   const handleRetry = () => {
     console.log("Attempting to retry the last message.");
     if (messagesState.length > 1) {
-      // Ensure there are at least two messages
       const lastMessage = messagesState[messagesState.length - 1];
       const lastUserMessage = messagesState[messagesState.length - 2];
-
+  
       if (lastMessage.role === "user") {
         console.log("Retrying the user's message due to an error.");
-        // Error case: retry the user's message
         handleSubmit(lastMessage.content as string, true);
       } else if (lastMessage.role === "assistant") {
         console.log("Retrying the last user message to get a new assistant response.");
-        // Regeneration case: retry the last user message to get a new assistant response
+        // Store the current assistant message before regenerating
         handleSubmit(lastUserMessage.content as string, false, true);
       }
     } else {
@@ -579,7 +538,8 @@ export default function MessageAndInput({
 
     return messagesState.slice(1).map((m, i) => (
       <MessageContent
-        key={`${m.role}-${i}`} // Using a more unique key
+        showRetries={i === messagesState.length - 2}      
+        key={`${m.role}-${i}`}
         userImage={persona?.image || user?.image}
         message={m}
         index={i + 1}
@@ -603,8 +563,8 @@ export default function MessageAndInput({
           i === messagesState.length - 2 &&
           messagesState.length > 2 &&
           !isLoading
-            ? regenerations.length
-            : 0
+            ? regenerations
+            : []
         }
         currentRegenerationIndex={currentRegenerationIndex}
         onGoBackRegenerate={handleOnGoBackRegenerate}
