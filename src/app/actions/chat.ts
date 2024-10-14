@@ -14,6 +14,14 @@ import { eq, and, desc, sql, or } from "drizzle-orm";
 import { auth } from "@/server/auth";
 import { isValidModel } from "@/lib/llm_models";
 
+type ErrorResponse = {
+  error: {
+    code: number;
+    message: string;
+    metadata?: Record<string, unknown>;
+  };
+};
+
 export async function saveChat(
   messages: CoreMessage[],
   character: typeof characters.$inferSelect,
@@ -311,10 +319,9 @@ export async function continueConversation(
     });
 
     const stream = createStreamableValue(result.textStream);
-    console.log("Successfully created streamable value");
     return stream.value;
   } catch (error) {
-    console.error("Failed to generate or stream response:", error);
+    console.log("Failed to generate or stream response:", error);
     throw new Error("Failed to generate response. Please try again.");
   }
 }

@@ -463,6 +463,8 @@ export default function MessageAndInput({
       );
       if ("error" in result) {
         setError(true);
+        console.log(result.error)
+        console.log(result.message)
         return;
       }
       for await (const content of readStreamableValue(result)) {
@@ -530,7 +532,9 @@ export default function MessageAndInput({
   const handleOnRewindHere = async (index: number) => {
     const m = await saveChat(messages.slice(0, index +1), character)
     setMessagesState(m.messages)
-    window.location.reload()
+    setTimeout(() => {
+      window.location.reload()
+    }, 1500)
   }
 
   const memoizedMessageList = useMemo(() => {

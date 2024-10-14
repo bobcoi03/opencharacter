@@ -274,8 +274,8 @@ export default function EllipsisButton({ character, made_by_username }: { charac
                   </div>
 
                   <p className="text-sm font-medium text-white mt-1">
-                    {latestMessage.role === 'assistant' ? character.name : 'You'}: {latestMessage.content === typeof String && latestMessage.content.slice(0, 200)}
-                    {latestMessage.content === typeof String && latestMessage.content.length > 200 && "..."}
+                    {latestMessage.role === 'assistant' ? character.name : 'You'}: {latestMessage.content && latestMessage.content.slice(0, 200)}
+                    {latestMessage.content && latestMessage.content.length > 200 && "..."}
                   </p>
                   <Button 
                     variant="link" 

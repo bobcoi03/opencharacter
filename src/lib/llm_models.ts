@@ -37,6 +37,10 @@ export const models = {
         "id": "mistralai/mistral-7b-instruct:nitro",
         "name": "mistralai/mistral-7b-instruct:nitro"
     },
+    "gryphe/mythomist-7b": {
+        "id": "gryphe/mythomist-7b",
+        "name": "gryphe/mythomist-7b"
+    }
 };
   
 // Helper function to get an array of model IDs
