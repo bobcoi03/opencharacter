@@ -31,21 +31,24 @@ export default async function Page() {
   return (
     <div className="text-white w-full overflow-y-auto overflow-x-hidden md:pl-16">
       <AICharacterGrid characters={popularCharacters} />
-      <div className="text-gray-500 flex gap-4 mb-24">
+      <div className="text-gray-500 flex gap-4 mb-24 text-xs flex-wrap">
         <Link href={"/about"}>
           About 
         </Link>
         <Link href={"/blog"}>
           Blog
         </Link>
-        <Link href={"/privacy-policy"}>
-          Privacy Policy         
-        </Link>
         <Link href={"https://github.com/bobcoi03/opencharacter"} target="_blank">
           Github
         </Link>
         <Link href={"https://buymeacoffee.com/luongquangn"} target="_blank">
           Donate
+        </Link>
+        <Link href={"/privacy-policy"}>
+          Privacy Policy         
+        </Link>
+        <Link href={"/terms-of-service"}>
+          Terms of Service       
         </Link>
       </div>
     </div>
