@@ -547,7 +547,7 @@ export default function MessageAndInput({
   const memoizedMessageList = useMemo(() => {
     if (messagesState.length <= 1) return null;
 
-    return messagesState.map((m, i) => (
+    return messagesState.slice(1).map((m, i) => (
       <MessageContent
         showRetries={i === messagesState.length - 2}      
         key={`${m.role}-${i}`}
@@ -678,7 +678,7 @@ export default function MessageAndInput({
           </div>
 
           <div className="pb-32 max-w-2xl mx-auto px-2">
-            {memoizedMessageList?.slice(1)}
+            {memoizedMessageList}
             <div ref={messagesEndRef} />
           </div>
         </div>
