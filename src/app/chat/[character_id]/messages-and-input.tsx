@@ -1,7 +1,7 @@
 "use client";
 
 import { type CoreMessage } from "ai";
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useRef, useMemo, FormEvent } from "react";
 import { readStreamableValue } from "ai/rsc";
 import { continueConversation } from "@/app/actions/chat";
 import { saveChat, createChatSession } from "@/app/actions/index";
@@ -37,9 +37,11 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from "@/components/ui/dialog";  
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
+import { VariableSizeList as List } from 'react-window';
+import AutoSizer from 'react-virtualized-auto-sizer';
 
 const MAX_TEXTAREA_HEIGHT = 450; // maximum height in pixels
 
@@ -213,7 +215,7 @@ const MessageContent: React.FC<MessageContentProps> = ({
                 ref={textareaRef}
                 value={editedContent}
                 onChange={handleTextareaChange}
-                className="min-h-[100px] text-sm text-slate-300 overflow-hidden"
+                className="min-h-[100px] text-sm text-slate-300 overflow-y-auto"
                 rows={1}
               />
               <div className="flex justify-start gap-2">
@@ -313,10 +315,10 @@ export default function MessageAndInput({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [regenerations, setRegenerations] = useState<string[]>([messagesState[messagesState.length -1].content as string]);
   const [currentRegenerationIndex, setCurrentRegenerationIndex] = useState(0);
+  const formRef = useRef<HTMLFormElement>(null);
   const { toast } = useToast()
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setInput(e.target.value)
     adjustTextareaHeight();
   };
 
@@ -347,8 +349,9 @@ export default function MessageAndInput({
     if (window.innerWidth > 768) {
       // Desktop
       if (e.key === "Enter" && !e.shiftKey) {
+        // submit form
         e.preventDefault();
-        handleSubmit(input);
+        formRef.current?.requestSubmit();
       } else if (e.key === "Escape") {
         e.preventDefault();
         resetTextareaHeight();
@@ -599,6 +602,16 @@ export default function MessageAndInput({
     handleOnRewindHere
   ]);
 
+  const handleFormSubmit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (formRef.current) {
+      const formData = new FormData(formRef.current);
+      const inputValue = formData.get('message') as string;
+      handleSubmit(inputValue, false, false);
+      formRef.current.reset();
+    }
+  };
+
   return (
     <div className="flex flex-col h-full relative max-w-full overflow-x-hidden">
       <style jsx global>{`
@@ -667,7 +680,7 @@ export default function MessageAndInput({
           </div>
 
           <div className="pb-32 max-w-2xl mx-auto px-2">
-            {memoizedMessageList}
+            {memoizedMessageList?.slice(1)}
             <div ref={messagesEndRef} />
           </div>
         </div>
@@ -699,10 +712,8 @@ export default function MessageAndInput({
             </div>
           )}
           <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleSubmit(input);
-            }}
+            ref={formRef}
+            onSubmit={handleFormSubmit}
             className="pointer-events-auto flex items-center space-x-2 max-w-full px-2"
           >
             <div className="relative flex-grow">
@@ -735,7 +746,7 @@ export default function MessageAndInput({
               </div>
               <textarea
                 ref={textareaRef}
-                value={input}
+                name="message"
                 onChange={handleInputChange}
                 onKeyDown={handleKeyDown}
                 onFocus={handleInputFocus}
