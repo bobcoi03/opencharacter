@@ -791,7 +791,7 @@ export default function MessageAndInput({
       </div>
 
       <Link 
-        className="fixed bottom-0 text-center left-0 right-0 text-[9px] text-light text-slate-200 underline" 
+        className="fixed bottom-0 text-center left-0 right-0 text-[10px] text-light text-slate-200 underline" 
         href={"https://buymeacoffee.com/luongquangn"}
         target="_blank"
       >
