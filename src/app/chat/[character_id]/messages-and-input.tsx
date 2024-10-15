@@ -227,7 +227,7 @@ const MessageContent: React.FC<MessageContentProps> = ({
             </div>
           ) : (
             <ReactMarkdown
-              className="text-md text-white text-wrap break-words flex flex-wrap border max-w-full"
+              className="text-md text-white text-wrap break-words flex flex-wrap max-w-full"
               components={markdownComponents}
             >
               {message.content as string}
