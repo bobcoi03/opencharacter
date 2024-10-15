@@ -58,7 +58,6 @@
     "react-markdown": "^9.0.1",
     "react-virtualized-auto-sizer": "^1.0.24",
     "react-window": "^1.8.10",
-    "react-window-dynamic": "^1.8.0-alpha.2",
     "tailwind-merge": "^2.5.2",
     "tailwindcss-animate": "^1.0.7",
     "uuid": "^10.0.0",

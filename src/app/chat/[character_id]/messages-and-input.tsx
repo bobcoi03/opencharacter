@@ -40,8 +40,6 @@ import {
 } from "@/components/ui/dialog";  
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
-import { VariableSizeList as List } from 'react-window';
-import AutoSizer from 'react-virtualized-auto-sizer';
 
 const MAX_TEXTAREA_HEIGHT = 450; // maximum height in pixels
 
