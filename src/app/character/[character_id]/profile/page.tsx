@@ -1,5 +1,5 @@
 import React from "react";
-import { ArrowLeft, MessageSquare, ThumbsUp, Share2 } from "lucide-react";
+import { ArrowLeft, MessageSquare, Share2 } from "lucide-react";
 import Link from "next/link";
 import { characters } from "@/server/db/schema";
 import { Button } from "@/components/ui/button";
@@ -7,23 +7,11 @@ import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { db } from "@/server/db";
 import { eq, and, or } from "drizzle-orm";
-import ShareButton from "@/components/share-button";
 import { auth } from "@/server/auth";
 
 export const runtime = "edge";
 
 const MAX_DESCRIPTION_LENGTH = 300;
-
-interface Character {
-  id: string;
-  name: string;
-  avatar_image_url: string;
-  tagline: string;
-  description: string;
-  interactionCount: number;
-  likeCount: number;
-  tags: string;
-}
 
 export default async function CharacterProfilePage({
   params,
