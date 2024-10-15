@@ -91,12 +91,17 @@ const MessageContent: React.FC<MessageContentProps> = ({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const markdownComponents: Partial<Components> = {
-    p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
-    em: ({ children }) => <em className="text-neutral-300">{children}</em>,
+    p: ({ children }) => <p className="mb-2 last:mb-0 text-wrap break-words">{children}</p>,
+    em: ({ children }) => <em className="text-neutral-300 text-wrap break-words">{children}</em>,
     code: ({ children }) => (
       <code className="bg-neutral-800 px-1 py-0.5 rounded text-sm text-neutral-200">
         {children}
       </code>
+    ),
+    pre: ({ children }) => (
+      <pre className="bg-neutral-800 p-2 rounded text-sm text-neutral-200 whitespace-pre-wrap break-words overflow-x-auto">
+        {children}
+      </pre>
     ),
   };
 
@@ -152,7 +157,7 @@ const MessageContent: React.FC<MessageContentProps> = ({
 
   return (
     <div 
-      className="flex items-start mb-8 w-full overflow-hidden"
+      className="flex items-start mb-8 w-full"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => {
         setIsHovered(false);
@@ -168,7 +173,7 @@ const MessageContent: React.FC<MessageContentProps> = ({
           className={`w-full h-full object-cover ${localStorage.getItem("character_icon_style") === "circle" ? "rounded-full" : "rounded-lg"}`}
         />
       </div>
-      <div className="flex flex-col max-w-full flex-grow">
+      <div className="flex flex-col max-w-full flex-grow overflow-hidden">
         <div className="flex justify-between items-center mb-2">
           <span className="text-xs text-neutral-400">
             {isUser ? userName || "You" : characterName}
@@ -221,14 +226,15 @@ const MessageContent: React.FC<MessageContentProps> = ({
               </div>
             </div>
           ) : (
-            <ReactMarkdown className="text-md text-white text-wrap break-words"
+            <ReactMarkdown
+              className="text-md text-white text-wrap break-words flex flex-wrap border max-w-full"
               components={markdownComponents}
             >
               {message.content as string}
             </ReactMarkdown>
           )}
         </div>
-        <div className="w-full flex justify-end">
+        <div className="w-full flex justify-end max-w-full flex-wrap">
           {!isUser && showRetries && (
             <div className="flex items-center space-x-2 mt-4 ml-2">
               <button 
