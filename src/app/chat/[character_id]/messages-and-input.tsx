@@ -235,7 +235,7 @@ const MessageContent: React.FC<MessageContentProps> = ({
           )}
         </div>
         <div className="w-full flex justify-end max-w-full flex-wrap">
-          {!isUser && showRetries && (
+          {!isUser && showRetries && index != 1 && (
             <div className="flex items-center space-x-2 mt-4 ml-2">
               <button 
                 className="p-1 rounded-full"
