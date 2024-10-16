@@ -109,7 +109,7 @@ export function CreateCharacterForm({
   };
 
   return (
-    <div className="w-full bg-white dark:bg-neutral-900 min-h-screen p-6 overflow-y-auto mb-12">
+    <div className="w-full bg-white dark:bg-neutral-900 min-h-screen p-6 overflow-y-auto mb-12 md:ml-16">
       <header>
         <Link
           href="/"
