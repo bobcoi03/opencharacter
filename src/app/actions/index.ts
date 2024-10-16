@@ -1,7 +1,7 @@
 export const runtime = "edge";
 
 import { continueConversation, getConversations, createChatSession, getAllConversationsByCharacter, saveChat, deleteChatSession } from "./chat";
-import { createCharacter, searchCharacters } from "./character";
+import { createCharacter, searchCharacters, searchCharactersByTags } from "./character";
 import { CreatePersona, updatePersona, getAllUserPersonas, getDefaultPersona, setDefaultPersona, deletePersona } from "./persona";
 import { saveUser } from "./user";
 
@@ -21,4 +21,5 @@ export {
     saveUser,
     deletePersona,
     deleteChatSession,
+    searchCharactersByTags
 };

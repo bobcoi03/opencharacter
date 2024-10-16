@@ -1,12 +1,12 @@
 "use server";
 
 import { db } from "@/server/db";
-import { characters } from "@/server/db/schema";
+import { characters, users } from "@/server/db/schema";
 import { auth } from "@/server/auth";
 import { z } from "zod";
 import FileStorage, { uploadToR2 } from "@/lib/r2_storage";
 import { eq, like, or, desc, sql, and } from "drizzle-orm";
-import { CharacterTags } from "@/types/character-tags";
+import { CharacterTag, CharacterTags } from "@/types/character-tags";
 
 const CreateCharacterSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -263,4 +263,49 @@ export async function searchCharacters(query: string, limit = 10) {
   console.log(`Returning ${limitedResults.length} characters`);
 
   return limitedResults;
+}
+
+type CharacterWithUserName = {
+  id: string;
+  name: string;
+  tagline: string;
+  avatar_image_url: string | null;
+  interactionCount: number;
+  createdAt: Date;
+  userName: string | null;
+  tags: string[];
+};
+
+export async function searchCharactersByTags(tags: CharacterTag[], limit = 500): Promise<CharacterWithUserName[]> {
+  console.log(`Searching characters with tags: ${tags.join(', ')}, limit: ${limit}`);
+
+  const results = await db
+    .select({
+      id: characters.id,
+      name: characters.name,
+      tagline: characters.tagline,
+      avatar_image_url: characters.avatar_image_url,
+      interactionCount: characters.interactionCount,
+      createdAt: characters.createdAt,
+      userName: users.name,
+      tags: characters.tags,
+    })
+    .from(characters)
+    .leftJoin(users, eq(characters.userId, users.id))
+    .where(
+      and(
+        eq(characters.visibility, "public"),
+        or(...tags.map(tag => like(characters.tags, `%${tag}%`)))
+      )
+    )
+    .orderBy(desc(characters.interactionCount))
+    .limit(limit);
+
+  console.log(`Fetched ${results.length} characters`);
+
+  return results.map(character => ({
+    ...character,
+    tags: JSON.parse(character.tags),
+    createdAt: new Date(character.createdAt),
+  }));
 }

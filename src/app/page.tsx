@@ -7,7 +7,7 @@ import Link from "next/link";
 
 export const runtime = "edge";
 
-export default async function Page() {
+export default async function Page({ searchParams }: { searchParams: { tags?: string }} ) {
   const popularCharacters = await getPopularCharacters();
 
   async function getPopularCharacters() {
@@ -30,7 +30,7 @@ export default async function Page() {
 
   return (
     <div className="text-white w-full overflow-y-auto overflow-x-hidden md:pl-16">
-      <AICharacterGrid characters={popularCharacters} />
+      <AICharacterGrid initialCharacters={popularCharacters} />
       <div className="text-gray-500 flex gap-4 mb-24 text-xs flex-wrap">
         <Link href={"/about"}>
           About 

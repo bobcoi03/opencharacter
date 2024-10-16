@@ -1,11 +1,13 @@
 "use client"
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { MessageCircle } from "lucide-react";
-import { characters } from "@/server/db/schema";
+import { CharacterTag, SFWCharacterTags } from "@/types/character-tags";
+import { searchCharactersByTags } from "@/app/actions/index"; // Import the server action
 
 type Character = {
   id: string;
@@ -70,10 +72,32 @@ const AICharacterCard: React.FC<{ character: Character }> = ({ character }) => {
   );
 };
 
-const AICharacterGrid: React.FC<{ characters: Character[] }> = ({
-  characters,
+const AICharacterGrid: React.FC<{ initialCharacters: Character[] }> = ({
+  initialCharacters,
 }) => {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [sortOption, setSortOption] = useState<SortOption>("popular");
+  const [showTags, setShowTags] = useState(false);
+  const [characters, setCharacters] = useState<Character[]>(initialCharacters);
+
+  const activeTags = useMemo(() => {
+    const tags = searchParams.get('tags');
+    return tags ? tags.split(',') : [];
+  }, [searchParams]);
+
+  useEffect(() => {
+    const fetchCharacters = async () => {
+      if (activeTags.length > 0) {
+        const fetchedCharacters = await searchCharactersByTags(activeTags as CharacterTag[]);
+        setCharacters(fetchedCharacters);
+      } else {
+        setCharacters(initialCharacters);
+      }
+    };
+
+    fetchCharacters();
+  }, [activeTags, initialCharacters]);
 
   const sortedCharacters = useMemo(() => {
     switch (sortOption) {
@@ -96,31 +120,72 @@ const AICharacterGrid: React.FC<{ characters: Character[] }> = ({
     }
   }, [characters, sortOption]);
 
-  const SortButton: React.FC<{ option: SortOption; label: string }> = ({ option, label }) => (
+  const Button: React.FC<{ label: string; isActive: boolean; onClick: () => void }> = ({ label, isActive, onClick }) => (
     <div
-      className={`text-sm font-semibold text-white rounded-lg p-3 max-w-24 text-center hover:cursor-pointer ${
-        sortOption === option ? "bg-black" : "bg-neutral-800 hover:bg-gray-700"
+      className={`text-sm font-semibold text-white rounded-lg p-2 text-center hover:cursor-pointer transition-colors duration-200 ${
+        isActive ? "bg-black" : "bg-neutral-800 hover:bg-gray-700"
       }`}
-      onClick={() => setSortOption(option)}
+      onClick={onClick}
     >
       {label}
     </div>
   );
 
-  return (
-    <div className="bg-neutral-900">
-      <div className="w-full flex gap-2 mb-3">
-        <SortButton option="popular" label="Popular" />
-        <SortButton option="new" label="New" />
-        <SortButton option="old" label="Old" />
+  const CharacterTypeButton: React.FC<{ tag: CharacterTag }> = ({ tag }) => {
+    const isActive = activeTags.includes(tag);
+    
+    const handleClick = () => {
+      let newTags: string[];
+      if (isActive) {
+        newTags = activeTags.filter(t => t !== tag);
+      } else {
+        newTags = [...activeTags, tag];
+      }
+      router.push(`/?tags=${newTags.join(',')}`);
+    };
+
+    return (
+      <div
+        className={`text-sm font-semibold text-white rounded-lg p-2 text-center hover:cursor-pointer transition-colors duration-200 ${
+          isActive ? "bg-black" : "bg-neutral-800 hover:bg-gray-700"
+        }`}
+        onClick={handleClick}
+      >
+        {tag.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
       </div>
+    );
+  };
+
+  const handleReset = () => {
+    router.push('/');
+  };
+
+  return (
+    <div className="bg-neutral-900 p-4">
+      <div className="w-full flex flex-wrap gap-2 mb-4">
+        <Button label="Popular" isActive={sortOption === "popular"} onClick={() => setSortOption("popular")} />
+        <Button label="New" isActive={sortOption === "new"} onClick={() => setSortOption("new")} />
+        <Button label="Old" isActive={sortOption === "old"} onClick={() => setSortOption("old")} />
+        <Button label="Tags" isActive={showTags} onClick={() => setShowTags(!showTags)} />
+        {activeTags.length > 0 && (
+          <Button label="Reset Tags" isActive={false} onClick={handleReset} />
+        )}
+      </div>
+
+      {showTags && (
+        <div className="w-full flex flex-wrap gap-2 mb-4 overflow-x-auto">
+          {SFWCharacterTags.map((tag) => (
+            <CharacterTypeButton key={tag} tag={tag} />
+          ))}
+        </div>
+      )}
     
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
         {sortedCharacters.map((character) => (
           <AICharacterCard key={character.id} character={character} />
         ))}
       </div>
-      <div className="border m-8" />
+      <div className="border-t border-gray-700 mt-8" />
     </div>
   );
 };
