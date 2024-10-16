@@ -1,10 +1,11 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { ArrowLeft, Upload, Globe, Lock } from "lucide-react";
+import { ArrowLeft, Upload, Globe, Lock, AlertTriangle, Tag, ChevronUp, ChevronDown  } from "lucide-react";
 import Link from "next/link";
-import { SubmitButton } from "@/app/new/submit-button";
+import { Loader2 } from "lucide-react";
 import { characters } from "@/server/db/schema";
+import { CharacterTags, AllCharacterTags, SFWCharacterTags, CharacterTag } from "@/types/character-tags";
 
 type CharacterVisibility = "public" | "private";
 
@@ -17,6 +18,7 @@ export function CreateCharacterForm({
   character?: typeof characters.$inferSelect;
   editMode?: boolean;
 }) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
   const [descriptionCharCount, setDescriptionCharCount] = useState<number>(
@@ -25,6 +27,38 @@ export function CreateCharacterForm({
   const [visibility, setVisibility] = useState<CharacterVisibility>(
     (character?.visibility as CharacterVisibility) ?? "public",
   );
+  const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
+  const [selectedTags, setSelectedTags] = useState<CharacterTag[]>(() => {
+    if (character?.tags) {
+      try {
+        const parsedTags = JSON.parse(character.tags);
+        return Array.isArray(parsedTags) ? parsedTags.filter((tag): tag is CharacterTag => AllCharacterTags.includes(tag as CharacterTag)) : [];
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  });
+  const [isNSFW, setIsNSFW] = useState<boolean>(selectedTags.includes(CharacterTags.NSFW));
+
+  const handleTagToggle = (tag: CharacterTag) => {
+    if (tag === CharacterTags.NSFW) return; // Ignore NSFW tag in this function
+
+    setSelectedTags(prev => 
+      prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
+    );
+  };
+
+  const handleNSFWToggle = (checked: boolean) => {
+    setIsNSFW(checked);
+    setSelectedTags(prev => {
+      if (checked) {
+        return [...prev.filter(tag => tag !== CharacterTags.NSFW), CharacterTags.NSFW];
+      } else {
+        return prev.filter(tag => tag !== CharacterTags.NSFW);
+      }
+    });
+  };
 
   useEffect(() => {
     if (character) {
@@ -60,6 +94,20 @@ export function CreateCharacterForm({
     }
   };
 
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setIsSubmitting(true);
+    const formData = new FormData(event.currentTarget);
+    formData.set('tags', JSON.stringify(selectedTags));
+    try {
+      await action(formData);
+    } catch (error) {
+      console.error("Error submitting form:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="w-full bg-white dark:bg-neutral-900 min-h-screen p-6 overflow-y-auto mb-12">
       <header>
@@ -72,7 +120,7 @@ export function CreateCharacterForm({
       </header>
 
       <div className="max-w-3xl mx-auto p-4">
-        <form className="space-y-4" action={action}>
+        <form className="space-y-4" onSubmit={handleSubmit}>
           <div className="flex flex-col items-center mb-6">
             <div className="w-20 h-20 bg-gray-200 dark:bg-gray-700 rounded-full mb-2 flex items-center justify-center overflow-hidden relative">
               {previewUrl ? (
@@ -200,100 +248,47 @@ export function CreateCharacterForm({
             </div>
           </div>
 
-          <div className="space-y-3">
-            <h3 className="text-sm font-medium">AI Behavior Configuration</h3>
-
-            <div>
-              <label className="block mb-1 text-sm font-medium">
-                Temperature
-              </label>
-              <input
-                type="number"
-                name="temperature"
-                min="0"
-                max="2"
-                step="0.1"
-                defaultValue={character?.temperature ?? 1.0}
-                className="w-full p-2 text-sm border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-neutral-900"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Influences response variety. 0.0 to 2.0. Lower values: more
-                predictable; Higher values: more diverse.
-              </p>
+          <div>
+            <label className="block mb-1 text-sm font-medium">
+              Character Tags
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {SFWCharacterTags.map((tag) => (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={() => handleTagToggle(tag)}
+                  className={`px-3 py-1 text-sm border rounded-full flex items-center space-x-2 ${
+                    selectedTags.includes(tag)
+                      ? "border-blue-500 text-blue-500"
+                      : "border-gray-200 dark:border-gray-700"
+                  }`}
+                >
+                  <span>{tag}</span>
+                </button>
+              ))}
             </div>
+          </div>
 
-            <div>
-              <label className="block mb-1 text-sm font-medium">Top P</label>
+          <div>
+            <label className="flex items-center space-x-2">
               <input
-                type="number"
-                name="top_p"
-                min="0"
-                max="1"
-                step="0.05"
-                defaultValue={character?.top_p ?? 1.0}
-                className="w-full p-2 text-sm border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-neutral-900"
+                type="checkbox"
+                checked={isNSFW}
+                onChange={(e) => handleNSFWToggle(e.target.checked)}
+                className="form-checkbox h-5 w-5 text-blue-600"
               />
-              <p className="text-xs text-gray-500 mt-1">
-                Limits token choices to top percentage. 0.0 to 1.0. Lower
-                values: more predictable; Higher values: more diverse.
-              </p>
-            </div>
+              <span className="text-sm font-medium flex items-center">
+                <AlertTriangle size={16} className="mr-1 text-yellow-500" />
+                NSFW Content
+              </span>
+            </label>
+            <p className="text-xs text-gray-500 mt-1 ml-7">
+              If your character contains adult content or is not suitable for all audiences, please tick this box.
+            </p>
+          </div>
 
-            <div>
-              <label className="block mb-1 text-sm font-medium">Top K</label>
-              <input
-                type="number"
-                name="top_k"
-                min="0"
-                step="1"
-                defaultValue={character?.top_k ?? 0}
-                className="w-full p-2 text-sm border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-neutral-900"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Limits token choices to top K. 0 or above. Lower values: more
-                predictable; 0: consider all choices.
-              </p>
-            </div>
-
-            <div>
-              <label className="block mb-1 text-sm font-medium">
-                Frequency Penalty
-              </label>
-              <input
-                type="number"
-                name="frequency_penalty"
-                min="-2"
-                max="2"
-                step="0.1"
-                defaultValue={character?.frequency_penalty ?? 0.0}
-                className="w-full p-2 text-sm border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-neutral-900"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Controls token repetition based on frequency. -2.0 to 2.0.
-                Positive: reduce repetition; Negative: encourage repetition.
-              </p>
-            </div>
-
-            <div>
-              <label className="block mb-1 text-sm font-medium">
-                Presence Penalty
-              </label>
-              <input
-                type="number"
-                name="presence_penalty"
-                min="-2"
-                max="2"
-                step="0.1"
-                defaultValue={character?.presence_penalty ?? 0.0}
-                className="w-full p-2 text-sm border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-neutral-900"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Adjusts repetition of used tokens. -2.0 to 2.0. Positive: reduce
-                repetition; Negative: encourage repetition.
-              </p>
-            </div>
-
-            <div>
+          <div>
               <label className="block mb-1 text-sm font-medium">
                 Max Tokens
               </label>
@@ -311,8 +306,118 @@ export function CreateCharacterForm({
                 length of the generated text.
               </p>
             </div>
+
+          <div className="space-y-3">
+            <div className="mt-6">
+              <button
+                type="button"
+                onClick={() => setShowAdvancedSettings(!showAdvancedSettings)}
+                className="flex items-center text-sm"
+              >
+                {showAdvancedSettings ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                <span className="text-sm font-medium text-white ">Advanced AI Behavior Configuration</span>
+              </button>
+
+              {showAdvancedSettings && (
+                <div className="mt-4 space-y-4">
+                  <div>
+                    <label className="block mb-1 text-sm font-medium">Temperature</label>
+                    <input
+                      type="number"
+                      name="temperature"
+                      min="0"
+                      max="2"
+                      step="0.1"
+                      defaultValue={character?.temperature ?? 1.0}
+                      className="w-full p-2 text-sm border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-neutral-900"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Influences response variety. 0.0 to 2.0. Lower values: more predictable; Higher values: more diverse.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block mb-1 text-sm font-medium">Top P</label>
+                    <input
+                      type="number"
+                      name="top_p"
+                      min="0"
+                      max="1"
+                      step="0.05"
+                      defaultValue={character?.top_p ?? 1.0}
+                      className="w-full p-2 text-sm border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-neutral-900"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Limits token choices to top percentage. 0.0 to 1.0. Lower values: more predictable; Higher values: more diverse.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block mb-1 text-sm font-medium">Top K</label>
+                    <input
+                      type="number"
+                      name="top_k"
+                      min="0"
+                      step="1"
+                      defaultValue={character?.top_k ?? 0}
+                      className="w-full p-2 text-sm border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-neutral-900"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Limits token choices to top K. 0 or above. Lower values: more predictable; 0: consider all choices.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block mb-1 text-sm font-medium">Frequency Penalty</label>
+                    <input
+                      type="number"
+                      name="frequency_penalty"
+                      min="-2"
+                      max="2"
+                      step="0.1"
+                      defaultValue={character?.frequency_penalty ?? 0.0}
+                      className="w-full p-2 text-sm border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-neutral-900"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Controls token repetition based on frequency. -2.0 to 2.0. Positive: reduce repetition; Negative: encourage repetition.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block mb-1 text-sm font-medium">Presence Penalty</label>
+                    <input
+                      type="number"
+                      name="presence_penalty"
+                      min="-2"
+                      max="2"
+                      step="0.1"
+                      defaultValue={character?.presence_penalty ?? 0.0}
+                      className="w-full p-2 text-sm border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-neutral-900"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Adjusts repetition of used tokens. -2.0 to 2.0. Positive: reduce repetition; Negative: encourage repetition.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
           </div>
-          <SubmitButton editMode={editMode} />
+
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="mt-6 text-black px-12 py-2 border border-gray-200 dark:border-gray-700 rounded-full tracking-widest uppercase font-bold bg-transparent hover:bg-[#616467] hover:text-white dark:text-neutral-200 transition duration-200 flex items-center justify-center"
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Creating...
+              </>
+            ) : (
+              !editMode ? 'Create Character' : 'Save Changes'
+            )}
+          </button>        
         </form>
       </div>
     </div>

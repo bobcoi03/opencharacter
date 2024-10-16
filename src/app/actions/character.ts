@@ -6,6 +6,7 @@ import { auth } from "@/server/auth";
 import { z } from "zod";
 import FileStorage, { uploadToR2 } from "@/lib/r2_storage";
 import { eq, like, or, desc, sql, and } from "drizzle-orm";
+import { CharacterTags } from "@/types/character-tags";
 
 const CreateCharacterSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -23,6 +24,14 @@ const CreateCharacterSchema = z.object({
   min_p: z.coerce.number().min(0).max(1).optional().default(0.0),
   top_a: z.coerce.number().min(0).max(1).optional().default(0.0),
   max_tokens: z.coerce.number().int().min(1).optional().default(600),
+  tags: z.string().transform((str) => {
+    try {
+      const parsed = JSON.parse(str);
+      return z.array(z.enum(Object.values(CharacterTags) as [string, ...string[]])).parse(parsed);
+    } catch {
+      return [];
+    }
+  }),
 });
 
 export async function createCharacter(formData: FormData) {
@@ -51,6 +60,7 @@ export async function createCharacter(formData: FormData) {
     description,
     greeting,
     visibility,
+    tags,
     temperature,
     top_p,
     top_k,
@@ -79,13 +89,13 @@ export async function createCharacter(formData: FormData) {
         greeting,
         visibility,
         userId: session.user.id,
-        tags: "[]",
+        tags: JSON.stringify(tags), // Ensure tags are stored as a JSON string
         interactionCount: 0,
         likeCount: 0,
         avatar_image_url: avatarImageUrl,
         createdAt: sql`CURRENT_TIMESTAMP`,
         updatedAt: sql`CURRENT_TIMESTAMP`,
-        // New AI behavior fields
+        // AI behavior fields
         temperature,
         top_p,
         top_k,
@@ -163,6 +173,7 @@ export async function updateCharacter(characterId: string, formData: FormData) {
       ...validatedData,
       avatar_image_url: avatarImageUrl,
       updatedAt: new Date(),
+      tags: JSON.stringify(validatedData.tags)
     };
 
     const updatedCharacter = await db
