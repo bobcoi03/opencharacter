@@ -44,11 +44,6 @@ export const models: Models = {
         name: "mistralai/mistral-7b-instruct:nitro",
         paid: false
     },
-    "gryphe/mythomist-7b": {
-        id: "gryphe/mythomist-7b",
-        name: "gryphe/mythomist-7b",
-        paid: false
-    },
     "meta-llama/llama-3.1-70b-instruct": {
         id: "meta-llama/llama-3.1-70b-instruct",
         name: "meta-llama/llama-3.1-70b-instruct",
@@ -77,6 +72,41 @@ export const models: Models = {
     "mistralai/codestral-mamba": {
         id: "mistralai/codestral-mamba",
         name: "mistralai/codestral-mamba",
+        paid: true
+    },
+    "openai/gpt-4o-mini": {
+        id: "openai/gpt-4o-mini",
+        name: "openai/gpt-4o-mini",
+        paid: true,
+    },
+    "anthropic/claude-3-haiku": {
+        id: "anthropic/claude-3-haiku",
+        name: "anthropic/claude-3-haiku",
+        paid: true,
+    },
+    "cognitivecomputations/dolphin-mixtral-8x22b": {
+        id: "cognitivecomputations/dolphin-mixtral-8x22b",
+        name: "cognitivecomputations/dolphin-mixtral-8x22b",
+        paid: true,
+    },
+    "google/gemma-2-27b-it": {
+        id: "google/gemma-2-27b-it",
+        name: "google/gemma-2-27b-it",
+        paid: true,
+    },
+    "mistralai/mixtral-8x7b-instruct": {
+        id: "mistralai/mixtral-8x7b-instruct",
+        name: "mistralai/mixtral-8x7b-instruct",
+        paid: true,
+    },
+    "gryphe/mythomist-7b": {
+        id: "gryphe/mythomist-7b",
+        name: "gryphe/mythomist-7b",
+        paid: true,
+    },
+    "anthropic/claude-instant-1:beta": {
+        id: "anthropic/claude-instant-1:beta",
+        name: "anthropic/claude-instant-1:beta",
         paid: true
     }
 };
