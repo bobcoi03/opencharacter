@@ -12,7 +12,14 @@ import {
 import { db } from "@/server/db";
 import { eq, and, desc, sql, or } from "drizzle-orm";
 import { auth } from "@/server/auth";
-import { isValidModel } from "@/lib/llm_models";
+import { isValidModel, isPaidModel } from "@/lib/llm_models";
+
+// TRIAL RUN!!
+const PAID_USER_IDS = [
+  "fc735725-b774-4376-bb38-538a3aada18f", // me local
+  "ed84afc0-d6d9-4c15-8e4c-757618597ba1", // me prod
+  "16f0830a-f6a6-4755-8020-e5420fbbb356", // 1
+];
 
 type ErrorResponse = {
   error: {
@@ -147,8 +154,16 @@ export async function continueConversation(
   chat_session_id?: string,
 ) {
   const session = await auth();
+
   if (!session?.user) {
     return { error: true, message: "Failed to authenticate user" };
+  }
+
+  console.log(`USERID: ${session.user.id}`)
+
+  // Check if the model is paid and if the user has access
+  if (isPaidModel(model_name) && !PAID_USER_IDS.includes(session.user.id!)) {
+    return { error: true, message: "Model is only available to valued anons" };
   }
 
   // Check if the character is public or if it's private and belongs to the user

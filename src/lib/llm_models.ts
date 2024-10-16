@@ -1,55 +1,108 @@
 type Model = {
     id: string;
     name: string;
+    paid: boolean;
 };
 
 type Models = {
     [key: string]: Model;
 };
 
-// Create the models object
-export const models = {
+export const models: Models = {
     "gryphe/mythomax-l2-13b": {
-        "id": "gryphe/mythomax-l2-13b",
-        "name": "MythomaxL213B"
+        id: "gryphe/mythomax-l2-13b",
+        name: "MythomaxL213B",
+        paid: false
     },
     "microsoft/wizardlm-2-7b": {
-        "id": "microsoft/wizardlm-2-7b",
-        "name": "microsoft/wizardlm-2-7b",
+        id: "microsoft/wizardlm-2-7b",
+        name: "microsoft/wizardlm-2-7b",
+        paid: false
     },
     "mistralai/mistral-nemo": {
-        "id": "mistralai/mistral-nemo",
-        "name": "mistralai/mistral-nemo"
+        id: "mistralai/mistral-nemo",
+        name: "mistralai/mistral-nemo",
+        paid: false
     },
     "google/gemini-flash-1.5-8b": {
-        "id": "google/gemini-flash-1.5-8b",
-        "name": "google/gemini-flash-1.5-8b",
+        id: "google/gemini-flash-1.5-8b",
+        name: "google/gemini-flash-1.5-8b",
+        paid: false
     },
     "mistralai/mistral-7b-instruct": {
-        "id": "mistralai/mistral-7b-instruct",
-        "name": "mistralai/mistral-7b-instruct"
+        id: "mistralai/mistral-7b-instruct",
+        name: "mistralai/mistral-7b-instruct",
+        paid: false
     },
     "google/gemma-2-9b-it": {
-        "id": "google/gemma-2-9b-it",
-        "name": "google/gemma-2-9b-it"
+        id: "google/gemma-2-9b-it",
+        name: "google/gemma-2-9b-it",
+        paid: false
     },
     "mistralai/mistral-7b-instruct:nitro": {
-        "id": "mistralai/mistral-7b-instruct:nitro",
-        "name": "mistralai/mistral-7b-instruct:nitro"
+        id: "mistralai/mistral-7b-instruct:nitro",
+        name: "mistralai/mistral-7b-instruct:nitro",
+        paid: false
     },
     "gryphe/mythomist-7b": {
-        "id": "gryphe/mythomist-7b",
-        "name": "gryphe/mythomist-7b"
+        id: "gryphe/mythomist-7b",
+        name: "gryphe/mythomist-7b",
+        paid: false
+    },
+    "meta-llama/llama-3.1-70b-instruct": {
+        id: "meta-llama/llama-3.1-70b-instruct",
+        name: "meta-llama/llama-3.1-70b-instruct",
+        paid: true
+    },
+    "nousresearch/hermes-3-llama-3.1-70b": {
+        id: "nousresearch/hermes-3-llama-3.1-70b",
+        name: "nousresearch/hermes-3-llama-3.1-70b",
+        paid: true
+    },
+    "deepseek/deepseek-chat": {
+        id: "deepseek/deepseek-chat",
+        name: "deepseek/deepseek-chat",
+        paid: true
+    },
+    "microsoft/phi-3.5-mini-128k-instruct": {
+        id: "microsoft/phi-3.5-mini-128k-instruct",
+        name: "microsoft/phi-3.5-mini-128k-instruct",
+        paid: true
+    },
+    "ai21/jamba-1-5-mini": {
+        id: "ai21/jamba-1-5-mini",
+        name: "ai21/jamba-1-5-mini",
+        paid: true
+    },
+    "mistralai/codestral-mamba": {
+        id: "mistralai/codestral-mamba",
+        name: "mistralai/codestral-mamba",
+        paid: true
     }
 };
-  
-// Helper function to get an array of model IDs
+
 export const getModelIds = (): string[] => Object.keys(models);
 
-// Helper function to get an array of Model objects
 export const getModelArray = (): Model[] => Object.values(models);
 
-// Function to validate if a model name exists
-export const isValidModel = (model_name: string): boolean => {
-    return model_name in models;
+export const isValidModel = (modelName: string): boolean => modelName in models;
+
+export const isPaidModel = (modelName: string): boolean => {
+    const model = models[modelName];
+    return model ? model.paid : false;
 };
+
+export const getPaidModelIds = (): string[] => 
+    Object.keys(models).filter(id => models[id].paid);
+
+export const getPaidModelArray = (): Model[] => 
+    Object.values(models).filter(model => model.paid);
+
+export const getFreeModelIds = (): string[] => 
+    Object.keys(models).filter(id => !models[id].paid);
+
+export const getFreeModelArray = (): Model[] => 
+    Object.values(models).filter(model => !model.paid);
+
+export const getModelsByType = (paid: boolean): Model[] => 
+    Object.values(models).filter(model => model.paid === paid);

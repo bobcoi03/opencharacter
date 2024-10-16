@@ -314,15 +314,12 @@ export default function MessageAndInput({
   const [regenerations, setRegenerations] = useState<string[]>([messagesState[messagesState.length -1].content as string]);
   const [currentRegenerationIndex, setCurrentRegenerationIndex] = useState(0);
   const formRef = useRef<HTMLFormElement>(null);
+  const [errorMessage, setErrorMessage] = useState<string>("");
   const { toast } = useToast()
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     adjustTextareaHeight();
   };
-
-  useEffect(() => {
-    console.log(regenerations)
-  }, [regenerations])
 
   const adjustTextareaHeight = () => {
     if (textareaRef.current) {
@@ -422,7 +419,6 @@ export default function MessageAndInput({
       setSelectedModel(savedModel);
     }
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    console.log("len: ", messagesState.length)
   }, [messagesState]);
 
   const handleInputFocus = () => {
@@ -471,7 +467,7 @@ export default function MessageAndInput({
       if ("error" in result) {
         setError(true);
         console.log(result.error)
-        console.log(result.message)
+        setErrorMessage(result.message)
         return;
       }
       for await (const content of readStreamableValue(result)) {
@@ -689,7 +685,7 @@ export default function MessageAndInput({
         <div className="max-w-2xl mx-auto w-full">
           {error && (
             <div className="mb-2 p-2 bg-red-900 border border-red-800 rounded-lg text-red-200 text-sm pointer-events-auto flex justify-between items-center">
-              <p className="flex items-center">
+              <p className="flex items-center text-xs">
                 <svg
                   className="w-4 h-4 mr-2 flex-shrink-0"
                   fill="currentColor"
@@ -701,7 +697,7 @@ export default function MessageAndInput({
                     clipRule="evenodd"
                   />
                 </svg>
-                Failed to send message, please try again
+                {errorMessage}, please try again
               </p>
               <RotateCcw
                 className="w-5 h-5 text-red-500 cursor-pointer hover:text-red-600 ml-2"
