@@ -796,11 +796,11 @@ export default function MessageAndInput({
       </div>
 
       <Link 
-        className="fixed bottom-0 text-center left-0 right-0 text-[10px] text-light text-slate-200 underline" 
-        href={"https://buymeacoffee.com/luongquangn"}
+        className="fixed bottom-0 text-center left-0 right-0 text-[11px] text-light text-slate-200 underline" 
+        href={"https://discordapp.com/users/368400765754277889"}
         target="_blank"
       >
-        If you like the site, consider donating
+        Want access to better models? DM me
       </Link>
 
     </div>
