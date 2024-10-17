@@ -727,9 +727,9 @@ export default function MessageAndInput({
                       <DropdownMenuItem
                         key={model.id}
                         onClick={() => handleModelSelect(model.id)}
-                        className={`flex items-center justify-between ${model.paid ? "bg-red-800" : ""}`}
+                        className={`flex items-center justify-between ${model.paid ? "bg-red-800" : ""} rounded-none text-xs`}
                       >
-                        {model.name} {model.paid && "PAID"}
+                        {model.name} {model.paid && "PAID, DM FOR ACCESS"}
                         {selectedModel === model.id && (
                           <Check className="w-4 h-4 text-green-500" />
                         )}
