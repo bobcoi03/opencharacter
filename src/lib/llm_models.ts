@@ -39,11 +39,6 @@ export const models: Models = {
         name: "google/gemma-2-9b-it",
         paid: false
     },
-    "mistralai/mistral-7b-instruct:nitro": {
-        id: "mistralai/mistral-7b-instruct:nitro",
-        name: "mistralai/mistral-7b-instruct:nitro",
-        paid: false
-    },
     "liquid/lfm-40b": {
         id: "liquid/lfm-40b",
         name: "liquid/lfm-40b",

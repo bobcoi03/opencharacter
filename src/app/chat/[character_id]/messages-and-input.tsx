@@ -17,6 +17,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Loader2Icon,
+  SendHorizonal
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -681,7 +682,7 @@ export default function MessageAndInput({
       </div>
 
       {/* Message Input */}
-      <div className="fixed bottom-0 left-0 right-0 py-4 pointer-events-none w-full max-w-full">
+      <div className="fixed bottom-6 left-0 right-0 py-4 pointer-events-none w-full max-w-full">
         <div className="max-w-2xl mx-auto w-full">
           {error && (
             <div className="mb-2 p-2 bg-red-900 border border-red-800 rounded-lg text-red-200 text-sm pointer-events-auto flex justify-between items-center">
@@ -711,7 +712,7 @@ export default function MessageAndInput({
             className="pointer-events-auto flex items-center space-x-2 max-w-full px-2"
           >
             <div className="relative flex-grow">
-              <div className="absolute inset-0 bg-neutral-700 bg-opacity-20 backdrop-blur-md rounded-xl border-neutral-700"></div>
+              <div className="absolute inset-0 bg-slate-600 bg-opacity-20 backdrop-blur-md rounded-3xl border-neutral-700"></div>
               <div className="absolute left-3 top-1/2 transform -translate-y-1/2 z-20">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -719,7 +720,7 @@ export default function MessageAndInput({
                       type="button"
                       className="bg-neutral-600 rounded-full p-2 transition-opacity opacity-70 hover:opacity-100 focus:opacity-100 hover:cursor-pointer"
                     >
-                      <Cpu className="w-4 h-4 text-gray-300" />
+                      <Cpu className="w-3 h-3 text-gray-300" />
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="max-h-96 overflow-y-auto">
@@ -745,7 +746,7 @@ export default function MessageAndInput({
                 onKeyDown={handleKeyDown}
                 onFocus={handleInputFocus}
                 placeholder={`Message ${character.name}...`}
-                className="w-full py-3 pl-14 pr-12 bg-transparent relative z-10 outline-none text-white text-lg rounded-xl resize-none overflow-hidden"
+                className="w-full py-4 pl-14 pr-12 bg-transparent relative z-10 outline-none text-white text-xl rounded-xl resize-none overflow-hidden"
                 style={{
                   minHeight: "50px",
                   maxHeight: `${MAX_TEXTAREA_HEIGHT}px`,
@@ -755,25 +756,25 @@ export default function MessageAndInput({
               />
               <button
                 type="submit"
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 bg-blue-500 rounded-full p-2 z-20 transition-opacity opacity-70 hover:opacity-100 focus:opacity-100 hover:cursor-pointer"
+                className="absolute right-3 top-1/2 transform bg-blue-700 rounded-full -translate-y-1/2 p-2 z-20 transition-opacity opacity-70 hover:opacity-100 focus:opacity-100 hover:cursor-pointer"
                 disabled={isLoading}
               >
                 {!isLoading ?
-                  <svg
-                    viewBox="0 0 24 24"
-                    className="w-5 h-5 text-white"
-                    fill="none"
-                    stroke="currentColor"
-                  >
-                    <path
-                      d="M5 12h14M12 5l7 7-7 7"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
+                    <svg
+                      viewBox="0 0 24 24"
+                      className="w-8 h-8 text-white"
+                      fill="none"
+                      stroke="currentColor"
+                      >
+                      <path
+                        d="M5 12h14M12 5l7 7-7 7"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
                   :
-                  <Loader2Icon className="w-5 h-5 animate-spin text-white"/>
+                  <Loader2Icon className="w-8 h-8 animate-spin text-white"/>
                 }
               </button>
             </div>
@@ -796,7 +797,7 @@ export default function MessageAndInput({
       </div>
 
       <Link 
-        className="fixed bottom-0 text-center left-0 right-0 text-[11px] text-light text-slate-200 underline" 
+        className="fixed bottom-4 text-center left-0 right-0 text-[11px] text-light text-slate-200 underline" 
         href={"https://discordapp.com/users/368400765754277889"}
         target="_blank"
       >
