@@ -730,7 +730,7 @@ export default function MessageAndInput({
                         onClick={() => handleModelSelect(model.id)}
                         className={`flex items-center justify-between ${model.paid ? "bg-red-800" : ""} rounded-none text-xs`}
                       >
-                        {model.name} {model.paid && "PAID, DM FOR ACCESS"}
+                        {model.name} {model.paid && "DM FOR ACCESS"}
                         {selectedModel === model.id && (
                           <Check className="w-4 h-4 text-green-500" />
                         )}
