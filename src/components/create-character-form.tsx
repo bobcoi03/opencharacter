@@ -253,7 +253,7 @@ export function CreateCharacterForm({
               Character Tags
             </label>
             <div className="flex flex-wrap gap-2">
-              {SFWCharacterTags.map((tag) => (
+              {AllCharacterTags.map((tag) => (
                 <button
                   key={tag}
                   type="button"

@@ -1,7 +1,7 @@
 import React from "react";
 import { ArrowLeft, MessageSquare, Share2 } from "lucide-react";
 import Link from "next/link";
-import { characters } from "@/server/db/schema";
+import { characters, users } from "@/server/db/schema";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -11,7 +11,7 @@ import { auth } from "@/server/auth";
 
 export const runtime = "edge";
 
-const MAX_DESCRIPTION_LENGTH = 300;
+const MAX_DESCRIPTION_LENGTH = 25000;
 
 export default async function CharacterProfilePage({
   params,
@@ -42,13 +42,20 @@ export default async function CharacterProfilePage({
     );
   }
 
-  let character = await db.query.characters.findFirst({
-    where: whereClause,
-  });
+  let result = await db.select({
+    character: characters,
+    userName: users.name,
+  })
+  .from(characters)
+  .leftJoin(users, eq(characters.userId, users.id))
+  .where(whereClause)
+  .limit(1);
 
-  if (!character) {
+  if (result.length === 0) {
     return <div>No character found</div>;
   }
+
+  const { character, userName } = result[0];
 
   const truncateDescription = (text: string, maxLength: number) => {
     if (text.length <= maxLength) return text;
@@ -56,8 +63,8 @@ export default async function CharacterProfilePage({
   };
 
   return (
-    <div className="w-full bg-white dark:bg-neutral-900 min-h-screen p-4 lg:p-6 overflow-y-auto mt-12">
-      <header className="mb-6">
+    <div className="bg-white dark:bg-neutral-900 min-h-screen p-4 lg:p-6 overflow-y-auto mt-12 mb-24 md:ml-12">
+      <header className="">
         <Link
           href="/"
           className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-neutral-800 inline-block"
@@ -66,7 +73,7 @@ export default async function CharacterProfilePage({
         </Link>
       </header>
 
-      <div className="max-w-7xl mx-auto lg:flex lg:space-x-8">
+      <div className="max-w-5xl mx-auto lg:flex lg:space-x-8 overflow-x-hidden">
         {/* Left column (Profile info) */}
         <div className="lg:w-1/3 mb-6 lg:mb-0">
           <div className="flex flex-col items-center mb-6">
@@ -81,7 +88,7 @@ export default async function CharacterProfilePage({
               {character.name}
             </h1>
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              By @{character.name.toLowerCase().replace(" ", "")}
+              By @{userName || "unknown"}
             </p>
           </div>
 
@@ -124,11 +131,6 @@ export default async function CharacterProfilePage({
         <div className="lg:w-2/3">
           <div className="mb-8">
             <div className="bg-gray-100 dark:bg-neutral-800 p-4 rounded-lg mb-4">
-              <div className="flex justify-between items-center mb-2">
-                <h2 className="text-xl font-semibold text-black dark:text-white">
-                  About
-                </h2>
-              </div>
               <h3 className="text-lg font-semibold mb-2 text-black dark:text-white">
                 About {character.name}
               </h3>
@@ -140,22 +142,12 @@ export default async function CharacterProfilePage({
               </p>
 
               <h3 className="text-md font-semibold mb-2 text-black dark:text-white">
-                {character.name}
-                {"'"}s Area of Expertise
+                Greeting Message from {character.name}
               </h3>
-              <p className="text-sm text-gray-700 dark:text-gray-300 mb-4">
+              <p className="text-md text-gray-700 dark:text-gray-300 mb-4">
                 {character.tagline}
               </p>
 
-              <h3 className="text-md font-semibold mb-2 text-black dark:text-white">
-                I geek out on...
-              </h3>
-              <p className="text-sm text-gray-700 dark:text-gray-300">
-                {truncateDescription(
-                  character.description,
-                  MAX_DESCRIPTION_LENGTH,
-                )}
-              </p>
             </div>
           </div>
         </div>
