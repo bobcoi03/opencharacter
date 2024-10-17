@@ -43,7 +43,7 @@ export default async function ProfileLayout({ children, params }: { children: Re
     return (
         <div className="flex justify-center bg-neutral-900">
             <div className="bg-neutral-900 text-white p-4 w-full max-w-lg">
-                <div className="flex flex-col items-center mb-6">
+                <div className="flex flex-col items-center mb-6 gap-2">
                     <div className="w-32 h-32 rounded-full overflow-hidden mb-2">
                         <img
                             src={user.image ?? '/default-avatar.jpg'}
@@ -52,6 +52,7 @@ export default async function ProfileLayout({ children, params }: { children: Re
                         />
                     </div>
                     <h1 className="text-xl font-bold mb-1">{user.name ?? 'User'}</h1>
+                    <p>{user.bio}</p>
                     <p className="text-sm text-neutral-400 mb-2">
                     <MessageCircle className="inline w-4 h-4 mr-1" /> {chatCountDisplay} Chats
                     </p>

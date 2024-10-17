@@ -17,6 +17,7 @@ type Character = {
   interactionCount: number;
   createdAt: Date;
   userName: string | null;
+  userId: string;
 };
 
 type SortOption = "popular" | "new" | "old";
@@ -61,7 +62,7 @@ const AICharacterCard: React.FC<{ character: Character }> = ({ character }) => {
           {truncatedTagline}
         </p>
         <div className="flex items-center text-xs text-gray-500 mt-1 w-full justify-between px-2 py-2">
-          <span>@{character.userName}</span>
+          <Link href={`/public-profile/${character.userId}`} className="hover:underline hover:text-blue-600">@{character.userName}</Link>
           <div className="flex items-center">
             <MessageCircle className="w-3 h-3 mr-1" />
             <span>{character.interactionCount}</span>

@@ -20,6 +20,7 @@ export default async function Page({ searchParams }: { searchParams: { tags?: st
         interactionCount: characters.interactionCount,
         createdAt: characters.createdAt,
         userName: users.name,
+        userId: characters.userId,
       })
       .from(characters)
       .leftJoin(users, eq(characters.userId, users.id))

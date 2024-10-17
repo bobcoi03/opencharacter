@@ -274,6 +274,7 @@ type CharacterWithUserName = {
   createdAt: Date;
   userName: string | null;
   tags: string[];
+  userId: string
 };
 
 export async function searchCharactersByTags(tags: CharacterTag[], limit = 500): Promise<CharacterWithUserName[]> {
@@ -289,6 +290,7 @@ export async function searchCharactersByTags(tags: CharacterTag[], limit = 500):
       createdAt: characters.createdAt,
       userName: users.name,
       tags: characters.tags,
+      userId: characters.userId,
     })
     .from(characters)
     .leftJoin(users, eq(characters.userId, users.id))
@@ -307,5 +309,6 @@ export async function searchCharactersByTags(tags: CharacterTag[], limit = 500):
     ...character,
     tags: JSON.parse(character.tags),
     createdAt: new Date(character.createdAt),
+    userId: character.userId
   }));
 }
