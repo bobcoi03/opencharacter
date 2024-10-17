@@ -44,6 +44,41 @@ export const models: Models = {
         name: "mistralai/mistral-7b-instruct:nitro",
         paid: false
     },
+    "liquid/lfm-40b": {
+        id: "liquid/lfm-40b",
+        name: "liquid/lfm-40b",
+        paid: false,
+    },
+    "meta-llama/llama-3.2-3b-instruct": {
+        id: "meta-llama/llama-3.2-3b-instruct",
+        name: "meta-llama/llama-3.2-3b-instruct",
+        paid: false,
+    },
+    "meta-llama/llama-3.2-1b-instruct": {
+        id: "meta-llama/llama-3.2-1b-instruct",
+        name: "meta-llama/llama-3.2-1b-instruct",
+        paid: false,
+    },
+    "meta-llama/llama-3.1-8b-instruct": {
+        id: "meta-llama/llama-3.1-8b-instruct",
+        name: "meta-llama/llama-3.1-8b-instruct",
+        paid: false,
+    },
+    "qwen/qwen-2-7b-instruct": {
+        id: "qwen/qwen-2-7b-instruct",
+        name: "qwen/qwen-2-7b-instruct",
+        paid: false,
+    },
+    "mistralai/mistral-7b-instruct-v0.3": {
+        id: "mistralai/mistral-7b-instruct-v0.3",
+        name: "mistralai/mistral-7b-instruct-v0.3",
+        paid: false
+    },
+    "meta-llama/llama-3-8b-instruct": {
+        id: "meta-llama/llama-3-8b-instruct",
+        name: "meta-llama/llama-3-8b-instruct",
+        paid: false
+    },
     "meta-llama/llama-3.1-70b-instruct": {
         id: "meta-llama/llama-3.1-70b-instruct",
         name: "meta-llama/llama-3.1-70b-instruct",
