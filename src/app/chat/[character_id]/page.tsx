@@ -390,9 +390,9 @@ function ChatHeader({
               />
             )}
           </div>
-          <p className="text-xs font-light text-gray-400">
+          <Link className="text-xs font-light text-gray-400 hover:underline hover:text-blue-700" href={`/public-profile/${character.userId}`}>
             by {madeByUsername}
-          </p>
+          </Link>
         </div>
       </div>
 

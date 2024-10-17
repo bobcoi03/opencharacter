@@ -669,9 +669,9 @@ export default function MessageAndInput({
             <ReactMarkdown className="font-light text-md text-slate-200">
               {character.tagline}
             </ReactMarkdown>
-            <p className="font-light text-xs text-slate-200">
+            <Link className="text-xs font-light text-gray-400 hover:underline hover:text-blue-700" href={`/public-profile/${character.userId}`}>
               by {made_by_name}
-            </p>
+            </Link>
           </div>
 
           <div className="pb-32 max-w-2xl mx-auto px-2">

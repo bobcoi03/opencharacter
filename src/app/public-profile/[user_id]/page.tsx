@@ -69,7 +69,7 @@ export default async function ProfileLayout({ params }: { params: { user_id: str
                                 {character.avatar_image_url ? (
                                     <img src={character.avatar_image_url} alt={character.name} className="w-16 h-16 rounded-md mr-3 flex-shrink-0 object-cover" />
                                 ) : (
-                                    <div className="w-24 h-24 bg-neutral-700 rounded-full flex items-center justify-center text-xl font-bold text-white mr-3 flex-shrink-0">
+                                    <div className="w-16 h-16 bg-neutral-700 flex items-center justify-center text-xl font-bold text-white mr-3 flex-shrink-0">
                                         {character.name.charAt(0)}
                                     </div>
                                 )}
