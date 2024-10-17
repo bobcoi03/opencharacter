@@ -6,7 +6,7 @@ import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { MessageCircle } from "lucide-react";
-import { CharacterTag, SFWCharacterTags } from "@/types/character-tags";
+import { AllCharacterTags, CharacterTag, CharacterTags, SFWCharacterTags } from "@/types/character-tags";
 import { searchCharactersByTags } from "@/app/actions/index"; // Import the server action
 
 type Character = {
@@ -174,7 +174,7 @@ const AICharacterGrid: React.FC<{ initialCharacters: Character[] }> = ({
 
       {showTags && (
         <div className="w-full flex flex-wrap gap-2 mb-4 overflow-x-auto">
-          {SFWCharacterTags.map((tag) => (
+          {AllCharacterTags.map((tag) => (
             <CharacterTypeButton key={tag} tag={tag} />
           ))}
         </div>
