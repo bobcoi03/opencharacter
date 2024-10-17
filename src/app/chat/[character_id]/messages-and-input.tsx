@@ -16,8 +16,7 @@ import {
   MoreHorizontal,
   ChevronLeft,
   ChevronRight,
-  Loader2Icon,
-  SendHorizonal
+  Loader2,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -471,6 +470,7 @@ export default function MessageAndInput({
         setErrorMessage(result.message)
         return;
       }
+      console.log("result: ", result)
       for await (const content of readStreamableValue(result)) {
         setMessagesState([
           ...newMessages,
@@ -489,10 +489,10 @@ export default function MessageAndInput({
         }
       }
     } catch (err) {
+      console.log(err)
       setError(true);
     } finally {
       setIsLoading(false);
-
       if (regenerate) {
         setCurrentRegenerationIndex(prev => prev + 1)
       }
@@ -774,7 +774,7 @@ export default function MessageAndInput({
                       />
                     </svg>
                   :
-                  <Loader2Icon className="w-8 h-8 animate-spin text-white"/>
+                  <Loader2 className="w-8 h-8 animate-spin" />
                 }
               </button>
             </div>

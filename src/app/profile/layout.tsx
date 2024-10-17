@@ -10,7 +10,7 @@ type User = typeof users.$inferSelect;
 
 export const runtime = "edge"
 
-export default async function ProfileLayout({ children }: { children: React.ReactNode }) {
+export default async function ProfileLayout({ children, params }: { children: React.ReactNode, params: { user_id: string } }) {
     const session = await auth()
 
     if (!session?.user) {

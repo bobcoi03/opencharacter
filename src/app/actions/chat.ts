@@ -18,7 +18,8 @@ import { isValidModel, isPaidModel } from "@/lib/llm_models";
 const PAID_USER_IDS = [
   "fc735725-b774-4376-bb38-538a3aada18f", // me local
   "ed84afc0-d6d9-4c15-8e4c-757618597ba1", // me prod
-  "16f0830a-f6a6-4755-8020-e5420fbbb356", // 1
+  "16f0830a-f6a6-4755-8020-e5420fbbb356", // 1 16/10/24
+  "b3abb1e8-8d95-482f-8deb-ea3f86b56348", // m 17/10/24
 ];
 
 type ErrorResponse = {
