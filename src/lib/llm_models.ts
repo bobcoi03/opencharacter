@@ -19,11 +19,6 @@ export const models: Models = {
         name: "microsoft/wizardlm-2-7b",
         paid: false
     },
-    "mistralai/mistral-nemo": {
-        id: "mistralai/mistral-nemo",
-        name: "mistralai/mistral-nemo",
-        paid: false
-    },
     "google/gemini-flash-1.5-8b": {
         id: "google/gemini-flash-1.5-8b",
         name: "google/gemini-flash-1.5-8b",
@@ -73,6 +68,11 @@ export const models: Models = {
         id: "meta-llama/llama-3-8b-instruct",
         name: "meta-llama/llama-3-8b-instruct",
         paid: false
+    },
+    "mistralai/mistral-nemo": {
+        id: "mistralai/mistral-nemo",
+        name: "mistralai/mistral-nemo",
+        paid: true,
     },
     "meta-llama/llama-3.1-70b-instruct": {
         id: "meta-llama/llama-3.1-70b-instruct",
