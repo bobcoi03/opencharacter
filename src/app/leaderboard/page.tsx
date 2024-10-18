@@ -40,14 +40,14 @@ export default async function LeaderBoard() {
     const leaderboardData = await getLeaderboardData();
 
     return (
-        <div className="container mx-auto px-4 py-8">
-            <h1 className="text-3xl font-bold mb-6 text-center text-white">Creator Leaderboard Top 100</h1>
-            <div className="grid gap-4">
+        <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8">
+            <h1 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6 text-center text-white">Creator Leaderboard Top 100</h1>
+            <div className="grid gap-2 sm:gap-4">
                 {leaderboardData.map((user, index) => (
-                    <Card key={user.id} className="bg-neutral-800 text-white p-4">
+                    <Card key={user.id} className="bg-neutral-800 text-white p-2 sm:p-4">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center">
-                                <div className="w-20 h-20 rounded-md overflow-hidden mr-4 flex-shrink-0">
+                                <div className="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-md overflow-hidden mr-2 sm:mr-4 flex-shrink-0">
                                     <img
                                         src={user.image ?? '/default-avatar.jpg'}
                                         alt={user.name ?? 'User'}
@@ -55,22 +55,22 @@ export default async function LeaderBoard() {
                                     />
                                 </div>
                                 <div className="flex flex-col justify-center">
-                                    <div className="text-sm text-gray-400 mb-1">#{index + 1}</div>
-                                    <Link className="text-xl font-bold mb-1 hover:underline hover:text-blue-600" href={`/public-profile/${user.id}`}>
+                                    <div className="text-xs sm:text-sm text-gray-400 mb-0.5 sm:mb-1">#{index + 1}</div>
+                                    <Link className="text-base sm:text-lg md:text-xl font-bold mb-0.5 sm:mb-1 hover:underline hover:text-blue-600" href={`/public-profile/${user.id}`}>
                                         {user.name || `User_${user.id.slice(0, 8)}`}
                                     </Link>
-                                    <div className="flex items-center text-sm text-gray-400">
-                                        <Users size={16} className="mr-1" />
+                                    <div className="flex items-center text-xs sm:text-sm text-gray-400">
+                                        <Users size={12} className="mr-1" />
                                         <span>{user.characterCount} public characters</span>
                                     </div>
                                 </div>
                             </div>
                             <div className="flex flex-col items-end">
-                                <div className="text-3xl font-bold text-blue-500">
+                                <div className="text-xl sm:text-2xl md:text-3xl font-bold text-blue-500">
                                     {user.totalChats.toLocaleString()}
                                 </div>
-                                <div className="flex items-center text-sm text-gray-400">
-                                    <MessageCircle size={16} className="mr-1" />
+                                <div className="flex items-center text-xs sm:text-sm text-gray-400">
+                                    <MessageCircle size={12} className="mr-1" />
                                     <span>chats</span>
                                 </div>
                             </div>
