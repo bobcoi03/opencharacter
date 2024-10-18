@@ -26,7 +26,7 @@ export default async function Page({ searchParams }: { searchParams: { tags?: st
       .leftJoin(users, eq(characters.userId, users.id))
       .where(eq(characters.visibility, "public"))
       .orderBy(desc(characters.interactionCount))
-      .limit(500);
+      .limit(100);
   }
 
   return (
