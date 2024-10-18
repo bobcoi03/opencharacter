@@ -40,12 +40,12 @@ export default async function LeaderBoard() {
     const leaderboardData = await getLeaderboardData();
 
     return (
-        <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8 mb-24">
-            <h1 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6 text-center text-white">Creator Leaderboard Top 100</h1>
-            <div className="grid gap-2 sm:gap-4">
+        <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8 mb-24 w-full">
+            <h1 className="text-xl sm:text-3xl font-bold mb-4 sm:mb-6 text-center text-white">🏆 Creator Leaderboard Top 100 🏆</h1>
+            <div className="flex flex-col gap-2 sm:gap-4 w-full items-center">
                 {leaderboardData.map((user, index) => (
-                    <Card key={user.id} className="bg-neutral-800 text-white p-2 sm:p-4">
-                        <div className="flex items-center justify-between">
+                    <Card key={user.id} className="bg-neutral-800 text-white p-2 sm:p-4 w-full max-w-xl">
+                        <div className="flex items-center justify-between w-full">
                             <div className="flex items-center">
                                 <div className="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-md overflow-hidden mr-2 sm:mr-4 flex-shrink-0">
                                     <img
