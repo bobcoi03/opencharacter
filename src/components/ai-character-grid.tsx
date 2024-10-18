@@ -168,6 +168,7 @@ const AICharacterGrid: React.FC<{ initialCharacters: Character[] }> = ({
         <Button label="New" isActive={sortOption === "new"} onClick={() => setSortOption("new")} />
         <Button label="Old" isActive={sortOption === "old"} onClick={() => setSortOption("old")} />
         <Button label="Tags" isActive={showTags} onClick={() => setShowTags(!showTags)} />
+        <Button label="Leaderboard" onClick={() => router.push("/leaderboard")} isActive={false} />
         {activeTags.length > 0 && (
           <Button label="Reset Tags" isActive={false} onClick={handleReset} />
         )}
