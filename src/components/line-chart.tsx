@@ -59,7 +59,7 @@ export default function LineChartDashboard({ messageData }: { messageData: Messa
 
   return (
     <div className="">
-      <h2 className="text-sm font-semibold mb-2 text-white">Daily Message Count by Character Last 30 days</h2>
+      <h2 className="text-sm font-semibold mb-2 text-white">Daily Message Count Last 30 days</h2>
       <ResponsiveContainer width="100%" height={400}>
         <LineChart data={chartData}>
           <XAxis dataKey="date" />
