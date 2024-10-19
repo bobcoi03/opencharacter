@@ -15,6 +15,7 @@ import {
   HandCoins,
   Github,
   Plus,
+  LayoutDashboard,
 } from "lucide-react";
 import { useSession, signIn, signOut } from "next-auth/react";
 import {
@@ -167,6 +168,12 @@ const NewSidebarContent: React.FC<NewSidebarProps> = ({ search }) => {
                     <Link href={"/profile"} className="w-full flex">
                       <User className="mr-2 h-4 w-4" />
                       <span>Profile</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">
+                    <Link href={"/dashboard"} className="w-full flex">
+                      <LayoutDashboard className="mr-2 h-4 w-4" />
+                      <span>Dashboard</span>
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem className="text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">
