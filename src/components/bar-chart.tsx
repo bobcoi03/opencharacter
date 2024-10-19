@@ -1,12 +1,12 @@
 "use client";
 
 import React from 'react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, Cell, CartesianGrid } from 'recharts';
 
-type MessageData = {
-  name: string;
-  messageCount: number;
-}[];
+interface MessageCount {
+  date: string;
+  count: number;
+}
 
 // Define a color palette
 const colors = [
@@ -14,23 +14,19 @@ const colors = [
   "#a4de6c", "#d0ed57", "#ffc658", "#ff7300", "#8dd1e1", "#a4de6c", "#d0ed57", "#83a6ed"
 ];
 
-export default function BarChartDashboard({ messageData }: { messageData: MessageData }) {
+export default function BarChartDashboard({ userCountData }: { userCountData: MessageCount[] }) {
   return (
-    <div className="">
-      <h2 className="text-sm font-semibold mb-2 text-white">Today Message Count by Character</h2>
-      <ResponsiveContainer width="60%" height={250}>
-        <BarChart data={messageData}>
-          <XAxis dataKey="name" />
-          <YAxis />
-          <Tooltip />
-          <Legend />
-          <Bar dataKey="messageCount">
-            {messageData.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
-            ))}
-          </Bar>
-        </BarChart>
-      </ResponsiveContainer>
-    </div>
-  );
+      <div className="">
+          <h2 className="text-sm font-bold">Daily Active Users</h2>
+          <ResponsiveContainer width="100%" height={300}>
+          <BarChart data={userCountData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="date" />
+              <YAxis />
+              <Tooltip />
+              <Bar dataKey="count" fill="#8884d8" />
+          </BarChart>
+          </ResponsiveContainer>
+      </div>
+    );
 }
