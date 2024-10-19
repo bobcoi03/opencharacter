@@ -17,6 +17,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Loader2,
+  Star,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -62,6 +63,7 @@ interface MessageContentProps {
   currentRegenerationIndex: number;
   onNewChatFromHere: (index: number) => void;
   onRewindHere: (index: number) => void;
+  onRateMessage: (index: number, rating: number) => void;
 }
 
 const MessageContent: React.FC<MessageContentProps> = ({
@@ -82,6 +84,7 @@ const MessageContent: React.FC<MessageContentProps> = ({
   currentRegenerationIndex,
   onNewChatFromHere,
   onRewindHere,
+  onRateMessage,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(message.content as string);
@@ -89,6 +92,10 @@ const MessageContent: React.FC<MessageContentProps> = ({
   const [isHovered, setIsHovered] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const handleRating = (rating: number) => {
+    onRateMessage(index, rating);
+  };
 
   const markdownComponents: Partial<Components> = {
     p: ({ children }) => <p className="mb-2 last:mb-0 text-wrap break-words">{children}</p>,
@@ -234,40 +241,54 @@ const MessageContent: React.FC<MessageContentProps> = ({
             </ReactMarkdown>
           )}
         </div>
-        <div className="w-full flex justify-end max-w-full flex-wrap">
-          {!isUser && showRetries && index != 1 && (
-            <div className="flex items-center space-x-2 mt-4 ml-2">
-              <button 
-                className="p-1 rounded-full"
-                onClick={() => {
-                    if (currentRegenerationIndex - 1 <= 0) {
-                      currentRegenerationIndex = 1;
-                    }
-                    onGoBackRegenerate && onGoBackRegenerate(currentRegenerationIndex - 1);
-                }}
-                disabled={currentRegenerationIndex == 0}
-              >
-                <ChevronLeft className={`w-4 h-4 ${currentRegenerationIndex <= 0 ? "text-slate-700" : ""}`} />
-              </button>
-              <span className="text-sm text-gray-400">
-                {currentRegenerationIndex} / {30}
-              </span>
-              <button 
-                className="p-1 rounded-full"
-                onClick={() => {
-                  if (currentRegenerationIndex < regenerations.length - 1) {
-                    onGoBackRegenerate && onGoBackRegenerate(currentRegenerationIndex + 1);
-                  } else {
-                    onRetry && onRetry();
-                  }
-                }}
-                disabled={regenerations.length >= 30}
-              >
-                <ChevronRight className={`w-4 h-4 ${regenerations.length >= 30 ? "text-slate-700" : ""}`} />
-              </button>
+        {!isUser && showRetries && index != 1 && (
+        <div className="w-full flex justify-between max-w-full flex-row">
+          <div className="items-center flex">
+            <div className="flex space-x-1">
+              {Array.from({ length: 5 }, (_, i) => (
+                  <Star 
+                    key={i} 
+                    className={`w-4 h-4 transition-transform transform hover:scale-125 cursor-pointer ${
+                      (message.rating || 0) >= i + 1 ? 'text-yellow-500' : 'text-gray-600'
+                    }`} 
+                    onClick={() => handleRating(i + 1)}
+                    fill={(message.rating || 0) >= i + 1 ? '#FFFF00' : ''}
+                  />
+              ))}
             </div>
-          )}
+          </div>
+          <div className="flex items-center space-x-2 mt-4 ml-2">
+            <button 
+              className="p-1 rounded-full"
+              onClick={() => {
+                  if (currentRegenerationIndex - 1 <= 0) {
+                    currentRegenerationIndex = 1;
+                  }
+                  onGoBackRegenerate && onGoBackRegenerate(currentRegenerationIndex - 1);
+              }}
+              disabled={currentRegenerationIndex == 0}
+            >
+              <ChevronLeft className={`w-4 h-4 ${currentRegenerationIndex <= 0 ? "text-slate-700" : ""}`} />
+            </button>
+            <span className="text-sm text-gray-400">
+              {currentRegenerationIndex} / {30}
+            </span>
+            <button 
+              className="p-1 rounded-full"
+              onClick={() => {
+                if (currentRegenerationIndex < regenerations.length - 1) {
+                  onGoBackRegenerate && onGoBackRegenerate(currentRegenerationIndex + 1);
+                } else {
+                  onRetry && onRetry();
+                }
+              }}
+              disabled={regenerations.length >= 30}
+            >
+              <ChevronRight className={`w-4 h-4 ${regenerations.length >= 30 ? "text-slate-700" : ""}`} />
+            </button>
+          </div>
         </div>
+        )}
       </div>
     </div>
   );
@@ -541,11 +562,32 @@ export default function MessageAndInput({
     }, 1500)
   }
 
+  const handleRateMessage = async (index: number, rating: number) => {
+    const newMessages = messagesState.map((msg, i) =>
+      i === index ? { ...msg, rating } : msg
+    );
+
+    setMessagesState(newMessages);
+
+    try {
+      await saveChat(newMessages, character, chat_session);
+    } catch (error) {
+      console.error("Failed to save message rating:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save message rating. Please try again.",
+        variant: "destructive",
+        className: "text-xs"
+      });
+    }
+  };
+
   const memoizedMessageList = useMemo(() => {
     if (messagesState.length <= 1) return null;
 
     return messagesState.slice(1).map((m, i) => (
       <MessageContent
+        onRateMessage={handleRateMessage}
         showRetries={i === messagesState.length - 2}      
         key={`${m.role}-${i}`}
         userImage={persona?.image || user?.image}
