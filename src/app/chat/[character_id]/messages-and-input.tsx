@@ -25,7 +25,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { characters, personas } from "@/server/db/schema";
+import { characters, ChatMessage, ChatMessageArray, personas } from "@/server/db/schema";
 import ReactMarkdown from "react-markdown";
 import { Components } from "react-markdown";
 import { getModelArray } from "@/lib/llm_models";
@@ -46,7 +46,7 @@ const MAX_TEXTAREA_HEIGHT = 450; // maximum height in pixels
 interface MessageContentProps {
   showRetries: boolean;
   userImage?: string | undefined | null;
-  message: CoreMessage;
+  message: ChatMessage;
   index: number;
   isUser: boolean;
   userName?: string;
@@ -459,7 +459,7 @@ export default function MessageAndInput({
 
     try {
       const result = await continueConversation(
-        newMessages,
+        newMessages as ChatMessageArray,
         selectedModel,
         character,
         chat_session,
@@ -549,7 +549,7 @@ export default function MessageAndInput({
         showRetries={i === messagesState.length - 2}      
         key={`${m.role}-${i}`}
         userImage={persona?.image || user?.image}
-        message={m}
+        message={m as ChatMessage}
         index={i + 1}
         isUser={m.role === "user"}
         userName={persona?.displayName ?? user?.name ?? "Guest"}

@@ -149,7 +149,7 @@ export async function createChatSession(
 }
 
 export async function continueConversation(
-  messages: CoreMessage[],
+  messages: ChatMessageArray,
   model_name: string,
   character: typeof characters.$inferSelect,
   chat_session_id?: string,
@@ -159,8 +159,6 @@ export async function continueConversation(
   if (!session?.user) {
     return { error: true, message: "Failed to authenticate user" };
   }
-
-  console.log(`USERID: ${session.user.id}`)
 
   // Check if the model is paid and if the user has access
   if (isPaidModel(model_name) && !PAID_USER_IDS.includes(session.user.id!)) {
@@ -224,6 +222,7 @@ export async function continueConversation(
       ...messages[0],
       role: "system",
       content: `${messages[0].content}\n\n${personaInfo}`,
+      id: crypto.randomUUID(), // Add unique id to the first message
     };
   }
 
@@ -267,6 +266,8 @@ export async function continueConversation(
             messages.push({
               role: "assistant",
               content: completion.text,
+              time: Date.now(),
+              id: crypto.randomUUID()
             });
 
             let chatSession;

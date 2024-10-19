@@ -123,6 +123,7 @@ export type ChatMessage = {
   id: string;
   content: string;
   role: 'user' | 'assistant' | 'system';
+  time?: number; 
 };
 
 export type ChatMessageArray = ChatMessage[];
