@@ -217,7 +217,7 @@ export async function continueConversation(
 
   // Modify the first message to include persona information
   if (defaultPersona && messages.length > 0) {
-    const personaInfo = `The user you are chatting to is called: ${defaultPersona.displayName} {{user}}\nBackground information:${defaultPersona.background}`;
+    const personaInfo = `The user you are chatting to is called: ${defaultPersona.displayName} {{user}}\nBackground information:${defaultPersona.background}\n`;
     messages[0] = {
       ...messages[0],
       role: "system",
@@ -300,6 +300,15 @@ export async function continueConversation(
                 .orderBy(desc(chat_sessions.updated_at))
                 .limit(1)
                 .then((rows) => rows[0]);
+            }
+
+            if (chatSession.summary) {
+              messages[0] = {
+                ...messages[0],
+                role: "system",
+                content: `${messages[0].content}\nChat Memory:${chatSession.summary}`,
+                id: crypto.randomUUID(),
+              };
             }
 
             if (chatSession) {
@@ -454,4 +463,228 @@ export async function deleteChatSession(chatSessionId: string) {
     console.error("Failed to delete chat session:", error);
     return { success: false, error: "Failed to delete chat session. Please try again." };
   }
+}
+
+export async function summarizeConversation(
+  messages: ChatMessageArray,
+  character: typeof characters.$inferSelect,
+  chat_session_id?: string | null
+) {
+  const session = await auth();
+
+  if (!session?.user) {
+    return { error: true, message: "Failed to authenticate user" };
+  }
+
+  const model_name = "nousresearch/hermes-3-llama-3.1-405b";
+  let chatSession;
+
+  if (chat_session_id) {
+    // If chat_session_id is provided, fetch that specific session
+    chatSession = await db
+      .select()
+      .from(chat_sessions)
+      .where(
+        and(
+          eq(chat_sessions.id, chat_session_id),
+          eq(chat_sessions.user_id, session.user.id!),
+          eq(chat_sessions.character_id, character.id),
+        ),
+      )
+      .limit(1)
+      .then((rows) => rows[0]);
+  } else {
+    // If no chat_session_id, find the most recent session
+    chatSession = await db
+      .select()
+      .from(chat_sessions)
+      .where(
+        and(
+          eq(chat_sessions.user_id, session.user.id!),
+          eq(chat_sessions.character_id, character.id),
+        ),
+      )
+      .orderBy(desc(chat_sessions.updated_at))
+      .limit(1)
+      .then((rows) => rows[0]);
+  }
+
+  if (!chatSession) {
+    return { error: true, message: "No chat session found" };
+  }
+
+  let llm_provider = createOpenAI({
+    baseURL: "https://openrouter.helicone.ai/api/v1",
+    apiKey: process.env.OPENROUTER_API_KEY,
+    headers: {
+      Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+      "Helicone-Auth": `Bearer ${process.env.HELICONE_API_KEY}`,
+      "HTTP-Referer": "https://opencharacter.org",
+      "X-Title": "OpenCharacter",
+      "Helicone-User-Id": session?.user?.email ?? "guest",
+    },
+  });
+
+  const model = llm_provider(model_name);
+
+  const summaryPrompt = `Summarize the following conversation between a user and ${character.name}. Provide a concise summary that captures the main points of the conversation:
+
+${messages.map((msg) => `${msg.role}: ${msg.content}`).join("\n")}
+
+Summary:`;
+
+  try {
+    const result = await streamText({
+      model: model,
+      messages: [{ role: "user", content: summaryPrompt }],
+      temperature: 1,
+      maxTokens: 900,
+      maxRetries: 3,
+      onFinish: async (completion) => {
+        if (session?.user) {
+          try {
+            await db
+              .update(chat_sessions)
+              .set({
+                summary: completion.text,
+                updated_at: new Date(),
+              })
+              .where(eq(chat_sessions.id, chatSession!.id));
+            console.log(`Updated chat session summary: ${chatSession!.id}`);
+          } catch (error) {
+            console.error("Failed to update chat session summary:", error);
+          }
+        }
+      },
+    });
+
+    const stream = createStreamableValue(result.textStream);
+    return stream.value;
+  } catch (error) {
+    console.log("Failed to generate or stream summary:", error);
+    throw new Error("Failed to generate summary. Please try again.");
+  }
+}
+
+export async function saveSummarization(
+  content: string,
+  character: typeof characters.$inferSelect,
+  chat_session_id?: string | null
+) {
+  const session = await auth();
+
+  if (!session?.user) {
+    return { error: true, message: "Failed to authenticate user" };
+  }
+
+  let chatSession;
+
+  if (chat_session_id) {
+    // If chat_session_id is provided, fetch that specific session
+    chatSession = await db
+      .select()
+      .from(chat_sessions)
+      .where(
+        and(
+          eq(chat_sessions.id, chat_session_id),
+          eq(chat_sessions.user_id, session.user.id!),
+          eq(chat_sessions.character_id, character.id)
+        )
+      )
+      .limit(1)
+      .then((rows) => rows[0]);
+  } else {
+    // If no chat_session_id, find the most recent session for the character
+    chatSession = await db
+      .select()
+      .from(chat_sessions)
+      .where(
+        and(
+          eq(chat_sessions.user_id, session.user.id!),
+          eq(chat_sessions.character_id, character.id)
+        )
+      )
+      .orderBy(desc(chat_sessions.updated_at))
+      .limit(1)
+      .then((rows) => rows[0]);
+  }
+
+  if (!chatSession) {
+    return { error: true, message: "No chat session found for the specified character" };
+  }
+
+  try {
+    await db
+      .update(chat_sessions)
+      .set({
+        summary: content,
+        updated_at: new Date(),
+      })
+      .where(eq(chat_sessions.id, chatSession.id));
+
+    console.log(`Updated chat session summary: ${chatSession.id} for character: ${character.name}`);
+    return { success: true, message: "Summary saved successfully" };
+  } catch (error) {
+    console.error("Failed to update chat session summary:", error);
+    return { error: true, message: "Failed to save summary. Please try again." };
+  }
+}
+
+export async function fetchSummary(
+  character: typeof characters.$inferSelect,
+  chat_session_id?: string | null
+) {
+  const session = await auth();
+
+  if (!session?.user) {
+    return { error: true, message: "Failed to authenticate user" };
+  }
+
+  let chatSession;
+
+  if (chat_session_id) {
+    // If chat_session_id is provided, fetch that specific session
+    chatSession = await db
+      .select()
+      .from(chat_sessions)
+      .where(
+        and(
+          eq(chat_sessions.id, chat_session_id),
+          eq(chat_sessions.user_id, session.user.id!),
+          eq(chat_sessions.character_id, character.id)
+        )
+      )
+      .limit(1)
+      .then((rows) => rows[0]);
+  } else {
+    // If no chat_session_id, find the most recent session for the character
+    chatSession = await db
+      .select()
+      .from(chat_sessions)
+      .where(
+        and(
+          eq(chat_sessions.user_id, session.user.id!),
+          eq(chat_sessions.character_id, character.id)
+        )
+      )
+      .orderBy(desc(chat_sessions.updated_at))
+      .limit(1)
+      .then((rows) => rows[0]);
+  }
+
+  if (!chatSession) {
+    return { error: true, message: "No chat session found for the specified character" };
+  }
+
+  if (!chatSession.summary) {
+    return { error: true, message: "No summary available for this chat session" };
+  }
+
+  return {
+    success: true,
+    summary: chatSession.summary,
+    chat_session_id: chatSession.id,
+    character_id: character.id,
+    character_name: character.name
+  };
 }

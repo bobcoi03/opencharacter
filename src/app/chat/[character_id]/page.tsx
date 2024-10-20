@@ -345,7 +345,12 @@ export default async function ChatPage({
 
   return (
     <div className="flex flex-col dark:bg-neutral-900 relative overflow-x-hidden max-w-full">
-      <ChatHeader character={character} madeByUsername={madeByUsername} />
+      <ChatHeader 
+        character={character}
+        madeByUsername={madeByUsername}
+        chatSession={(searchParams.session as string) ?? null}
+        messages={initialMessages} 
+      />
 
       {/* Chat Content */}
       <div className="flex-grow overflow-y-auto pt-[72px] pb-4">
@@ -365,9 +370,13 @@ export default async function ChatPage({
 function ChatHeader({
   character,
   madeByUsername,
+  chatSession,
+  messages,
 }: {
   character: typeof characters.$inferSelect;
   madeByUsername: string;
+  chatSession: string | null;
+  messages: CoreMessage[]
 }) {
   return (
     <div className="bg-neutral-900 p-4 flex items-center justify-between border-neutral-700 fixed md:fixed top-0 md:top-0 left-0 right-0 z-10">
@@ -400,6 +409,8 @@ function ChatHeader({
         <ShareButton />
         <Suspense fallback={<div className="w-10 h-10" />}>
           <EllipsisButton
+            chat_session={chatSession}
+            messages={messages}
             character={character}
             made_by_username={madeByUsername}
           />

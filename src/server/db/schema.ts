@@ -151,6 +151,7 @@ export const chat_sessions = sqliteTable("chat_session", {
   updated_at: integer("updated_at", { mode: "timestamp_ms" })
     .notNull()
     .$defaultFn(() => sql`CURRENT_TIMESTAMP`),
+  summary: text("summary")
 }, (table) => ({
   userCharacterIndex: index('user_character_idx').on(table.user_id, table.character_id),
 }));

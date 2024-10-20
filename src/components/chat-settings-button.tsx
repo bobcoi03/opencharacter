@@ -5,7 +5,7 @@ import { Ellipsis, Share, Flag, Edit, MessageSquarePlus, UserPlus, MoreVertical 
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import Image from 'next/image';
 import { Button } from "@/components/ui/button";
-import { characters, chat_sessions } from '@/server/db/schema';
+import { characters, chat_sessions, ChatMessageArray } from '@/server/db/schema';
 import { format } from 'date-fns';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -21,8 +21,13 @@ import {
 import { personas as PersonaType } from '@/server/db/schema';
 import { toast, useToast } from "@/hooks/use-toast"
 import ChatSessionDeleteButton from './chat-session-delete-button';
+import { Textarea } from './ui/textarea';
+import { Brain } from 'lucide-react';
+import { CoreMessage } from 'ai';
+import { summarizeConversation, saveSummarization, fetchSummary } from '@/app/actions/chat';
+import { readStreamableValue } from 'ai/rsc';
 
-export default function EllipsisButton({ character, made_by_username }: { character: typeof characters.$inferSelect, made_by_username: string }) {
+export default function EllipsisButton({ character, made_by_username, chat_session, messages }: { character: typeof characters.$inferSelect, made_by_username: string, chat_session: string | null, messages: CoreMessage[] }) {
   const [shareMessage, setShareMessage] = useState('');
   const [isCreatingSession, setIsCreatingSession] = useState(false);
   const [conversations, setConversations] = useState<typeof chat_sessions.$inferSelect[]>([]);
@@ -30,7 +35,17 @@ export default function EllipsisButton({ character, made_by_username }: { charac
   const [defaultPersona, setDefaultPersonaState] = useState<typeof PersonaType.$inferSelect | null>(null);
   const [isLoadingPersonas, setIsLoadingPersonas] = useState(false);
   const [isSettingDefault, setIsSettingDefault] = useState(false);
+  const [memoryContent, setMemoryContent] = useState('');
+  const [isLoadingAutoSummarize, setIsLoadingAutoSummarize] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    const ff = async () => {
+      const content = await fetchSummary(character, chat_session)
+      setMemoryContent(content.summary || "")
+    }
+    ff()
+  }, [])
 
   useEffect(() => {
     const fetchConversations = async () => {
@@ -134,6 +149,31 @@ export default function EllipsisButton({ character, made_by_username }: { charac
     });
   }, []);
 
+  const handleAutoSummary = async () => {
+    setIsLoadingAutoSummarize(true)
+
+    const result = await summarizeConversation(messages as ChatMessageArray, character, chat_session)
+    if ("error" in result) {
+      return;
+    } else {
+      for await (const content of readStreamableValue(result)) {
+        setMemoryContent(content as string)
+      }
+    }
+
+    setIsLoadingAutoSummarize(false)
+  };
+
+  const handleSaveMemory = async () => {
+    setIsLoadingAutoSummarize(true)
+    const result = await saveSummarization(memoryContent, character, chat_session);
+    toast({
+      title: result.message,
+      className: `${result.error ? 'bg-red-300' : 'bg-green-300'}`
+    });
+    setIsLoadingAutoSummarize(false)
+  };
+
   return (
     <Sheet>
       <SheetTrigger asChild>
@@ -184,7 +224,7 @@ export default function EllipsisButton({ character, made_by_username }: { charac
                 'Creating...'
               ) : (
                 <>
-                  <MessageSquarePlus className="w-5 h-5 mr-2" />
+                  <MessageSquarePlus className="w-4 h-4 mr-2" />
                   New Chat
                 </>
               )}
@@ -193,10 +233,53 @@ export default function EllipsisButton({ character, made_by_username }: { charac
           <Dialog>
             <DialogTrigger asChild>
               <Button 
+                className="w-full mb-4 bg-neutral-700 hover:bg-neutral-600 text-gray-200 flex items-center justify-center py-2 rounded-full transition-colors"
+              >
+                <Brain className="w-4 h-4 mr-2" />
+                Memory
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px] bg-neutral-900 text-white">
+              <DialogHeader>
+                <DialogTitle>Conversation Memory</DialogTitle>
+                <DialogDescription>
+                  <p>TEMPORARY: If AUTO SUMMARISE, MAKE SURE TO REFRESH PAGE BEFORE</p>
+                </DialogDescription>
+              </DialogHeader>
+              <div className="mt-4">
+                <Textarea
+                  value={memoryContent}
+                  onChange={(e) => setMemoryContent(e.target.value)}
+                  placeholder="Enter chat memory here... (4000 characters max)
+                  "
+                  className="w-full h-40 bg-neutral-800 text-white"
+                  maxLength={4000}
+                />
+                <p className='w-full text-xs text-slate-200'>{memoryContent.length}/4000</p>
+                <Button 
+                  onClick={handleAutoSummary}
+                  className="mt-4 w-full bg-neutral-700 hover:bg-neutral-600"
+                  disabled={isLoadingAutoSummarize}
+                >
+                  Auto Summary
+                </Button>
+                <Button 
+                  onClick={handleSaveMemory}
+                  className="mt-4 w-full bg-blue-600 hover:bg-blue-700"
+                  disabled={isLoadingAutoSummarize}
+                >
+                  Save Memory
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button 
                 className="w-full mb-4 bg-neutral-700 hover:bg-neutral-600 text-gray-200 flex items-center justify-between py-2 px-4 rounded-full transition-colors"
                 onClick={fetchPersonas}
               >
-                <div className="flex items-center textpxs">
+                <div className="flex items-center text">
                   <UserPlus className="w-4 h-4 mr-2" />
                   Personas
                 </div>
