@@ -197,12 +197,14 @@ const NewSidebarContent: React.FC<NewSidebarProps> = ({ search }) => {
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <Button
-                onClick={() => signIn("google")}
-                className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
-              >
-                Sign In
-              </Button>
+              !pathname.startsWith("/signin") && (
+                <Button
+                  onClick={() => router.push("/signin")}
+                  className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
+                >
+                  Sign In
+                </Button>
+              )
             )}
           </div>
         </div>

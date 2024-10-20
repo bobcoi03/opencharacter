@@ -12,7 +12,9 @@ function SignIn() {
 
     return (
         <button
-        onClick={() => signIn('google')}
+        onClick={() => signIn('google', {
+          redirect: true
+        })}
         className="w-full py-3 px-4 bg-gray-100 dark:bg-neutral-800 text-black dark:text-white rounded-full text-center text-sm hover:bg-gray-200 dark:hover:bg-neutral-700 transition-colors flex items-center justify-center"
       >
         <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">

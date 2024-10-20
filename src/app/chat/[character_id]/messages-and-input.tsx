@@ -830,8 +830,15 @@ export default function MessageAndInput({
               <DialogHeader>
                 <DialogTitle>Sign in to continue</DialogTitle>
               </DialogHeader>
-              <p>Please sign in to send messages and save your conversation.</p>
+              <p className="text-xs">Please sign in to send messages and save your conversation.</p>
+              
               <SignInButton />
+              <p className="text-[8px] mt-2 text-slate-400">
+                By signing in, you agree to our 
+                <Link href="/terms-of-service" className="text-blue-500 underline"> Terms of Service</Link> and 
+                <Link href="/privacy-policy" className="text-blue-500 underline"> Privacy Policy</Link>, 
+                and receive emails from us about product updates, news, and promotional offers. You can unsubscribe at any time.
+              </p>
             </DialogContent>
           </Dialog>
 
