@@ -249,6 +249,48 @@ export async function continueConversation(
     console.error("Failed to update interaction count:", error);
   }
 
+  let chatSession;
+
+  if (chat_session_id) {
+    // If chat_session_id is provided, fetch that specific session
+    chatSession = await db
+      .select()
+      .from(chat_sessions)
+      .where(
+        and(
+          eq(chat_sessions.id, chat_session_id),
+          eq(chat_sessions.user_id, session.user.id!),
+          eq(chat_sessions.character_id, character.id),
+        ),
+      )
+      .limit(1)
+      .then((rows) => rows[0]);
+  } else {
+    // If no chat_session_id, find the most recent session
+    chatSession = await db
+      .select()
+      .from(chat_sessions)
+      .where(
+        and(
+          eq(chat_sessions.user_id, session.user.id!),
+          eq(chat_sessions.character_id, character.id),
+        ),
+      )
+      .orderBy(desc(chat_sessions.updated_at))
+      .limit(1)
+      .then((rows) => rows[0]);
+  }
+
+  if (chatSession.summary) {
+    console.log("Injecting chat session summary")
+    messages[0] = {
+      ...messages[0],
+      role: "system",
+      content: `${messages[0].content}\nChat Memory:${chatSession.summary}`,
+      id: crypto.randomUUID(),
+    };
+  }
+
   try {
     const result = await streamText({
       model: model,
@@ -269,48 +311,6 @@ export async function continueConversation(
               time: Date.now(),
               id: crypto.randomUUID()
             });
-
-            let chatSession;
-
-            if (chat_session_id) {
-              // If chat_session_id is provided, fetch that specific session
-              chatSession = await db
-                .select()
-                .from(chat_sessions)
-                .where(
-                  and(
-                    eq(chat_sessions.id, chat_session_id),
-                    eq(chat_sessions.user_id, session.user.id!),
-                    eq(chat_sessions.character_id, character.id),
-                  ),
-                )
-                .limit(1)
-                .then((rows) => rows[0]);
-            } else {
-              // If no chat_session_id, find the most recent session
-              chatSession = await db
-                .select()
-                .from(chat_sessions)
-                .where(
-                  and(
-                    eq(chat_sessions.user_id, session.user.id!),
-                    eq(chat_sessions.character_id, character.id),
-                  ),
-                )
-                .orderBy(desc(chat_sessions.updated_at))
-                .limit(1)
-                .then((rows) => rows[0]);
-            }
-
-            if (chatSession.summary) {
-              console.log("Injecting chat session summary")
-              messages[0] = {
-                ...messages[0],
-                role: "system",
-                content: `${messages[0].content}\nChat Memory:${chatSession.summary}`,
-                id: crypto.randomUUID(),
-              };
-            }
 
             if (chatSession) {
               await db
