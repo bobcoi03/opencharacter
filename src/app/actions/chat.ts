@@ -268,6 +268,7 @@ export async function continueConversation(
       )
       .limit(1)
       .then((rows) => rows[0]);
+
   } else {
     // If no chat_session_id, find the most recent session
     chatSession = await db
@@ -284,7 +285,7 @@ export async function continueConversation(
       .then((rows) => rows[0]);
   }
 
-  if (chatSession.summary) {
+  if (chatSession && chatSession.summary) {
     console.log("Injecting chat session summary")
     messages[0] = {
       ...messages[0],
