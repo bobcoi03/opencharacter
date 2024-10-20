@@ -303,6 +303,7 @@ export async function continueConversation(
             }
 
             if (chatSession.summary) {
+              console.log("Injecting chat session summary")
               messages[0] = {
                 ...messages[0],
                 role: "system",
