@@ -33,7 +33,7 @@ const safeTruncate = (str: string, n: number) => {
 
 const AICharacterCard: React.FC<{ character: Character }> = ({ character }) => {
   const truncatedTagline = React.useMemo(
-    () => safeTruncate(character.tagline, 50),
+    () => safeTruncate(character.tagline, 150),
     [character.tagline],
   );
 
@@ -44,23 +44,23 @@ const AICharacterCard: React.FC<{ character: Character }> = ({ character }) => {
       className="block w-full h-full"
     >
       <Card className="bg-neutral-800 overflow-hidden rounded-lg h-full flex flex-col">
-        <CardContent className="px-6 py-3 flex flex-col">
-          <div className="relative w-full pb-[100%] rounded-lg overflow-hidden max-h-24 h-full">
+        <CardContent className="flex flex-col px-0 flex-grow">
+          <div className="relative w-full pb-[100%] rounded-lg overflow-hidden">
             <Image
               src={character.avatar_image_url ?? "/default-avatar.jpg"}
               alt={character.name}
               layout="fill"
               objectFit="cover"
-              className="overflow-hidden border"
+              className="overflow-hidden border h-full w-full"
             />
           </div>
-          <h3 className="mt-2 text-sm font-semibold text-gray-200 truncate text-center">
+          <h3 className="mt-2 mb-2 text-xs font-semibold text-gray-200 truncate px-1 text-wrap break-words">
             {character.name}
           </h3>
+          <p className="text-xs text-gray-400 w-full px-1 flex-grow">
+            {truncatedTagline}
+          </p>
         </CardContent>
-        <p className="text-xs text-gray-400 text-center w-full px-2 flex-grow">
-          {truncatedTagline}
-        </p>
         <div className="flex items-center text-xs text-gray-500 mt-1 w-full justify-between px-2 py-2">
           <Link href={`/public-profile/${character.userId}`} className="hover:underline hover:text-blue-600">@{character.userName}</Link>
           <div className="flex items-center">
@@ -162,7 +162,7 @@ const AICharacterGrid: React.FC<{ initialCharacters: Character[] }> = ({
   };
 
   return (
-    <div className="bg-neutral-900 p-4">
+    <div className="bg-neutral-900">
       <div className="w-full flex flex-wrap gap-2 mb-4">
         <Button label="Popular" isActive={sortOption === "popular"} onClick={() => setSortOption("popular")} />
         <Button label="New" isActive={sortOption === "new"} onClick={() => setSortOption("new")} />
@@ -182,7 +182,7 @@ const AICharacterGrid: React.FC<{ initialCharacters: Character[] }> = ({
         </div>
       )}
     
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
         {sortedCharacters.map((character) => (
           <AICharacterCard key={character.id} character={character} />
         ))}
