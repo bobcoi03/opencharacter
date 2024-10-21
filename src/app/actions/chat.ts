@@ -693,3 +693,161 @@ export async function fetchSummary(
     character_name: character.name
   };
 }
+
+export async function toggleChatSessionSharing(
+  character: typeof characters.$inferSelect | null,
+  chat_session_id?: string
+) {
+  const session = await auth();
+
+  if (!session?.user) {
+    return { error: true, message: "User not authenticated" };
+  }
+
+  // Check if character exists
+  if (!character) {
+    return { error: true, message: "No character provided" };
+  }
+
+  let chatSession;
+
+  if (chat_session_id) {
+    // If chat_session_id is provided, fetch that specific session
+    chatSession = await db
+      .select()
+      .from(chat_sessions)
+      .where(
+        and(
+          eq(chat_sessions.id, chat_session_id),
+          eq(chat_sessions.user_id, session.user.id!),
+          eq(chat_sessions.character_id, character.id)
+        )
+      )
+      .limit(1)
+      .then((rows) => rows[0]);
+
+    if (!chatSession) {
+      return { error: true, message: "Chat session not found or you don't have permission to access it" };
+    }
+  } else {
+    // If no chat_session_id, find the most recent session for the character
+    chatSession = await db
+      .select()
+      .from(chat_sessions)
+      .where(
+        and(
+          eq(chat_sessions.user_id, session.user.id!),
+          eq(chat_sessions.character_id, character.id)
+        )
+      )
+      .orderBy(desc(chat_sessions.updated_at))
+      .limit(1)
+      .then((rows) => rows[0]);
+
+    if (!chatSession) {
+      return { error: true, message: "No chat session found for this character" };
+    }
+  }
+
+  // Toggle the share field
+  const newShareValue = !chatSession.share;
+
+  try {
+    // Update the chat session with the new share value
+    await db
+      .update(chat_sessions)
+      .set({
+        share: newShareValue,
+        updated_at: new Date(),
+      })
+      .where(eq(chat_sessions.id, chatSession.id));
+
+    return {
+      success: true,
+      message: `Chat session sharing ${newShareValue ? 'enabled' : 'disabled'} successfully`,
+      chatSession: {
+        id: chatSession.id,
+        share: newShareValue,
+        character_id: character.id,
+        character_name: character.name
+      }
+    };
+  } catch (error) {
+    console.error("Failed to update chat session sharing status:", error);
+    return { error: true, message: "Failed to update sharing status. Please try again." };
+  }
+}
+
+export async function getChatSessionShareStatus(
+  character: typeof characters.$inferSelect | null,
+  chat_session_id?: string
+) {
+  const session = await auth();
+
+  if (!session?.user) {
+    return { error: true, message: "User not authenticated" };
+  }
+
+  // Check if character exists
+  if (!character) {
+    return { error: true, message: "No character provided" };
+  }
+
+  let chatSession;
+
+  if (chat_session_id) {
+    // If chat_session_id is provided, fetch that specific session
+    chatSession = await db
+      .select({
+        id: chat_sessions.id,
+        share: chat_sessions.share,
+        character_id: chat_sessions.character_id,
+      })
+      .from(chat_sessions)
+      .where(
+        and(
+          eq(chat_sessions.id, chat_session_id),
+          eq(chat_sessions.user_id, session.user.id!),
+          eq(chat_sessions.character_id, character.id)
+        )
+      )
+      .limit(1)
+      .then((rows) => rows[0]);
+
+    if (!chatSession) {
+      return { error: true, message: "Chat session not found or you don't have permission to access it" };
+    }
+  } else {
+    // If no chat_session_id, find the most recent session for the character
+    chatSession = await db
+      .select({
+        id: chat_sessions.id,
+        share: chat_sessions.share,
+        character_id: chat_sessions.character_id,
+      })
+      .from(chat_sessions)
+      .where(
+        and(
+          eq(chat_sessions.user_id, session.user.id!),
+          eq(chat_sessions.character_id, character.id)
+        )
+      )
+      .orderBy(desc(chat_sessions.updated_at))
+      .limit(1)
+      .then((rows) => rows[0]);
+
+    if (!chatSession) {
+      return { error: true, message: "No chat session found for this character" };
+    }
+  }
+
+  return {
+    success: true,
+    chatSession: {
+      id: chatSession.id,
+      share: chatSession.share,
+      character_id: chatSession.character_id,
+      character_name: character.name
+    }
+  };
+}

@@ -60,6 +60,7 @@ const NewSidebarContent: React.FC<NewSidebarProps> = ({ search }) => {
   const pathname = usePathname();
 
   const isChatRoute = pathname.startsWith("/chat/");
+  const isShareRoute = pathname.startsWith("/share/");
 
   const handleSearch = async (query: string): Promise<void> => {
     setSearchQuery(query);

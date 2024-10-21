@@ -301,6 +301,7 @@ export default function MessageAndInput({
   messages,
   chat_session,
   persona,
+  share = false, // Default value set to false
 }: {
   user: User | undefined;
   character: typeof characters.$inferSelect;
@@ -308,6 +309,7 @@ export default function MessageAndInput({
   messages: CoreMessage[];
   chat_session?: string | undefined;
   persona?: typeof personas.$inferSelect | undefined;
+  share?: boolean; // Removed default value from type definition
 }) {
   const router = useRouter();
   const replacePlaceholders = (content: string | undefined) => {
@@ -724,7 +726,8 @@ export default function MessageAndInput({
       </div>
 
       {/* Message Input */}
-      <div className="fixed bottom-6 left-0 right-0 py-4 pointer-events-none w-full max-w-full">
+      {!share && 
+        <div className="fixed bottom-6 left-0 right-0 py-4 pointer-events-none w-full max-w-full">
         <div className="max-w-2xl mx-auto w-full">
           {error && (
             <div className="mb-2 p-2 bg-red-900 border border-red-800 rounded-lg text-red-200 text-sm pointer-events-auto flex justify-between items-center">
@@ -843,8 +846,10 @@ export default function MessageAndInput({
           </Dialog>
 
         </div>
-      </div>
+      </div>      
+      }
 
+      {!share &&
       <Link 
         className="fixed bottom-4 text-center left-0 right-0 text-[11px] text-light text-slate-200 underline" 
         href={"https://discordapp.com/users/368400765754277889"}
@@ -852,7 +857,7 @@ export default function MessageAndInput({
       >
         Want access to better models? DM me
       </Link>
-
+      }
     </div>
   );
 }

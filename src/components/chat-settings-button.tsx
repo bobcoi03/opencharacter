@@ -24,8 +24,9 @@ import ChatSessionDeleteButton from './chat-session-delete-button';
 import { Textarea } from './ui/textarea';
 import { Brain } from 'lucide-react';
 import { CoreMessage } from 'ai';
-import { summarizeConversation, saveSummarization, fetchSummary } from '@/app/actions/chat';
+import { summarizeConversation, saveSummarization, fetchSummary, toggleChatSessionSharing, getChatSessionShareStatus } from '@/app/actions/chat';
 import { readStreamableValue } from 'ai/rsc';
+import { Switch } from './ui/switch';
 
 export default function EllipsisButton({ character, made_by_username, chat_session, messages }: { character: typeof characters.$inferSelect, made_by_username: string, chat_session: string | null, messages: CoreMessage[] }) {
   const [shareMessage, setShareMessage] = useState('');
@@ -37,7 +38,51 @@ export default function EllipsisButton({ character, made_by_username, chat_sessi
   const [isSettingDefault, setIsSettingDefault] = useState(false);
   const [memoryContent, setMemoryContent] = useState('');
   const [isLoadingAutoSummarize, setIsLoadingAutoSummarize] = useState(false);
+  const [shareStatus, setShareStatus] = useState(false);
   const router = useRouter();
+  const [isTogglingShare, setIsTogglingShare] = useState(false);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const fetchShareStatus = async () => {
+      const status = await getChatSessionShareStatus(character, chat_session || undefined);
+      if (status.error) {
+        setShareStatus(false);
+      } else {
+        setShareStatus(status.chatSession?.share ?? false);
+      }
+    };
+    fetchShareStatus();
+  }, [character, chat_session]);
+
+  const handleToggleShare = async () => {
+    setIsTogglingShare(true);
+    try {
+      const result = await toggleChatSessionSharing(character, chat_session || undefined);
+      if (result.error) {
+        toast({
+          title: "Error",
+          description: result.message,
+          variant: "destructive",
+        });
+      } else {
+        setShareStatus(result.chatSession!.share || false);
+        toast({
+          title: "Success",
+          description: result.message,
+        });
+      }
+    } catch (error) {
+      console.error("Failed to toggle chat session sharing:", error);
+      toast({
+        title: "Error",
+        description: "Failed to toggle chat sharing. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsTogglingShare(false);
+    }
+  };
 
   useEffect(() => {
     const ff = async () => {
@@ -230,6 +275,17 @@ export default function EllipsisButton({ character, made_by_username, chat_sessi
               )}
             </Button>
           </Link>
+          <div 
+            className="w-full mb-4 bg-gray-100 bg-neutral-700 hover:bg-neutral-600 text-gray-200 flex items-center justify-center py-2 rounded-full transition-colors gap-2"
+          >
+            <p className='text-sm font-semibold'>Make Chat Public</p>
+            <Switch 
+              checked={shareStatus} 
+              onCheckedChange={handleToggleShare}
+              disabled={isTogglingShare}
+              className='text-green-300'
+            />
+          </div>
           <Dialog>
             <DialogTrigger asChild>
               <Button 
