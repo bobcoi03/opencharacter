@@ -45,6 +45,7 @@ import { useToast } from "@/hooks/use-toast";
 const MAX_TEXTAREA_HEIGHT = 450; // maximum height in pixels
 
 interface MessageContentProps {
+  characterId?: string
   showRetries: boolean;
   userImage?: string | undefined | null;
   message: ChatMessage;
@@ -67,6 +68,7 @@ interface MessageContentProps {
 }
 
 const MessageContent: React.FC<MessageContentProps> = ({
+  characterId,
   showRetries,
   userImage,
   message,
@@ -173,13 +175,15 @@ const MessageContent: React.FC<MessageContentProps> = ({
         }
       }}
     >
-      <div className="mr-4 flex-shrink-0 overflow-hidden" style={{ width: `${localStorage.getItem("character_icon_size") ?? '40'}px`, height: `${localStorage.getItem("character_icon_size") ?? '40'}px` }}>
+      <Link className="mr-4 flex-shrink-0 overflow-hidden" style={{ width: `${localStorage.getItem("character_icon_size") ?? '40'}px`, height: `${localStorage.getItem("character_icon_size") ?? '40'}px` }}
+        href={isUser ? "/profile" : `/character/${characterId}/profile`}
+      >
         <img 
-          src={isUser ? (userImage ?? "/default-avatar.jpg") : (characterAvatarUrl || "/default-avatar.jpg")}
+          src={isUser ? (userImage ?? "/opencharacter_icon.png") : (characterAvatarUrl || "/default-avatar.jpg")}
           alt={isUser ? (userName ?? "Guest") : characterName}
           className={`w-full h-full object-cover ${localStorage.getItem("character_icon_style") === "circle" ? "rounded-full" : "rounded-lg"}`}
         />
-      </div>
+      </Link>
       <div className="flex flex-col max-w-full flex-grow overflow-hidden">
         <div className="flex justify-between items-center mb-2">
           <span className="text-xs text-neutral-400">
@@ -589,6 +593,7 @@ export default function MessageAndInput({
 
     return messagesState.slice(1).map((m, i) => (
       <MessageContent
+        characterId={character.id}
         onRateMessage={handleRateMessage}
         showRetries={i === messagesState.length - 2}      
         key={`${m.role}-${i}`}
