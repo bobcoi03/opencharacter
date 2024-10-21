@@ -9,6 +9,16 @@ type Models = {
 };
 
 export const models: Models = {
+    "mistralai/ministral-3b": {
+        id: "mistralai/ministral-3b",
+        name: "mistralai/ministral-3b",
+        paid: false,
+    },
+    "mistralai/ministral-8b": {
+        id: "mistralai/ministral-8b",
+        name: "mistralai/ministral-8b",
+        paid: false,
+    },
     "gryphe/mythomax-l2-13b": {
         id: "gryphe/mythomax-l2-13b",
         name: "MythomaxL213B",
@@ -138,6 +148,31 @@ export const models: Models = {
         id: "anthropic/claude-instant-1:beta",
         name: "anthropic/claude-instant-1:beta",
         paid: true
+    },
+    "nvidia/llama-3.1-nemotron-70b-instruct": {
+        id: "nvidia/llama-3.1-nemotron-70b-instruct",
+        name: "nvidia/llama-3.1-nemotron-70b-instruct",
+        paid: true,
+    },
+    "thedrummer/rocinante-12b": {
+        id: "thedrummer/rocinante-12b",
+        name: "thedrummer/rocinante-12b",
+        paid: true
+    },
+    "eva-unit-01/eva-qwen-2.5-14b": {
+        id: "eva-unit-01/eva-qwen-2.5-14b",
+        name: "eva-unit-01/eva-qwen-2.5-14b",
+        paid: true
+    },
+    "mistralai/mistral-tiny": {
+        id: "mistralai/mistral-tiny",
+        name: "mistralai/mistral-tiny",
+        paid: true,
+    },
+    "mistralai/mistral-small": {
+        id: "mistralai/mistral-small",
+        name: "mistralai/mistral-small",
+        paid: true,
     }
 };
 
