@@ -852,10 +852,10 @@ export default function MessageAndInput({
       {!share &&
       <Link 
         className="fixed bottom-4 text-center left-0 right-0 text-[11px] text-light text-slate-200 underline" 
-        href={"https://discordapp.com/users/368400765754277889"}
+        href={"/plans"}
         target="_blank"
       >
-        Want access to better models? DM me
+        Want access to better models?
       </Link>
       }
     </div>
