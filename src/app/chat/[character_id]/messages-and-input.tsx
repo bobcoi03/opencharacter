@@ -731,6 +731,14 @@ export default function MessageAndInput({
       </div>
 
       {/* Message Input */}
+      { share &&
+        <Link 
+          className="fixed bottom-20 md:bottom-6 left-0 right-0 px-8 py-4 max-w-lg w-full border mx-auto rounded-xl text-center text-slate-400 hover:bg-slate-900 hover:cursor-pointer bg-neutral-900"
+          href={`/chat/${character.id}`}  
+        >
+          chat with {character.name}...
+        </Link>
+      }
       {!share && 
         <div className="fixed bottom-6 left-0 right-0 py-4 pointer-events-none w-full max-w-full">
         <div className="max-w-2xl mx-auto w-full">

@@ -408,7 +408,6 @@ function ChatHeader({
       </div>
 
       <div className="flex items-center space-x-2">
-        <ShareButton />
         <Suspense fallback={<div className="w-10 h-10" />}>
           <EllipsisButton
             
