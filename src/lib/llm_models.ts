@@ -44,9 +44,9 @@ export const models: Models = {
         name: "google/gemma-2-9b-it",
         paid: false
     },
-    "liquid/lfm-40b": {
-        id: "liquid/lfm-40b",
-        name: "liquid/lfm-40b",
+    "liquid/lfm-40b:free": {
+        id: "liquid/lfm-40b:free",
+        name: "liquid/lfm-40b:free",
         paid: false,
     },
     "meta-llama/llama-3.2-3b-instruct": {
