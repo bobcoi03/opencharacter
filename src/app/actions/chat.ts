@@ -23,7 +23,8 @@ const PAID_USER_IDS = [
   "b3abb1e8-8d95-482f-8deb-ea3f86b56348", // m 17/10/24
   "b4cd8ebb-2731-452d-ac6b-06d51e5a8369", // m 20/10/24
   "3fbe9fef-7af7-4e21-9750-a5bac3fb2d7c", // yar 21/10/24
-  "8a4e0f89-15ba-4fde-ada8-54ff8b42da5d" // 21/10/24
+  "8a4e0f89-15ba-4fde-ada8-54ff8b42da5d", // 21/10/24
+  "3177bd61-74b2-46e9-a19c-c9ceb6fc591e" // Re 24/10/24
 ];
 
 type ErrorResponse = {
