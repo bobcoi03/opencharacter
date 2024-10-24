@@ -21,13 +21,22 @@ const BlogCard: React.FC<BlogPost> = ({ image, category, title, excerpt, link })
 );
 
 const BlogPage: React.FC = () => {
-  const blogPost: BlogPost = {
-    image: "/OpenCharacterCard.png",
-    category: "Announcements",
-    title: "Uncensored Alternative to Character.AI",
-    excerpt: "Discover OpenCharacter: The open-source, uncensored platform for AI character creation and interaction. Learn how we're pushing the boundaries of AI conversation technology.",
-    link: "/blog/uncensored-alternative-to-characterai"
-  };
+  const blogPosts: BlogPost[] = [
+    {
+      image: "/OpenCharacterCard.png",
+      category: "Announcements",
+      title: "Uncensored Alternative to Character.AI",
+      excerpt: "Discover OpenCharacter: The open-source, uncensored platform for AI character creation and interaction. Learn how we're pushing the boundaries of AI conversation technology.",
+      link: "/blog/uncensored-alternative-to-characterai"
+    },
+    {
+      image: "https://opencharacter.org/c.ai-preview.png",
+      category: "Future",
+      title: "Future of OpenCharacter",
+      excerpt: "Explore the future of OpenCharacter, an open-source, uncensored platform for AI character creation.",
+      link: "/blog/future-of-project"
+    }
+  ];
 
   return (
     <div className="bg-neutral-900 min-h-screen text-white mb-24">
@@ -38,14 +47,19 @@ const BlogPage: React.FC = () => {
         <div className="relative z-10 text-center px-4">
           <h1 className="text-wrap text-2xl md:text-5xl font-bold mb-4 text-black">OpenCharacter.org</h1>
           <p className="text-sm text-black max-w-2xl mx-auto">
-            The open source, uncensored, free alternative to CharacterAI
+            The open source, uncensored, alternative to CharacterAI
           </p>
         </div>
       </div>
       
       <div className="container py-6">
-        <div className="md:ml-16">
-          <BlogCard {...blogPost} />
+        <div className="md:ml-16 md:flex md:flex-row gap-4">
+          {blogPosts.map((blog, index) => 
+            <BlogCard 
+              key={index}
+              {...blog}
+            />
+          )}
         </div>
       </div>
     </div>
