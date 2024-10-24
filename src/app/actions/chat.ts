@@ -482,7 +482,7 @@ export async function summarizeConversation(
     return { error: true, message: "Failed to authenticate user" };
   }
 
-  const model_name = "nousresearch/hermes-3-llama-3.1-405b";
+  const model_name = "mistralai/mistral-nemo";
   let chatSession;
 
   if (chat_session_id) {
