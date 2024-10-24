@@ -15,7 +15,7 @@ function SignIn() {
         onClick={() => signIn('google', {
           redirect: true
         })}
-        className="w-full py-3 px-4 bg-gray-100 dark:bg-neutral-800 text-black dark:text-white rounded-full text-center text-sm hover:bg-gray-200 dark:hover:bg-neutral-700 transition-colors flex items-center justify-center"
+        className="w-full py-3 px-4 bg-white text-black rounded-full text-center text-sm hover:bg-gray-200 dark:hover:bg-neutral-700 transition-colors flex items-center justify-center"
       >
         <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
           <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>

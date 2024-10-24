@@ -18,7 +18,7 @@ export default async function SignInPage() {
                     <h1 className="text-3xl font-bold mb-4">Hello, <span className="text-blue-600">welcome to OpenCharacter!</span></h1>
                     <p className="text-gray-400 mb-8">Create any chatbots for any purpose.</p>
                     
-                    <div className="mb-4">
+                    <div className="mb-10">
                         <SignInButton />
                     </div>
                     
