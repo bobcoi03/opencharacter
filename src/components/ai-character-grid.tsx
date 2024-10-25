@@ -49,8 +49,26 @@ const AICharacterCard: React.FC<{ character: Character }> = ({ character }) => {
     () => safeTruncate(character.tagline, 150),
     [character.tagline],
   );
+  const [showNSFW, setShowNSFW] = useState(false);
 
-  const isNSFW = parseTags(character.tags).includes("nsfw");
+  // Parse tags and check if any NSFW tag is present
+  const characterTags = parseTags(character.tags);
+  const isNSFW = characterTags.some(tag => NSFWCharacterTags.includes(tag as any));
+
+  // Get NSFW setting from localStorage, default to false if not set
+  const [shouldBlur, setShouldBlur] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem("nsfw") !== "true" && isNSFW;
+    }
+    return isNSFW; // Default to blurring NSFW content on initial server-side render
+  });
+
+  const handleViewNSFW = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setShouldBlur(false);
+    setShowNSFW(true);
+  };
 
   return (
     <Link
@@ -66,8 +84,20 @@ const AICharacterCard: React.FC<{ character: Character }> = ({ character }) => {
               alt={character.name}
               layout="fill"
               objectFit="cover"
-              className="overflow-hidden border h-full w-full transition-all duration-200"
+              className={`overflow-hidden border h-full w-full transition-all duration-200 ${
+                shouldBlur ? 'blur-xl' : ''
+              }`}
             />
+            {shouldBlur && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <button
+                  onClick={handleViewNSFW}
+                  className="bg-black text-white px-2 py-2 rounded-lg text-[8px] font-medium hover:bg-gray-900 transition-colors duration-200"
+                >
+                  View NSFW Content
+                </button>
+              </div>
+            )}
           </div>
           <div className="px-1">
             <h3 className="mt-2 text-xs font-semibold text-gray-200 truncate text-wrap break-words">
