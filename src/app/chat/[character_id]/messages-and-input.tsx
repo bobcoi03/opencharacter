@@ -342,6 +342,7 @@ export default function MessageAndInput({
   const [currentRegenerationIndex, setCurrentRegenerationIndex] = useState(0);
   const formRef = useRef<HTMLFormElement>(null);
   const [errorMessage, setErrorMessage] = useState<string>("");
+  const [isAgeVerified, setIsAgeVerified] = useState(false);
   const { toast } = useToast()
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -848,7 +849,29 @@ export default function MessageAndInput({
               </DialogHeader>
               <p className="text-xs">Please sign in to send messages and save your conversation.</p>
               
-              <SignInButton />
+              <div className="mb-6">
+                <label className="flex items-center gap-2 text-sm text-gray-300 mb-4">
+                  <input 
+                    type="checkbox" 
+                    checked={isAgeVerified}
+                    onChange={(e) => setIsAgeVerified(e.target.checked)}
+                    className="w-4 h-4 rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-blue-500"
+                  />
+                  I confirm that I am 18 years or older
+                </label>
+              </div>
+
+              {isAgeVerified ? (
+                <SignInButton />
+              ) : (
+                <button 
+                  disabled
+                  className="w-full px-4 py-2 bg-gray-600 text-gray-300 rounded cursor-not-allowed opacity-50"
+                >
+                  Please confirm you are 18 or older
+                </button>
+              )}
+
               <p className="text-[8px] mt-2 text-slate-400">
                 By signing in, you agree to our 
                 <Link href="/terms-of-service" className="text-blue-500 underline"> Terms of Service</Link> and 
