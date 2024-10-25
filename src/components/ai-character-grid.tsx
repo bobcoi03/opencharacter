@@ -49,19 +49,8 @@ const AICharacterCard: React.FC<{ character: Character }> = ({ character }) => {
     () => safeTruncate(character.tagline, 150),
     [character.tagline],
   );
-  const [showNSFW, setShowNSFW] = useState(false);
 
-  // Compute shouldBlur - blur if the character has NSFW tags and user hasn't opted out
-  const shouldBlur = !localStorage.getItem("nsfw") && parseTags(character.tags).includes("nsfw");
-  const isNSFW = shouldBlur; // Update to reflect if the character is NSFW
-  console.log(character.name, character.tags);
-
-  const handleViewNSFW = (e: React.MouseEvent) => {
-    console.log('Viewing NSFW content for:', character.name);
-    e.preventDefault();
-    e.stopPropagation();
-    setShowNSFW(true);
-  };
+  const isNSFW = parseTags(character.tags).includes("nsfw");
 
   return (
     <Link
@@ -77,20 +66,8 @@ const AICharacterCard: React.FC<{ character: Character }> = ({ character }) => {
               alt={character.name}
               layout="fill"
               objectFit="cover"
-              className={`overflow-hidden border h-full w-full transition-all duration-200 ${
-                shouldBlur ? 'blur-xl' : ''
-              }`}
+              className="overflow-hidden border h-full w-full transition-all duration-200"
             />
-            {shouldBlur && (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <button
-                  onClick={handleViewNSFW}
-                  className="bg-black text-white px-2 py-2 rounded-lg text-[8px] font-medium hover:bg-gray-900 transition-colors duration-200"
-                >
-                  View NSFW Content
-                </button>
-              </div>
-            )}
           </div>
           <div className="px-1">
             <h3 className="mt-2 text-xs font-semibold text-gray-200 truncate text-wrap break-words">
