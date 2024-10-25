@@ -10,6 +10,7 @@ import { Slider } from '@/components/ui/slider';
 import { users } from '@/server/db/schema';
 import Image from 'next/image';
 import { saveUser } from '@/app/actions/index';
+import NSFWToggle from './nsfw-toggle';
 
 type User = typeof users.$inferSelect;
 
@@ -220,6 +221,7 @@ const SettingsButton = ({ user }: SettingsButtonProps) => {
                       />
                     </div>
                   </div>
+                  <NSFWToggle />
                 </div>
               )}
               {errorMessage && (

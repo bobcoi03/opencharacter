@@ -6,7 +6,7 @@ import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { MessageCircle } from "lucide-react";
-import { AllCharacterTags, CharacterTag, CharacterTags, SFWCharacterTags } from "@/types/character-tags";
+import { AllCharacterTags, CharacterTag, CharacterTags, NSFWCharacterTags, SFWCharacterTags } from "@/types/character-tags";
 import { searchCharactersByTags } from "@/app/actions/index"; // Import the server action
 
 type Character = {
@@ -18,6 +18,19 @@ type Character = {
   createdAt: Date;
   userName: string | null;
   userId: string;
+  tags: string | string[] | null; // Updated to handle multiple possible types
+};
+
+// Helper function to parse tags
+const parseTags = (tags: string | string[] | null): string[] => {
+  if (!tags) return [];
+  if (Array.isArray(tags)) return tags;
+  try {
+    const parsed = JSON.parse(tags);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [tags]; // If it's a single string and not JSON
+  }
 };
 
 type SortOption = "popular" | "new" | "old";
@@ -36,6 +49,19 @@ const AICharacterCard: React.FC<{ character: Character }> = ({ character }) => {
     () => safeTruncate(character.tagline, 150),
     [character.tagline],
   );
+  const [showNSFW, setShowNSFW] = useState(false);
+
+  // Compute shouldBlur - blur if the character has NSFW tags and user hasn't opted out
+  const shouldBlur = !localStorage.getItem("nsfw") && parseTags(character.tags).includes("nsfw");
+  const isNSFW = shouldBlur; // Update to reflect if the character is NSFW
+  console.log(character.name, character.tags);
+
+  const handleViewNSFW = (e: React.MouseEvent) => {
+    console.log('Viewing NSFW content for:', character.name);
+    e.preventDefault();
+    e.stopPropagation();
+    setShowNSFW(true);
+  };
 
   return (
     <Link
@@ -51,12 +77,33 @@ const AICharacterCard: React.FC<{ character: Character }> = ({ character }) => {
               alt={character.name}
               layout="fill"
               objectFit="cover"
-              className="overflow-hidden border h-full w-full"
+              className={`overflow-hidden border h-full w-full transition-all duration-200 ${
+                shouldBlur ? 'blur-xl' : ''
+              }`}
             />
+            {shouldBlur && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <button
+                  onClick={handleViewNSFW}
+                  className="bg-black text-white px-2 py-2 rounded-lg text-[8px] font-medium hover:bg-gray-900 transition-colors duration-200"
+                >
+                  View NSFW Content
+                </button>
+              </div>
+            )}
           </div>
-          <h3 className="mt-2 mb-2 text-xs font-semibold text-gray-200 truncate px-1 text-wrap break-words">
-            {character.name}
-          </h3>
+          <div className="px-1">
+            <h3 className="mt-2 text-xs font-semibold text-gray-200 truncate text-wrap break-words">
+              {character.name}
+            </h3>
+            {isNSFW && (
+              <div className="mt-1 mb-2">
+                <span className="px-2 py-0.5 bg-red-500 text-white text-[10px] rounded inline-block">
+                  NSFW
+                </span>
+              </div>
+            )}
+          </div>
           <p className="text-xs text-gray-400 w-full px-1 flex-grow">
             {truncatedTagline}
           </p>
@@ -91,7 +138,7 @@ const AICharacterGrid: React.FC<{ initialCharacters: Character[] }> = ({
     const fetchCharacters = async () => {
       if (activeTags.length > 0) {
         const fetchedCharacters = await searchCharactersByTags(activeTags as CharacterTag[]);
-        setCharacters(fetchedCharacters);
+        setCharacters(fetchedCharacters as Character[]); // Type assertion if needed
       } else {
         setCharacters(initialCharacters);
       }

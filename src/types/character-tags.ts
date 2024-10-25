@@ -50,11 +50,14 @@ export const CharacterTags = {
     NSFW: 'nsfw',
   } as const;
   
-  export type CharacterTag = typeof CharacterTags[keyof typeof CharacterTags];
+export type CharacterTag = typeof CharacterTags[keyof typeof CharacterTags];
   
-  export const AllCharacterTags = Object.values(CharacterTags);
+export const AllCharacterTags = Object.values(CharacterTags);
   
-  // Separate array for SFW tags if needed
-  export const SFWCharacterTags = AllCharacterTags.filter(tag => 
+// Separate array for SFW tags if needed
+export const SFWCharacterTags = AllCharacterTags.filter(tag => 
     !['dominant', 'submissive', 'smut', 'nsfw'].includes(tag)
-  );
+);
+
+// Array for NSFW tags
+export const NSFWCharacterTags = ['dominant', 'submissive', 'smut', 'nsfw'] as const;

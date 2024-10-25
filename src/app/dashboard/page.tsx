@@ -232,22 +232,18 @@ export default async function Dashboard() {
   const recentMessages = await getRecentMessages();
   const userCountData = await getUserCountData();
 
-  if (!messageData || !recentMessages || !userCountData) {
-    return <div className="md:ml-16 text-white p-4">Please log in to view the dashboard.</div>;
-  }
-
   return (
     <div className="md:ml-16 text-white p-4 mb-16">
       <div className="lg:flex">
         <div className="w-full lg:w-[60%]">
-          <LineChartDashboard messageData={messageData} />
+          {messageData && messageData?.length > 0 && <LineChartDashboard messageData={messageData} />}
         </div>
         <div className="w-full lg:w-[40%] mt-4 lg:mt-0">
-          <RecentMessages messages={recentMessages} />
+          {recentMessages && recentMessages.length > 0 && <RecentMessages messages={recentMessages} />}
         </div>
       </div>
       <div className="w-full lg:w-[40%] mt-4">
-        <BarChartDashboard userCountData={userCountData} />
+        {userCountData && userCountData.length > 0 && <BarChartDashboard userCountData={userCountData} />}
       </div>
     </div>
   );
