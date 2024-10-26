@@ -5,6 +5,8 @@ import { MessageCircle } from "lucide-react"
 import ProfileNav from "@/components/profile-nav"
 import SettingsButton from "@/components/user-settings-button"
 import { db } from "@/server/db"
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
 
 type User = typeof users.$inferSelect;
 
@@ -44,7 +46,7 @@ export default async function ProfileLayout({ children, params }: { children: Re
         <div className="flex justify-center bg-neutral-900">
             <div className="bg-neutral-900 text-white p-4 w-full max-w-lg">
                 <div className="flex flex-col items-center mb-6 gap-2">
-                    <div className="w-32 h-32 rounded-full overflow-hidden mb-2">
+                    <div className="w-32 h-32 rounded-md overflow-hidden mb-2">
                         <img
                             src={user.image ?? '/default-avatar.jpg'}
                             alt={user.name ?? 'User'}
@@ -56,7 +58,14 @@ export default async function ProfileLayout({ children, params }: { children: Re
                     <p className="text-sm text-neutral-400 mb-2">
                     <MessageCircle className="inline w-4 h-4 mr-1" /> {chatCountDisplay} Chats
                     </p>
-                    <SettingsButton user={user} />
+                    <div className="flex flex-row gap-2">
+                        <SettingsButton user={user} />
+                        <Link href={`/public-profile/${user.id}`}>
+                            <Button variant="outline" className="rounded-full bg-neutral-800">
+                                Public Profile
+                            </Button>
+                        </Link>
+                    </div>
                 </div>
         
                 <ProfileNav />
