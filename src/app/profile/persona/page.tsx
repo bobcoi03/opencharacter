@@ -28,12 +28,12 @@ export default async function PersonaPage() {
                     <div key={persona.id} className="flex items-center justify-between hover:bg-neutral-800 p-2 hover:rounded-xl">
                         <Link href={`/profile/persona/${persona.id}/edit`} className="flex items-center space-x-3 min-w-0 flex-grow">
                             {persona.image ? (
-                                <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
+                                <div className="w-12 h-12 rounded-sm overflow-hidden flex-shrink-0">
                                     <Image
                                         src={persona.image}
                                         alt={persona.displayName}
-                                        width={32}
-                                        height={32}
+                                        width={48}
+                                        height={48}
                                         className="w-full h-full object-cover"
                                     />
                                 </div>

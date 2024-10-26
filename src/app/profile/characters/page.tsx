@@ -5,6 +5,8 @@ import { auth } from '@/server/auth';
 import { db } from '@/server/db';
 import { eq } from 'drizzle-orm';
 import { characters } from '@/server/db/schema';
+import { CharacterOptions } from '@/components/character-options';
+import Image from 'next/image';
 
 export const runtime = "edge"
 
@@ -20,12 +22,7 @@ export default async function CharactersPage() {
 
     // Get the characters for the user
     const userCharacters = await db
-        .select({
-            id: characters.id,
-            name: characters.name,
-            tagline: characters.tagline,
-            avatarImageUrl: characters.avatar_image_url,
-        })
+        .select()
         .from(characters)
         .where(eq(characters.userId, userId!))
         .all();
@@ -33,22 +30,30 @@ export default async function CharactersPage() {
     return (
         <div className="space-y-4 mb-24">
             {userCharacters.map((character) => (
-                <Link key={character.id} href={`/chat/${character.id}`} className="block">
-                    <div className="flex items-center">
-                        {character.avatarImageUrl ? (
-                            <img src={character.avatarImageUrl} alt={character.name} className="w-12 h-12 rounded-full mr-3 flex-shrink-0" />
+                <div key={character.id} className="flex items-center justify-between hover:bg-neutral-800 p-2 hover:rounded-xl">
+                    <Link href={`/chat/${character.id}`} className="flex items-center space-x-3 min-w-0 flex-grow">
+                        {character.avatar_image_url ? (
+                            <div className="w-12 h-12 rounded-sm overflow-hidden flex-shrink-0">
+                                <Image
+                                    src={character.avatar_image_url}
+                                    alt={character.name}
+                                    width={48}
+                                    height={48}
+                                    className="w-full h-full object-cover"
+                                />
+                            </div>
                         ) : (
-                            <div className="w-12 h-12 bg-neutral-700 rounded-full flex items-center justify-center text-xl font-bold text-white mr-3 flex-shrink-0">
-                                {character.name.charAt(0)}
+                            <div className="w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold bg-gradient-to-br from-black via-black to-purple-300 flex-shrink-0">
+                                {character.name[0]}
                             </div>
                         )}
-                        <div className="flex-grow min-w-0">
-                            <h2 className="font-semibold text-sm">{character.name}</h2>
+                        <div className="min-w-0 flex-1">
+                            <h2 className="font-semibold text-sm truncate">{character.name}</h2>
                             <p className="text-xs text-neutral-400 truncate">{character.tagline}</p>
                         </div>
-                        <MoreVertical className="w-5 h-5 text-neutral-400 flex-shrink-0" />
-                    </div>
-                </Link>
+                    </Link>
+                    <CharacterOptions character={character} />
+                </div>
             ))}
 
             <Link href="/new" className="block mx-auto w-32 items-center">

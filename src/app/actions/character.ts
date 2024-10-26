@@ -312,3 +312,50 @@ export async function searchCharactersByTags(tags: CharacterTag[], limit = 500):
     userId: character.userId
   }));
 }
+
+export async function deleteCharacter(characterId: string) {
+  const session = await auth();
+  if (!session || !session.user) {
+    throw new Error("You must be logged in to delete a character");
+  }
+
+  try {
+    // First, fetch the character to verify ownership
+    const existingCharacter = await db
+      .select()
+      .from(characters)
+      .where(eq(characters.id, characterId))
+      .limit(1);
+
+    if (existingCharacter.length === 0) {
+      return { 
+        success: false, 
+        error: "Character not found" 
+      };
+    }
+
+    // Verify the user owns this character
+    if (existingCharacter[0].userId !== session.user.id) {
+      return {
+        success: false,
+        error: "You don't have permission to delete this character"
+      };
+    }
+
+    // Delete the character
+    await db
+      .delete(characters)
+      .where(eq(characters.id, characterId));
+
+    return { 
+      success: true 
+    };
+  } catch (error) {
+    console.error("Error deleting character:", error);
+    return {
+      success: false,
+      error: "Failed to delete character",
+      details: error
+    };
+  }
+}
