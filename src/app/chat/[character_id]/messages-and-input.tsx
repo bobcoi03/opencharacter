@@ -332,7 +332,7 @@ export default function MessageAndInput({
   const [messagesState, setMessagesState] =
     useState<CoreMessage[]>(processedMessages);
   const [input, setInput] = useState("");
-  const [selectedModel, setSelectedModel] = useState("meta-llama/llama-3.1-8b-instruct");
+  const [selectedModel, setSelectedModel] = useState("meta-llama/llama-3.2-3b-instruct");
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<boolean>(false);

@@ -235,15 +235,15 @@ export default async function Dashboard() {
   return (
     <div className="md:ml-16 text-white p-4 mb-16">
       <div className="lg:flex">
-        <div className="w-full lg:w-[60%]">
+        <div className="w-full lg:w-[50%]">
           {messageData && messageData?.length > 0 && <LineChartDashboard messageData={messageData} />}
         </div>
-        <div className="w-full lg:w-[40%] mt-4 lg:mt-0">
-          {recentMessages && recentMessages.length > 0 && <RecentMessages messages={recentMessages} />}
+        <div className="w-full lg:w-[50%] mt-4 lg:mt-0">
+          {userCountData && userCountData.length > 0 && <BarChartDashboard userCountData={userCountData} />}
         </div>
       </div>
-      <div className="w-full lg:w-[40%] mt-4">
-        {userCountData && userCountData.length > 0 && <BarChartDashboard userCountData={userCountData} />}
+      <div className="w-full lg:w-[50%] mt-4">
+        {recentMessages && recentMessages.length > 0 && <RecentMessages messages={recentMessages} />}
       </div>
     </div>
   );
