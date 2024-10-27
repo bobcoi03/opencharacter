@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { MoreVertical, Trash2 } from "lucide-react"
+import { MoreVertical, Trash2, Pencil } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -56,14 +56,24 @@ export function CharacterOptions({ character } : { character: typeof characters.
         <DialogHeader>
           <DialogTitle>Character Options</DialogTitle>
         </DialogHeader>
-        <Button
-          variant="destructive"
-          onClick={() => setIsConfirmDialogOpen(true)}
-          className="flex items-center"
-        >
-          <Trash2 className="w-4 h-4 mr-2" />
-          Delete Character
-        </Button>
+        <div className="flex flex-col gap-2">
+          <Button
+            variant="outline"
+            onClick={() => router.push(`/character/${character.id}/edit`)}
+            className="flex items-center"
+          >
+            <Pencil className="w-4 h-4 mr-2" />
+            Edit Character
+          </Button>
+          <Button
+            variant="destructive"
+            onClick={() => setIsConfirmDialogOpen(true)}
+            className="flex items-center"
+          >
+            <Trash2 className="w-4 h-4 mr-2" />
+            Delete Character
+          </Button>
+        </div>
       </DialogContent>
 
       <Dialog open={isConfirmDialogOpen} onOpenChange={setIsConfirmDialogOpen}>
