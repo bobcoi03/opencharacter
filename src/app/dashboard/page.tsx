@@ -6,14 +6,8 @@ import { ChatMessageArray } from "@/server/db/schema";
 import LineChartDashboard from "@/components/line-chart";
 import RecentMessages from "@/components/recent-messages";
 import BarChartDashboard from "@/components/bar-chart";
-import { Heart, MessageCircle, User, Tag } from "lucide-react";
 
 export const runtime = "edge";
-
-interface MessageCount {
-    date: string;
-    count: number;
-}
 
 async function getMessageData() {
     const session = await auth();
@@ -70,7 +64,7 @@ async function getMessageData() {
     return messageCounts;
   }
 
-async function getRecentMessages() {
+  async function getRecentMessages() {
     const session = await auth();
     const user = session?.user;
   
@@ -79,7 +73,25 @@ async function getRecentMessages() {
     }
   
     const recentSessions = await db.select({
+      id: chat_sessions.id,
       character: characters.name,
+      characterDetails: {
+        name: characters.name,
+        tagline: characters.tagline,
+        description: characters.description,
+        avatar_image_url: characters.avatar_image_url,
+        banner_image_url: characters.banner_image_url,
+        temperature: characters.temperature,
+        top_p: characters.top_p,
+        top_k: characters.top_k,
+        frequency_penalty: characters.frequency_penalty,
+        presence_penalty: characters.presence_penalty,
+        repetition_penalty: characters.repetition_penalty,
+        min_p: characters.min_p,
+        top_a: characters.top_a,
+        max_tokens: characters.max_tokens,
+        visibility: characters.visibility
+      },
       messages: chat_sessions.messages,
       timestamp: chat_sessions.last_message_timestamp
     })
@@ -87,17 +99,47 @@ async function getRecentMessages() {
     .innerJoin(characters, eq(chat_sessions.character_id, characters.id))
     .where(eq(characters.userId, user.id!))
     .orderBy(sql`last_message_timestamp desc`)
-    .limit(25);
+    .limit(10);
   
     return recentSessions.flatMap(session => {
       const messages = session.messages as ChatMessageArray;
-      return messages.slice(-1).map(message => ({
-        character: session.character,
-        content: message.content,
-        timestamp: session.timestamp.getTime() // Convert Date to number (milliseconds)
+      const lastMessage = messages[messages.length - 1];
+      
+      const fullConversation = messages.map(msg => ({
+        role: msg.role,
+        content: msg.content,
+        timestamp: msg.time || session.timestamp.getTime()
       }));
-    }).sort((a, b) => b.timestamp - a.timestamp).slice(0, 25);
-}
+  
+      // Convert null to undefined for the character details
+      const characterDetails = {
+        name: session.characterDetails.name,
+        tagline: session.characterDetails.tagline,
+        description: session.characterDetails.description,
+        avatar_image_url: session.characterDetails.avatar_image_url || undefined,
+        banner_image_url: session.characterDetails.banner_image_url || undefined,
+        temperature: session.characterDetails.temperature ?? undefined,
+        top_p: session.characterDetails.top_p ?? undefined,
+        top_k: session.characterDetails.top_k ?? undefined,
+        frequency_penalty: session.characterDetails.frequency_penalty ?? undefined,
+        presence_penalty: session.characterDetails.presence_penalty ?? undefined,
+        repetition_penalty: session.characterDetails.repetition_penalty ?? undefined,
+        min_p: session.characterDetails.min_p ?? undefined,
+        top_a: session.characterDetails.top_a ?? undefined,
+        max_tokens: session.characterDetails.max_tokens ?? undefined,
+        visibility: session.characterDetails.visibility ?? undefined,
+      }
+  
+      return [{
+        character: session.character,
+        characterDetails,
+        content: lastMessage.content,
+        timestamp: session.timestamp.getTime(),
+        sessionId: session.id,
+        fullConversation
+      }];
+    }).sort((a, b) => b.timestamp - a.timestamp);
+  }
 
 async function getUserCountData() {
   const session = await auth();
@@ -146,87 +188,7 @@ async function getUserCountData() {
 
   return filledData;
 }
-
-async function getAllCharacters() {
-    const session = await auth();
-    const user = session?.user;
-  
-    if (!user) {
-      return null;
-    }
-
-    const userCharacters = await db.select()
-        .from(characters)
-        .where(eq(characters.userId, user.id!));
-
-    return userCharacters;
-}
-
-interface CharacterGridProps {
-    characters: typeof characters.$inferSelect[];
-  }
-  
-  const CharacterCard: React.FC<{ character: typeof characters.$inferSelect }> = ({ character }) => {
-    const tags = JSON.parse(character.tags) as string[];
-  
-    return (
-      <div className="bg-gray-800 rounded-lg overflow-hidden shadow-lg">
-        <div className="h-32 bg-cover bg-center" style={{ backgroundImage: `url(${character.banner_image_url || '/api/placeholder/800/200'})` }} />
-        <div className="p-4">
-          <div className="flex items-center mb-4">
-            <img
-              src={character.avatar_image_url || '/api/placeholder/100/100'}
-              alt={character.name}
-              className="w-16 h-16 rounded-full mr-4 border-2 border-blue-500"
-            />
-            <div>
-              <h2 className="text-xl font-bold text-white">{character.name}</h2>
-              <p className="text-gray-400">{character.tagline}</p>
-            </div>
-          </div>
-          <p className="text-gray-300 mb-4 line-clamp-3">{character.description}</p>
-          <div className="flex justify-between items-center text-gray-400 mb-4">
-            <span className="flex items-center">
-              <MessageCircle size={18} className="mr-1" />
-              {character.interactionCount}
-            </span>
-            <span className="flex items-center">
-              <Heart size={18} className="mr-1" />
-              {character.likeCount}
-            </span>
-            <span className="flex items-center">
-              <User size={18} className="mr-1" />
-              {character.visibility}
-            </span>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {tags.slice(0, 3).map((tag, index) => (
-              <span key={index} className="bg-blue-600 text-white text-xs px-2 py-1 rounded-full flex items-center">
-                <Tag size={12} className="mr-1" />
-                {tag}
-              </span>
-            ))}
-            {tags.length > 3 && (
-              <span className="bg-gray-600 text-white text-xs px-2 py-1 rounded-full">
-                +{tags.length - 3}
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  };
-  
-  const CharacterGrid: React.FC<CharacterGridProps> = ({ characters }) => {
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {characters.map((character) => (
-          <CharacterCard key={character.id} character={character} />
-        ))}
-      </div>
-    );
-  };
-  
+    
 export default async function Dashboard() {
   const messageData = await getMessageData();
   const recentMessages = await getRecentMessages();
@@ -234,7 +196,7 @@ export default async function Dashboard() {
 
   return (
     <div className="md:ml-16 text-white p-4 mb-16">
-      <div className="lg:flex">
+      <div className="lg:flex lg:gap-4">
         <div className="w-full lg:w-[50%]">
           {messageData && messageData?.length > 0 && <LineChartDashboard messageData={messageData} />}
         </div>
@@ -242,7 +204,7 @@ export default async function Dashboard() {
           {userCountData && userCountData.length > 0 && <BarChartDashboard userCountData={userCountData} />}
         </div>
       </div>
-      <div className="w-full lg:w-[50%] mt-4">
+      <div className="w-full mt-4">
         {recentMessages && recentMessages.length > 0 && <RecentMessages messages={recentMessages} />}
       </div>
     </div>
