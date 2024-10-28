@@ -94,59 +94,11 @@ const NewSidebarContent: React.FC<NewSidebarProps> = ({ search }) => {
           </div>
           <div className="flex items-center space-x-4">
             <div className="relative">
-              {isSearchExpanded ? (
-                <>
-                  <input
-                    type="text"
-                    placeholder="Search..."
-                    className="bg-gray-100 dark:bg-gray-700 text-black dark:text-white px-2 py-1 rounded w-full max-w-[400px]"
-                    autoFocus
-                    value={searchQuery}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      handleSearch(e.target.value)
-                    }
-                    onBlur={() => {
-                      setTimeout(() => {
-                        setIsSearchExpanded(false);
-                        setSuggestions([]);
-                      }, 200);
-                    }}
-                  />
-                  {suggestions.length > 0 && (
-                    <ul className="absolute z-[9999] mt-1 w-full max-w-[400px] bg-white dark:bg-neutral-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg max-h-60 overflow-auto left-0 right-0">
-                      {suggestions.map((char: Character) => (
-                        <li
-                          key={char.id}
-                          onClick={() => handleSelectCharacter(char)}
-                          className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 p-2 text-sm flex items-start"
-                        >
-                          {char.avatar_image_url && (
-                            <img
-                              src={char.avatar_image_url}
-                              alt={char.name}
-                              className="w-8 h-8 rounded-full mr-2 flex-shrink-0"
-                            />
-                          )}
-                          <div className="flex-grow min-w-0">
-                            <div className="font-medium text-black dark:text-white truncate">
-                              {char.name}
-                            </div>
-                            <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                              {char.tagline}
-                            </div>
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </>
-              ) : (
-                <Search
-                  className="text-gray-600 dark:text-gray-300 cursor-pointer"
-                  size={20}
-                  onClick={() => setIsSearchExpanded(true)}
-                />
-              )}
+              <Search
+                className="text-gray-600 dark:text-gray-300 cursor-pointer"
+                size={20}
+                onClick={() => router.push('/search')}
+              />
             </div>
             {status === "authenticated" ? (
               <DropdownMenu>
