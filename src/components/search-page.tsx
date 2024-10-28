@@ -96,7 +96,7 @@ export default function SearchPage() {
 
       {/* Results Section */}
       {query && (
-        <div className="max-w-6xl mx-auto px-4 py-6 border-t border-gray-800">
+        <div className="w-full max-w-6xl mx-auto py-6 border-t border-gray-800">
           {/* Results Count */}
           {!isSearching && characters.length > 0 && (
             <p className="text-sm text-gray-500 mb-4">
@@ -113,7 +113,7 @@ export default function SearchPage() {
                 target='_blank'
                 className="w-full bg-gray-900/0 hover:bg-gray-900/50 rounded-xl cursor-pointer group"
               >
-                <div className="flex items-start gap-3 md:gap-4 p-3 md:p-4 w-full">
+                <div className="flex items-start gap-3 md:gap-4 p-4 w-full">
                   {/* Avatar */}
                   <div className="flex-none"> {/* Changed to flex-none */}
                     {character.avatar_image_url ? (
