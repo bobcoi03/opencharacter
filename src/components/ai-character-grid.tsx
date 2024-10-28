@@ -5,9 +5,18 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
-import { MessageCircle } from "lucide-react";
+import { MessageCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import { AllCharacterTags, CharacterTag, CharacterTags, NSFWCharacterTags, SFWCharacterTags } from "@/types/character-tags";
-import { searchCharactersByTags } from "@/app/actions/index"; // Import the server action
+import { searchCharactersByTags } from "@/app/actions/index";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination"
 
 type Character = {
   id: string;
@@ -18,10 +27,21 @@ type Character = {
   createdAt: Date;
   userName: string | null;
   userId: string;
-  tags: string | string[] | null; // Updated to handle multiple possible types
+  tags: string | string[] | null;
 };
 
-// Helper function to parse tags
+type PaginationInfo = {
+  currentPage: number;
+  totalPages: number;
+  totalItems: number;
+}
+
+interface AICharacterGridProps {
+  initialCharacters: Character[];
+  paginationInfo: PaginationInfo;
+  totalPublicCharacters: number;
+}
+
 const parseTags = (tags: string | string[] | null): string[] => {
   if (!tags) return [];
   if (Array.isArray(tags)) return tags;
@@ -29,7 +49,7 @@ const parseTags = (tags: string | string[] | null): string[] => {
     const parsed = JSON.parse(tags);
     return Array.isArray(parsed) ? parsed : [];
   } catch {
-    return [tags]; // If it's a single string and not JSON
+    return [tags];
   }
 };
 
@@ -51,16 +71,14 @@ const AICharacterCard: React.FC<{ character: Character }> = ({ character }) => {
   );
   const [showNSFW, setShowNSFW] = useState(false);
 
-  // Parse tags and check if any NSFW tag is present
   const characterTags = parseTags(character.tags);
   const isNSFW = characterTags.some(tag => NSFWCharacterTags.includes(tag as any));
 
-  // Get NSFW setting from localStorage, default to false if not set
   const [shouldBlur, setShouldBlur] = useState(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem("nsfw") !== "true" && isNSFW;
     }
-    return isNSFW; // Default to blurring NSFW content on initial server-side render
+    return isNSFW;
   });
 
   const handleViewNSFW = (e: React.MouseEvent) => {
@@ -127,53 +145,141 @@ const AICharacterCard: React.FC<{ character: Character }> = ({ character }) => {
   );
 };
 
-const AICharacterGrid: React.FC<{ initialCharacters: Character[] }> = ({
+const CustomPagination: React.FC<{
+  currentPage: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+}> = ({ currentPage, totalPages, onPageChange }) => {
+  const maxVisiblePages = 5;
+  const showLeftEllipsis = currentPage > 3;
+  const showRightEllipsis = currentPage < totalPages - 2;
+
+  const getVisiblePages = () => {
+    const pages = [];
+    if (totalPages <= maxVisiblePages) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      if (currentPage <= 3) {
+        for (let i = 1; i <= 3; i++) {
+          pages.push(i);
+        }
+      } else if (currentPage >= totalPages - 2) {
+        for (let i = totalPages - 2; i <= totalPages; i++) {
+          pages.push(i);
+        }
+      } else {
+        pages.push(currentPage - 1, currentPage, currentPage + 1);
+      }
+    }
+    return pages;
+  };
+
+  return (
+    <Pagination className="my-8">
+      <PaginationContent>
+        <PaginationItem>
+          <PaginationPrevious
+            onClick={() => onPageChange(currentPage - 1)}
+            className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+          />
+        </PaginationItem>
+
+        {showLeftEllipsis && (
+          <>
+            <PaginationItem>
+              <PaginationLink onClick={() => onPageChange(1)}>1</PaginationLink>
+            </PaginationItem>
+            <PaginationItem>
+              <PaginationEllipsis />
+            </PaginationItem>
+          </>
+        )}
+
+        {getVisiblePages().map((page) => (
+          <PaginationItem key={page}>
+            <PaginationLink
+              className="cursor-pointer"
+              onClick={() => onPageChange(page)}
+              isActive={currentPage === page}
+            >
+              {page}
+            </PaginationLink>
+          </PaginationItem>
+        ))}
+
+        {showRightEllipsis && (
+          <>
+            <PaginationItem>
+              <PaginationEllipsis />
+            </PaginationItem>
+            <PaginationItem>
+              <PaginationLink onClick={() => onPageChange(totalPages)}>
+                {totalPages}
+              </PaginationLink>
+            </PaginationItem>
+          </>
+        )}
+
+        <PaginationItem>
+          <PaginationNext
+            onClick={() => onPageChange(currentPage + 1)}
+            className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+          />
+        </PaginationItem>
+      </PaginationContent>
+    </Pagination>
+  );
+};
+
+const AICharacterGrid: React.FC<AICharacterGridProps> = ({
   initialCharacters,
+  paginationInfo,
+  totalPublicCharacters
 }) => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [sortOption, setSortOption] = useState<SortOption>("popular");
+  const [sortOption, setSortOption] = useState<SortOption>(() => {
+    return (searchParams.get('sort') as SortOption) || "popular";
+  });
   const [showTags, setShowTags] = useState(false);
   const [characters, setCharacters] = useState<Character[]>(initialCharacters);
+  const [pagination, setPagination] = useState<PaginationInfo>(paginationInfo);
+  const [isLoading, setIsLoading] = useState(false);
 
   const activeTags = useMemo(() => {
     const tags = searchParams.get('tags');
+    if (tags) {
+      setShowTags(true)
+    }
+    console.log('Current tags from URL:', tags);
     return tags ? tags.split(',') : [];
   }, [searchParams]);
 
   useEffect(() => {
-    const fetchCharacters = async () => {
-      if (activeTags.length > 0) {
-        const fetchedCharacters = await searchCharactersByTags(activeTags as CharacterTag[]);
-        setCharacters(fetchedCharacters as Character[]); // Type assertion if needed
-      } else {
-        setCharacters(initialCharacters);
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+      } finally {
+        setIsLoading(false);
       }
     };
 
-    fetchCharacters();
-  }, [activeTags, initialCharacters]);
+    fetchData();
+  }, [searchParams, router]);
 
-  const sortedCharacters = useMemo(() => {
-    switch (sortOption) {
-      case "popular":
-        return [...characters].sort((a, b) => (b.interactionCount ?? 0) - (a.interactionCount ?? 0));
-      case "new":
-        return [...characters].sort((a, b) => {
-          const dateA = a.createdAt instanceof Date ? a.createdAt.getTime() : 0;
-          const dateB = b.createdAt instanceof Date ? b.createdAt.getTime() : 0;
-          return dateB - dateA;
-        });
-      case "old":
-        return [...characters].sort((a, b) => {
-          const dateA = a.createdAt instanceof Date ? a.createdAt.getTime() : 0;
-          const dateB = b.createdAt instanceof Date ? b.createdAt.getTime() : 0;
-          return dateA - dateB;
-        });
-      default:
-        return characters;
+  const updateUrlWithFilters = (page: number, sort: SortOption, tags: string[]) => {
+    console.log('Updating URL with tags:', tags);
+    const params = new URLSearchParams();
+    params.set('id', Math.random().toString(36).substring(7));
+    params.set('page', page.toString());
+    params.set('sort', sort);
+    if (tags.length > 0) {
+      params.set('tags', tags.join(','));
     }
-  }, [characters, sortOption]);
+    router.push(`/?${params.toString()}`);
+  };
 
   const Button: React.FC<{ label: string; isActive: boolean; onClick: () => void }> = ({ label, isActive, onClick }) => (
     <div
@@ -192,11 +298,14 @@ const AICharacterGrid: React.FC<{ initialCharacters: Character[] }> = ({
     const handleClick = () => {
       let newTags: string[];
       if (isActive) {
+        console.log('Removing tag:', tag);
         newTags = activeTags.filter(t => t !== tag);
       } else {
+        console.log('Adding tag:', tag);
         newTags = [...activeTags, tag];
       }
-      router.push(`/?tags=${newTags.join(',')}`);
+      console.log('New tags after update:', newTags);
+      updateUrlWithFilters(1, sortOption, newTags);
     };
 
     return (
@@ -212,17 +321,48 @@ const AICharacterGrid: React.FC<{ initialCharacters: Character[] }> = ({
   };
 
   const handleReset = () => {
+    console.log('Resetting all tags');
     router.push('/');
+  };
+
+  const handlePageChange = (page: number) => {
+    updateUrlWithFilters(page, sortOption, activeTags);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleSortChange = (newSort: SortOption) => {
+    setSortOption(newSort);
+    updateUrlWithFilters(1, newSort, activeTags);
   };
 
   return (
     <div className="bg-neutral-900">
       <div className="w-full flex flex-wrap gap-2 mb-4">
-        <Button label="Popular" isActive={sortOption === "popular"} onClick={() => setSortOption("popular")} />
-        <Button label="New" isActive={sortOption === "new"} onClick={() => setSortOption("new")} />
-        <Button label="Old" isActive={sortOption === "old"} onClick={() => setSortOption("old")} />
-        <Button label="Tags" isActive={showTags} onClick={() => setShowTags(!showTags)} />
-        <Button label="Leaderboard" onClick={() => router.push("/leaderboard")} isActive={false} />
+        <Button 
+          label="Popular" 
+          isActive={sortOption === "popular"} 
+          onClick={() => handleSortChange("popular")} 
+        />
+        <Button 
+          label="New" 
+          isActive={sortOption === "new"} 
+          onClick={() => handleSortChange("new")} 
+        />
+        <Button 
+          label="Old" 
+          isActive={sortOption === "old"} 
+          onClick={() => handleSortChange("old")} 
+        />
+        <Button 
+          label="Tags" 
+          isActive={showTags} 
+          onClick={() => setShowTags(!showTags)} 
+        />
+        <Button 
+          label="Leaderboard" 
+          onClick={() => router.push("/leaderboard")} 
+          isActive={false} 
+        />
         {activeTags.length > 0 && (
           <Button label="Reset Tags" isActive={false} onClick={handleReset} />
         )}
@@ -236,11 +376,34 @@ const AICharacterGrid: React.FC<{ initialCharacters: Character[] }> = ({
         </div>
       )}
     
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
-        {sortedCharacters.map((character) => (
-          <AICharacterCard key={character.id} character={character} />
-        ))}
+      {isLoading ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
+          {Array.from({ length: 24 }).map((_, index) => (
+            <div key={index} className="bg-neutral-800 rounded-lg h-64 animate-pulse" />
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
+          {characters.map((character) => (
+            <AICharacterCard key={character.id} character={character} />
+          ))}
+        </div>
+      )}
+
+      <div className="flex flex-col items-center gap-6 mt-8">
+        {pagination.totalPages > 1 && (
+          <CustomPagination
+            currentPage={pagination.currentPage}
+            totalPages={pagination.totalPages}
+            onPageChange={handlePageChange}
+          />
+        )}
+        
+        <div className="inline-flex items-center justify-center px-4 py-2 text-xs font-medium text-white bg-black rounded-full border-2 border-gradient-to-r from-pink-500 via-purple-500 to-blue-500">
+          {totalPublicCharacters.toLocaleString()} total public characters
+        </div>
       </div>
+      
       <div className="border-t border-gray-700 mt-8" />
     </div>
   );

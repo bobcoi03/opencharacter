@@ -1,38 +1,137 @@
 import { searchCharacters } from "./actions/index";
 import { db } from "@/server/db";
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, asc, sql, and, or, SQL } from "drizzle-orm";
 import { characters, users } from "@/server/db/schema";
 import AICharacterGrid from "@/components/ai-character-grid";
 import Link from "next/link";
+import { Suspense } from "react";
 
 export const runtime = "edge";
+const ITEMS_PER_PAGE = 24;
 
-export default async function Page({ searchParams }: { searchParams: { tags?: string }} ) {
-  const popularCharacters = await getPopularCharacters();
+async function getTotalPublicCharacters() {
+  const result = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(characters)
+    .where(eq(characters.visibility, "public"))
+    .execute();
+  
+  return Number(result[0]?.count || 0);
+}
 
-  async function getPopularCharacters() {
-    return await db
-      .select({
-        id: characters.id,
-        name: characters.name,
-        tagline: characters.tagline,
-        avatar_image_url: characters.avatar_image_url,
-        interactionCount: characters.interactionCount,
-        createdAt: characters.createdAt,
-        userName: users.name,
-        userId: characters.userId,
-        tags: characters.tags
-      })
-      .from(characters)
-      .leftJoin(users, eq(characters.userId, users.id))
-      .where(eq(characters.visibility, "public"))
-      .orderBy(desc(characters.interactionCount))
-      .limit(500);
+async function getPaginatedCharacters(
+  page: number,
+  sortOption: string,
+  tags: string[]
+) {
+  const offset = (page - 1) * ITEMS_PER_PAGE;
+
+  // Initialize base condition
+  let conditions: SQL<unknown>[] = [eq(characters.visibility, "public")];
+
+  // Add tags filter if present
+  if (tags.length > 0) {
+    // Create tag conditions using OR logic
+    const tagConditions: SQL<unknown>[] = tags.map(tag => 
+      sql`${characters.tags} LIKE ${`%${tag}%`}` as SQL<unknown>
+    );
+    
+    // Combine conditions with OR
+    if (tagConditions.length > 0) {
+      conditions.push(sql`(${or(...tagConditions)})` as SQL<unknown>);
+    }
   }
+
+  // Get total count
+  const countResult = await db
+    .select({ value: sql<number>`count(*)` })
+    .from(characters)
+    .where(and(...conditions))
+    .execute();
+
+  const totalItems = Number(countResult[0]?.value || 0);
+
+  // Build and execute the main query
+  let query = db
+    .select({
+      id: characters.id,
+      name: characters.name,
+      tagline: characters.tagline,
+      avatar_image_url: characters.avatar_image_url,
+      interactionCount: characters.interactionCount,
+      createdAt: characters.createdAt,
+      userName: users.name,
+      userId: characters.userId,
+      tags: characters.tags
+    })
+    .from(characters)
+    .leftJoin(users, eq(characters.userId, users.id))
+    .where(and(...conditions));
+
+  // Add sorting
+  const sortedQuery = (() => {
+    switch (sortOption) {
+      case "new":
+        return query.orderBy(desc(characters.createdAt));
+      case "old":
+        return query.orderBy(asc(characters.createdAt));
+      case "popular":
+      default:
+        return query.orderBy(desc(characters.interactionCount));
+    }
+  })();
+
+  // Add pagination
+  const paginatedResults = await sortedQuery
+    .limit(ITEMS_PER_PAGE)
+    .offset(offset)
+    .execute();
+
+  return {
+    characters: paginatedResults,
+    totalItems
+  };
+}
+
+export default async function Page({ 
+  searchParams 
+}: { 
+  searchParams: { 
+    tags?: string;
+    page?: string;
+    sort?: string;
+    id?: string;
+  }
+}) {
+  const currentPage = Number(searchParams.page) || 1;
+  const sortOption = searchParams.sort || "popular";
+  const tags = searchParams.tags ? searchParams.tags.split(',') : [];
+  
+  const [
+    { characters: paginatedCharacters, totalItems },
+    totalPublicCharacters
+  ] = await Promise.all([
+    getPaginatedCharacters(currentPage, sortOption, tags),
+    getTotalPublicCharacters()
+  ]);
+
+  const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+
+  const paginationInfo = {
+    currentPage,
+    totalPages,
+    totalItems
+  };
 
   return (
     <div className="text-white w-full overflow-y-auto overflow-x-hidden md:pl-16">
-      <AICharacterGrid initialCharacters={popularCharacters} />
+      <Suspense key={searchParams.id}>
+        <AICharacterGrid 
+          initialCharacters={paginatedCharacters} 
+          paginationInfo={paginationInfo}
+          totalPublicCharacters={totalPublicCharacters}
+        />
+      </Suspense>
       <div className="text-gray-500 flex gap-4 mb-24 text-xs flex-wrap">
         <Link href={"/about"}>
           About 
