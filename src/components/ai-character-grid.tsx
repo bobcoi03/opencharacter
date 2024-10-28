@@ -154,44 +154,57 @@ const CustomPagination: React.FC<{
   const showLeftEllipsis = currentPage > 3;
   const showRightEllipsis = currentPage < totalPages - 2;
 
+  // Adjust visible pages based on screen size
   const getVisiblePages = () => {
     const pages = [];
-    if (totalPages <= maxVisiblePages) {
-      for (let i = 1; i <= totalPages; i++) {
-        pages.push(i);
+    if (typeof window !== 'undefined' && window.innerWidth < 640) {
+      // On mobile, show fewer pages
+      if (currentPage <= 2) {
+        pages.push(1, 2);
+      } else if (currentPage >= totalPages - 1) {
+        pages.push(totalPages - 1, totalPages);
+      } else {
+        pages.push(currentPage);
       }
     } else {
-      if (currentPage <= 3) {
-        for (let i = 1; i <= 3; i++) {
-          pages.push(i);
-        }
-      } else if (currentPage >= totalPages - 2) {
-        for (let i = totalPages - 2; i <= totalPages; i++) {
+      // Desktop behavior remains the same
+      if (totalPages <= maxVisiblePages) {
+        for (let i = 1; i <= totalPages; i++) {
           pages.push(i);
         }
       } else {
-        pages.push(currentPage - 1, currentPage, currentPage + 1);
+        if (currentPage <= 3) {
+          for (let i = 1; i <= 3; i++) {
+            pages.push(i);
+          }
+        } else if (currentPage >= totalPages - 2) {
+          for (let i = totalPages - 2; i <= totalPages; i++) {
+            pages.push(i);
+          }
+        } else {
+          pages.push(currentPage - 1, currentPage, currentPage + 1);
+        }
       }
     }
     return pages;
   };
 
   return (
-    <Pagination className="my-8">
-      <PaginationContent>
+    <Pagination className="my-8 text-xs max-w-full overflow-hidden">
+      <PaginationContent className="gap-1 sm:gap-2">
         <PaginationItem>
           <PaginationPrevious
             onClick={() => onPageChange(currentPage - 1)}
-            className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+            className={`${currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"} px-2 sm:px-4`}
           />
         </PaginationItem>
 
         {showLeftEllipsis && (
           <>
-            <PaginationItem>
+            <PaginationItem className="hidden sm:inline-block">
               <PaginationLink onClick={() => onPageChange(1)}>1</PaginationLink>
             </PaginationItem>
-            <PaginationItem>
+            <PaginationItem className="hidden sm:inline-block">
               <PaginationEllipsis />
             </PaginationItem>
           </>
@@ -200,7 +213,7 @@ const CustomPagination: React.FC<{
         {getVisiblePages().map((page) => (
           <PaginationItem key={page}>
             <PaginationLink
-              className="cursor-pointer"
+              className="cursor-pointer px-2 sm:px-4"
               onClick={() => onPageChange(page)}
               isActive={currentPage === page}
             >
@@ -211,10 +224,10 @@ const CustomPagination: React.FC<{
 
         {showRightEllipsis && (
           <>
-            <PaginationItem>
+            <PaginationItem className="hidden sm:inline-block">
               <PaginationEllipsis />
             </PaginationItem>
-            <PaginationItem>
+            <PaginationItem className="hidden sm:inline-block">
               <PaginationLink onClick={() => onPageChange(totalPages)}>
                 {totalPages}
               </PaginationLink>
@@ -225,7 +238,7 @@ const CustomPagination: React.FC<{
         <PaginationItem>
           <PaginationNext
             onClick={() => onPageChange(currentPage + 1)}
-            className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+            className={`${currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"} px-2 sm:px-4`}
           />
         </PaginationItem>
       </PaginationContent>
