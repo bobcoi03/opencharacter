@@ -195,7 +195,7 @@ export default async function Dashboard() {
   const userCountData = await getUserCountData();
 
   return (
-    <div className="md:ml-16 text-white p-4 mb-16">
+    <div className="md:ml-16 text-white md:p-4 mb-16">
       <div className="lg:flex lg:gap-4">
         <div className="w-full lg:w-[50%]">
           {messageData && messageData?.length > 0 && <LineChartDashboard messageData={messageData} />}
