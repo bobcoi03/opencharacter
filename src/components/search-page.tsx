@@ -14,6 +14,7 @@ type Character = {
   avatar_image_url: string | null;
   interactionCount: number;
   tags: string;
+  greeting: string
 };
 
 export default function SearchPage() {
@@ -41,7 +42,7 @@ export default function SearchPage() {
   }, []);
 
   return (
-    <div className="min-h-screen md:ml-16">
+    <div className="min-h-screen md:ml-16 overflow-x-hidden mb-24">
       {/* Search Section */}
       <div className="max-w-6xl mx-auto px-4 pt-12 pb-8">
         {!query && (
@@ -59,7 +60,7 @@ export default function SearchPage() {
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSearch(query)}
               placeholder="Search characters..."
-              className="w-full h-12 pl-12 pr-4 rounded-full bg-gray-900 border border-gray-800 
+              className="w-full h-12 pl-12 pr-4 rounded-full bg-black border 
                        text-white placeholder-gray-400 text-base md:text-lg focus:outline-none focus:ring-2 
                        focus:ring-blue-500/50 focus:border-transparent transition-all"
             />
@@ -80,8 +81,8 @@ export default function SearchPage() {
                     setQuery(tag);
                     handleSearch(tag);
                   }}
-                  className="px-4 py-2 rounded-full bg-gray-800 hover:bg-gray-700 
-                           transition-colors text-sm text-gray-400 border border-gray-700"
+                  className="px-4 py-2 rounded-full bg-black hover:bg-gray-700 
+                           transition-colors text-sm text-gray-400 border"
                 >
                   {tag}
                 </button>
@@ -90,19 +91,6 @@ export default function SearchPage() {
           )}
         </div>
 
-        {/* Filter Tags - Only show when there are results */}
-        {query && characters.length > 0 && (
-          <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 mt-6 text-sm px-2">
-            {['All', 'Public', 'Private', 'Most Popular', 'Recent'].map((filter) => (
-              <button
-                key={filter}
-                className="text-gray-400 hover:text-white transition-colors px-1 py-2 border-b-2 border-transparent hover:border-blue-500 whitespace-nowrap"
-              >
-                {filter}
-              </button>
-            ))}
-          </div>
-        )}
       </div>
 
       {/* Results Section */}
@@ -142,7 +130,7 @@ export default function SearchPage() {
                   </div>
 
                   {/* Content */}
-                  <div className="min-w-0 flex-auto"> {/* Changed flex-1 to flex-auto */}
+                  <div className="min-w-0"> {/* Changed flex-1 to flex-auto */}
                     <div className="flex items-center gap-2 mb-1 w-full">
                       <h2 className="text-base md:text-lg font-medium text-white group-hover:text-blue-400 truncate">
                         {character.name}
@@ -153,8 +141,8 @@ export default function SearchPage() {
                         <Lock className="flex-none w-4 h-4 text-amber-400" />
                       )}
                     </div>
-                    <p className="text-sm text-gray-400 mb-2 truncate">{character.tagline}</p>
-                    <p className="text-sm text-gray-500 mb-3 line-clamp-2 break-words">{character.description}</p>
+                    <p className="text-sm text-gray-400 mb-2 truncate text-wrap">{character.tagline.slice(0, 100)}</p>
+                    <p className="text-sm text-gray-500 mb-3 break-words">{character.greeting.slice(0, 100)}</p>
                     
                     {/* Metadata */}
                     <div className="flex flex-wrap items-center gap-2">
