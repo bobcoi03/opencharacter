@@ -206,16 +206,14 @@ export default async function Dashboard() {
   const userCountData = await getUserCountData();
 
   return (
-    <div className="md:ml-16 text-white md:p-4 mb-16">
-      <div className="lg:flex lg:gap-4">
-        <div className="w-full lg:w-[50%]">
-          {messageData && messageData?.length > 0 && <LineChartDashboard messageData={messageData} />}
-        </div>
-        <div className="w-full lg:w-[50%] mt-4 lg:mt-0">
-          {userCountData && userCountData.length > 0 && <BarChartDashboard userCountData={userCountData} />}
-        </div>
+    <div className="md:ml-16 text-white md:p-4 mb-16 flex flex-col gap-4">
+      <div className="w-full">
+        {messageData && messageData?.length > 0 && <LineChartDashboard messageData={messageData} />}
       </div>
-      <div className="w-full mt-4">
+      <div className="w-full">
+        {userCountData && userCountData.length > 0 && <BarChartDashboard userCountData={userCountData} />}
+      </div>
+      <div className="w-full">
         {recentMessages && recentMessages.length > 0 && <RecentMessages messages={recentMessages} />}
       </div>
     </div>
