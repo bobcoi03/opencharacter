@@ -99,7 +99,6 @@ async function getMessageData() {
     .innerJoin(characters, eq(chat_sessions.character_id, characters.id))
     .where(eq(characters.userId, user.id!))
     .orderBy(sql`last_message_timestamp desc`)
-    .limit(10);
   
     // Create a Map to store unique sessions by ID
     const uniqueSessions = new Map();

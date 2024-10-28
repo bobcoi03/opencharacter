@@ -7,6 +7,15 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 import ReactMarkdown from "react-markdown";
 import { Clock, MessageCircle, Settings, Sliders, Globe2, Lock } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -46,6 +55,15 @@ export default function RecentMessages({ messages }: { messages: Message[] }) {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedConversation, setSelectedConversation] = useState<Message | null>(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  
+  const ITEMS_PER_PAGE = 10;
+  const totalPages = Math.ceil(messages.length / ITEMS_PER_PAGE);
+  
+  const paginatedMessages = messages.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
 
   const handleMessageClick = (message: Message) => {
     setSelectedConversation(message);
@@ -56,6 +74,44 @@ export default function RecentMessages({ messages }: { messages: Message[] }) {
     return value !== undefined ? value.toFixed(2) : 'Default';
   };
 
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const renderPaginationItems = () => {
+    const items = [];
+    const showEllipsisStart = currentPage > 3;
+    const showEllipsisEnd = currentPage < totalPages - 2;
+
+    for (let i = 1; i <= totalPages; i++) {
+      if (
+        i === 1 || // Always show first page
+        i === totalPages || // Always show last page
+        (i >= currentPage - 1 && i <= currentPage + 1) // Show current page and adjacent pages
+      ) {
+        items.push(
+          <PaginationItem key={i}>
+            <PaginationLink
+              className={`${currentPage === i ? 'bg-gray-800 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800/50'}`}
+              onClick={() => handlePageChange(i)}
+            >
+              {i}
+            </PaginationLink>
+          </PaginationItem>
+        );
+      } else if (i === 2 && showEllipsisStart) {
+        items.push(
+          <PaginationEllipsis key="ellipsis-start" className="text-gray-500" />
+        );
+      } else if (i === totalPages - 1 && showEllipsisEnd) {
+        items.push(
+          <PaginationEllipsis key="ellipsis-end" className="text-gray-500" />
+        );
+      }
+    }
+    return items;
+  };
+
   return (
     <div className="bg-black rounded-xl shadow-2xl p-6">
       <div className="flex items-center justify-between mb-6">
@@ -64,12 +120,12 @@ export default function RecentMessages({ messages }: { messages: Message[] }) {
           <h2 className="text-base font-semibold text-white">Recent Conversations</h2>
         </div>
         <div className="text-xs text-gray-500">
-          {messages.length} conversations
+          Showing {((currentPage - 1) * ITEMS_PER_PAGE) + 1}-{Math.min(currentPage * ITEMS_PER_PAGE, messages.length)} of {messages.length} conversations
         </div>
       </div>
 
-      <div className="space-y-3 custom-scrollbar">
-        {messages.map((message, index) => (
+      <div className="space-y-3 custom-scrollbar mb-6">
+        {paginatedMessages.map((message, index) => (
           <div 
             key={index} 
             className="bg-gray-900/50 backdrop-blur-sm rounded-lg p-4 hover:bg-gray-800/70 
@@ -124,6 +180,28 @@ export default function RecentMessages({ messages }: { messages: Message[] }) {
           </div>
         ))}
       </div>
+
+      {totalPages > 1 && (
+        <Pagination className="justify-center">
+          <PaginationContent>
+            <PaginationItem>
+              <PaginationPrevious
+                className={`${currentPage === 1 ? 'pointer-events-none opacity-50' : 'text-gray-400 hover:text-white'}`}
+                onClick={() => currentPage > 1 && handlePageChange(currentPage - 1)}
+              />
+            </PaginationItem>
+            
+            {renderPaginationItems()}
+            
+            <PaginationItem>
+              <PaginationNext
+                className={`${currentPage === totalPages ? 'pointer-events-none opacity-50' : 'text-gray-400 hover:text-white'}`}
+                onClick={() => currentPage < totalPages && handlePageChange(currentPage + 1)}
+              />
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>
+      )}
 
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
         <SheetContent className="w-full sm:max-w-2xl overflow-y-auto border-l border-gray-800 bg-black/95 backdrop-blur-xl">
