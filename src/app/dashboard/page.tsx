@@ -101,7 +101,15 @@ async function getMessageData() {
     .orderBy(sql`last_message_timestamp desc`)
     .limit(10);
   
-    return recentSessions.flatMap(session => {
+    // Create a Map to store unique sessions by ID
+    const uniqueSessions = new Map();
+  
+    recentSessions.forEach(session => {
+      // Skip if we already have this session ID
+      if (uniqueSessions.has(session.id)) {
+        return;
+      }
+  
       const messages = session.messages as ChatMessageArray;
       const lastMessage = messages[messages.length - 1];
       
@@ -130,15 +138,19 @@ async function getMessageData() {
         visibility: session.characterDetails.visibility ?? undefined,
       }
   
-      return [{
+      uniqueSessions.set(session.id, {
         character: session.character,
         characterDetails,
         content: lastMessage.content,
         timestamp: session.timestamp.getTime(),
         sessionId: session.id,
         fullConversation
-      }];
-    }).sort((a, b) => b.timestamp - a.timestamp);
+      });
+    });
+  
+    // Convert Map values to array and sort by timestamp
+    return Array.from(uniqueSessions.values())
+      .sort((a, b) => b.timestamp - a.timestamp);
   }
 
 async function getUserCountData() {
