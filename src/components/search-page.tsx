@@ -32,7 +32,7 @@ export default function SearchPage() {
     
     setIsSearching(true);
     try {
-      const results = await searchCharacters(searchQuery);
+      const results = await searchCharacters(searchQuery, 30);
       setCharacters(results);
     } catch (error) {
       console.error('Search error:', error);
