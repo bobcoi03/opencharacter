@@ -32,7 +32,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import AuthProvider from "./auth-provider";
-import Image from "next/image";
 
 type Character = {
   id: string;

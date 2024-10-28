@@ -241,6 +241,7 @@ export async function searchCharacters(query: string, limit = 10) {
       likeCount: characters.likeCount,
       tags: characters.tags,
       avatar_image_url: characters.avatar_image_url,
+      greeting: characters.greeting
     })
     .from(characters)
     .where(whereClause);
