@@ -4,6 +4,7 @@ import React, { useState, useCallback, useRef } from 'react';
 import { Search, Globe2, Lock, MessageSquare, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { searchCharacters } from '@/app/actions';
+import Link from 'next/link';
 
 type Character = {
   id: string;
@@ -106,9 +107,10 @@ export default function SearchPage() {
           {/* Results Grid */}
           <div className="grid gap-4 w-full">
             {characters.map((character) => (
-              <div
+              <Link
                 key={character.id}
-                onClick={() => router.push(`/chat/${character.id}`)}
+                href={`/chat/${character.id}`}
+                target='_blank'
                 className="w-full bg-gray-900/0 hover:bg-gray-900/50 rounded-xl cursor-pointer group"
               >
                 <div className="flex items-start gap-3 md:gap-4 p-3 md:p-4 w-full">
@@ -165,7 +167,7 @@ export default function SearchPage() {
                     </div>
                   </div>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
 
