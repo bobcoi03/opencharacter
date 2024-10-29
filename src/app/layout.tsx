@@ -8,6 +8,7 @@ import { auth } from "@/server/auth";
 import { searchCharacters } from "./actions";
 import NewSidebar from "@/components/new-sidebar";
 import IconStyleInitializer from "@/components/icon-style-onmount";
+import AgeVerificationPopup from "@/components/age-verification-popup";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -45,6 +46,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const session = await auth();
+  const user = session?.user
 
   async function search(query: string) {
     'use server'
@@ -68,6 +70,7 @@ export default async function RootLayout({
           </main>
         </div>
         <Toaster />
+        <AgeVerificationPopup user={user} />
         <GoogleAnalytics gaId={process.env.GOOGLE_ANALYTICS_ID ?? ""} />
       </body>
     </html>
