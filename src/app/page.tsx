@@ -142,6 +142,9 @@ export default async function Page({
         <Link href={"/blog"}>
           Blog
         </Link>
+        <Link href={"https://www.tiktok.com/@opencharacter"} target="_blank">
+          TikTok
+        </Link>
         <Link href={"/plans"}>
           Premium
         </Link>
