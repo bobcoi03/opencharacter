@@ -181,7 +181,7 @@ const Banner = () => {
           </h2>
           
           <p className="text-purple-200">
-            Spread the word about OpenCharacter and get free access to the Premium Plan!
+            Post about OpenCharacter on social media and get free access to the Premium Plan!
           </p>
         </div>
 
