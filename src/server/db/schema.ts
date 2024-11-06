@@ -12,6 +12,19 @@ export const users = sqliteTable("user", {
   image: text("image"),
   bio: text("bio")
 })
+
+export const socialSubmissions = sqliteTable("social_submission", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  name: text("name").notNull(),
+  email: text("email").notNull(),
+  text: text("text").notNull(),
+  message: text("message"),
+  createdAt: integer("createdAt", { mode: "timestamp_ms" })
+    .notNull()
+    .$defaultFn(() => sql`CURRENT_TIMESTAMP`),
+});
  
 export const accounts = sqliteTable(
   "account",

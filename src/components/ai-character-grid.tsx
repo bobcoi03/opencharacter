@@ -399,7 +399,7 @@ const AICharacterGrid: React.FC<AICharacterGridProps> = ({
           />
         )}
         
-        <div className="inline-flex items-center justify-center px-4 py-2 text-xs font-medium text-white bg-black rounded-full border-2 border-gradient-to-r from-pink-500 via-purple-500 to-blue-500">
+        <div className="inline-flex items-center justify-center px-4 py-2 text-xs font-medium text-white bg-black rounded-full border-2 border-gradient-to-r from-pink-500 via-purple-500 to-blue-500 mb-8">
           {totalPublicCharacters.toLocaleString()} total public characters
         </div>
       </div>

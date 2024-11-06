@@ -5,6 +5,8 @@ import { characters, users } from "@/server/db/schema";
 import AICharacterGrid from "@/components/ai-character-grid";
 import Link from "next/link";
 import { Suspense } from "react";
+import { Star, ArrowRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export const runtime = "edge";
 const ITEMS_PER_PAGE = 24;
@@ -125,6 +127,7 @@ export default async function Page({
 
   return (
     <div className="text-white w-full overflow-y-auto overflow-x-hidden md:pl-16">
+      <Banner />
       <Suspense key={searchParams.id}>
         <AICharacterGrid 
           initialCharacters={paginatedCharacters} 
@@ -132,12 +135,15 @@ export default async function Page({
           totalPublicCharacters={totalPublicCharacters}
         />
       </Suspense>
-      <div className="text-gray-500 flex gap-4 mb-24 text-xs flex-wrap">
+      <div className="text-gray-500 flex gap-4 mb-24 text-md flex-wrap">
         <Link href={"/about"}>
           About 
         </Link>
         <Link href={"/blog"}>
           Blog
+        </Link>
+        <Link href={"/plans"}>
+          Premium
         </Link>
         <Link href={"https://github.com/bobcoi03/opencharacter"} target="_blank">
           Github
@@ -155,3 +161,41 @@ export default async function Page({
     </div>
   );
 }
+
+const Banner = () => {
+  return (
+    <div className="relative overflow-hidden rounded-lg border border-purple-500 bg-gradient-to-r from-purple-900/90 to-purple-800/90 p-12 mb-4">
+      <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2">
+        <div className="h-24 w-24 rounded-full bg-purple-500/20 blur-2xl"></div>
+      </div>
+      
+      <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="flex-1 space-y-2">
+          <div className="flex items-center gap-2">
+            <Star className="h-5 w-5 text-yellow-400 animate-pulse" />
+            <span className="text-sm font-medium text-purple-200">Limited Time Offer</span>
+          </div>
+          
+          <h2 className="text-2xl md:text-3xl font-bold text-white">
+            Want Free Access To The Premium Plan?
+          </h2>
+          
+          <p className="text-purple-200">
+            Spread the word about OpenCharacter and get free access to the Premium Plan!
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Link href="/opencharacter-free-access-to-premium-plan-limited-time-offer" className="inline-block">
+            <Button 
+              className="bg-purple-500 hover:bg-purple-600 text-white font-semibold px-6 py-2 rounded-lg transition-all duration-200 flex items-center gap-2"
+            >
+              Learn More
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+};
