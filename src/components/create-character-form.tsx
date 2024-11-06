@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Loader2 } from "lucide-react";
 import { characters } from "@/server/db/schema";
 import { CharacterTags, AllCharacterTags, SFWCharacterTags, CharacterTag } from "@/types/character-tags";
+import ButtonDialogs from "./prompt-suggestions";
 
 type CharacterVisibility = "public" | "private";
 
@@ -200,6 +201,9 @@ export function CreateCharacterForm({
               <p className="text-xs font-light text-gray-500">
                 character length: {descriptionCharCount}
               </p>
+
+              <ButtonDialogs />
+
             </div>
 
             <div>
