@@ -35,7 +35,14 @@ const BlogPage: React.FC = () => {
       title: "Future of OpenCharacter",
       excerpt: "Explore the future of OpenCharacter, an open-source, uncensored platform for AI character creation.",
       link: "/blog/future-of-project"
-    }
+    },
+    {
+      image: "/paint.webp",
+      category: "Why us over CharacterAI?",
+      title: "Why us?",
+      excerpt: "OpenCharacter vs CharacterAI",
+      link: "/blog/characterai-alternative-opencharacter"
+    },
   ];
 
   return (
@@ -53,7 +60,7 @@ const BlogPage: React.FC = () => {
       </div>
       
       <div className="container py-6">
-        <div className="md:ml-16 md:flex md:flex-row gap-4">
+        <div className="mx-auto flex-col md:flex-row md:ml-16 md:flex md:flex-wrap gap-4">
           {blogPosts.map((blog, index) => 
             <BlogCard 
               key={index}
