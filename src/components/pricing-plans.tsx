@@ -24,6 +24,13 @@ interface PlanCardProps {
   isEnterprise?: boolean
 }
 
+interface PricingOption {
+  label: string
+  value: string
+  monthlyPrice: number
+  savings?: number
+}
+
 const PlanCard: React.FC<PlanCardProps> = ({ 
   title, 
   price, 
@@ -78,10 +85,55 @@ const PlanCard: React.FC<PlanCardProps> = ({
 )
 
 const Plans: React.FC = () => {
-  const [isYearly, setIsYearly] = useState(false)
+  const [billingCycle, setBillingCycle] = useState<string>('monthly')
   const allModels = getModelArray()
   const freeModels = allModels.filter(model => !model.paid)
   const paidModels = allModels.filter(model => model.paid)
+
+  const pricingOptions: PricingOption[] = [
+    {
+      label: "Monthly",
+      value: "monthly",
+      monthlyPrice: 12,
+    },
+    {
+      label: "3 Months",
+      value: "quarterly",
+      monthlyPrice: 11,
+      savings: 8.3
+    },
+    {
+      label: "6 Months",
+      value: "biannual",
+      monthlyPrice: 10,
+      savings: 16.7
+    },
+    {
+      label: "Yearly",
+      value: "yearly",
+      monthlyPrice: 9,
+      savings: 25
+    }
+  ]
+
+  const selectedOption = pricingOptions.find(option => option.value === billingCycle)!
+
+  const getStandardPlanPrice = () => {
+    const monthlyPrice = selectedOption.monthlyPrice
+    const months = {
+      monthly: 1,
+      quarterly: 3,
+      biannual: 6,
+      yearly: 12
+    }[billingCycle]
+    
+    return `$${monthlyPrice * months!}/${billingCycle === 'monthly' ? 'month' : 'total'}`
+  }
+
+  const getStandardPlanSubPrice = () => {
+    if (billingCycle === 'monthly') return undefined
+    return `$${selectedOption.monthlyPrice}/month, billed ${billingCycle}ly${selectedOption.savings ? ` (Save ${selectedOption.savings}%)` : ''}`
+  }
 
   return (
     <div className="container mx-auto px-4 py-16 text-foreground">
@@ -92,14 +144,26 @@ const Plans: React.FC = () => {
       <h1 className="text-4xl font-bold text-center mb-12">Choose Your Plan</h1>
       
       <div className="flex justify-center items-center gap-4 mb-8">
-        <span className={`${!isYearly ? 'text-primary font-bold' : ''}`}>Monthly</span>
-        <button
-          onClick={() => setIsYearly(!isYearly)}
-          className="w-16 h-8 bg-secondary rounded-md p-1 relative"
-        >
-          <div className={`w-6 h-6 bg-primary rounded-md transition-transform duration-200 transform ${isYearly ? 'translate-x-8' : ''}`} />
-        </button>
-        <span className={`${isYearly ? 'text-primary font-bold' : ''}`}>Yearly (Save 17%)</span>
+        <div className="inline-flex p-1 bg-secondary rounded-lg">
+          {pricingOptions.map((option) => (
+            <button
+              key={option.value}
+              onClick={() => setBillingCycle(option.value)}
+              className={`px-4 py-2 rounded-md text-sm transition-all duration-200 ${
+                billingCycle === option.value
+                  ? 'bg-primary text-background'
+                  : 'hover:bg-background/10'
+              }`}
+            >
+              {option.label}
+              {option.savings && (
+                <span className="ml-1 text-xs opacity-75">
+                  (-{option.savings}%)
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
@@ -119,8 +183,8 @@ const Plans: React.FC = () => {
         />
         <PlanCard
           title="Standard Plan"
-          price={isYearly ? "$120/year" : "$12/month"}
-          subPrice={isYearly ? "Only $10/month, billed annually" : undefined}
+          price={getStandardPlanPrice()}
+          subPrice={getStandardPlanSubPrice()}
           features={[
             "Access to all models (free + paid)",
             "Up to 64x more memory",
@@ -129,7 +193,7 @@ const Plans: React.FC = () => {
             "Unlimited messages",
             "Profile Badge",
             "Creator Dashboard",
-            isYearly ? "Save $24 annually" : undefined
+            selectedOption.savings ? `Save ${selectedOption.savings}%` : undefined
           ].filter((feature): feature is string => feature !== undefined)}
           models={paidModels}
           buttonText="Upgrade Now"
