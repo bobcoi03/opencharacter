@@ -9,7 +9,7 @@ import { Star, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export const runtime = "edge";
-const ITEMS_PER_PAGE = 24;
+const ITEMS_PER_PAGE = 36;
 
 async function getTotalPublicCharacters() {
   const result = await db
