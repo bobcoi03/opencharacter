@@ -170,7 +170,7 @@ export default async function Page({
 
 const Banner = () => {
   return (
-    <div className="relative overflow-hidden rounded-lg border border-purple-500 bg-gradient-to-r from-purple-900/90 to-purple-800/90 p-12 mb-4">
+    <div className="relative overflow-hidden rounded-lg border border-slate-600 p-12 mb-4 bg-[url('/bg-banner.webp')] bg-cover">
       <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2">
         <div className="h-24 w-24 rounded-full bg-purple-500/20 blur-2xl"></div>
       </div>
@@ -179,14 +179,14 @@ const Banner = () => {
         <div className="flex-1 space-y-2">
           <div className="flex items-center gap-2">
             <Star className="h-5 w-5 text-yellow-400 animate-pulse" />
-            <span className="text-sm font-medium text-purple-200">Limited Time Offer</span>
+            <span className="text-sm font-medium text-white">Limited Time Offer</span>
           </div>
           
           <h2 className="text-2xl md:text-3xl font-bold text-white">
             Want Free Access To The Premium Plan?
           </h2>
           
-          <p className="text-purple-200">
+          <p className="text-white">
             Post about OpenCharacter on social media and get free access to the Premium Plan!
           </p>
         </div>

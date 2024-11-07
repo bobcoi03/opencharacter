@@ -59,7 +59,7 @@ export default async function RootLayout({
       <head>
         <ThemeScript/>
         <link rel="icon" href="/opencharacter_icon.png" sizes="any" />
-        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"></meta>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
       </head>
       <body className={`${inter.className} bg-neutral-900`}>
         <IconStyleInitializer />
