@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { getModelArray } from "@/lib/llm_models"
-import { Check } from "lucide-react"
+import { Check, ChevronDown } from "lucide-react"
 import Link from 'next/link'
 import { useState } from 'react'
 
@@ -41,51 +41,66 @@ const PlanCard: React.FC<PlanCardProps> = ({
   buttonAction, 
   isStandard,
   isEnterprise 
-}) => (
-  <div
-    className={`p-8 rounded-xl ${
-      isStandard ? 'bg-gradient-to-br from-primary to-primary/90 text-black' : 
-      isEnterprise ? 'bg-gradient-to-br from-violet-600 to-violet-500 text-white' : 
-      'bg-secondary'
-    } shadow-lg flex flex-col h-full transition-all duration-300 hover:shadow-xl`}
-  >
-    <h2 className="text-2xl font-bold mb-2">{title}</h2>
-    <div className="mb-6">
-      <p className="text-4xl font-bold">{price}</p>
-      {subPrice && <p className="text-sm opacity-75 mt-1">{subPrice}</p>}
-    </div>
-    <ul className="mb-6 flex-grow space-y-3">
-      {features.map((feature, index) => (
-        <li key={index} className="flex items-center">
-          <Check className="mr-3 text-green-400" size={18} />
-          <span className="text-sm">{feature}</span>
-        </li>
-      ))}
-    </ul>
-    <div className="mb-6">
-      <h3 className="font-semibold mb-2 text-sm uppercase tracking-wide">Included Models:</h3>
-      <ul className="grid grid-cols-2 gap-2">
-        {models.map((model, index) => (
-          <li key={index} className="text-[9px] bg-background/10 rounded px-2 py-1">{model.name}</li>
+}) => {
+  const [isModelsOpen, setIsModelsOpen] = useState(false)
+
+  return (
+    <div
+      className={`p-8 rounded-xl ${
+        isStandard ? 'bg-gradient-to-br from-primary to-primary/90 text-black' : 
+        isEnterprise ? 'bg-gradient-to-br from-violet-600 to-violet-500 text-white' : 
+        'bg-secondary'
+      } shadow-lg flex flex-col h-full transition-all duration-300 hover:shadow-xl`}
+    >
+      <h2 className="text-2xl font-bold mb-2">{title}</h2>
+      <div className="mb-6">
+        <p className="text-4xl font-bold">{price}</p>
+        {subPrice && <p className="text-sm opacity-75 mt-1">{subPrice}</p>}
+      </div>
+      <ul className="mb-6 flex-grow space-y-3">
+        {features.map((feature, index) => (
+          <li key={index} className="flex items-center">
+            <Check className="mr-3 text-green-400" size={18} />
+            <span className="text-sm">{feature}</span>
+          </li>
         ))}
       </ul>
+      <div className="mb-6">
+        <button 
+          onClick={() => setIsModelsOpen(!isModelsOpen)}
+          className="w-full flex items-center justify-between font-semibold text-sm uppercase tracking-wide hover:opacity-80 transition-opacity"
+        >
+          <span>Included Models</span>
+          <ChevronDown 
+            size={20} 
+            className={`transition-transform duration-200 ${isModelsOpen ? 'rotate-180' : ''}`}
+          />
+        </button>
+        <div className={`grid grid-cols-2 gap-2 overflow-hidden transition-all duration-200 ${
+          isModelsOpen ? 'mt-2 max-h-96' : 'max-h-0'
+        }`}>
+          {models.map((model, index) => (
+            <ul key={index} className="text-[9px] bg-background/10 rounded px-2 py-1">{model.name}</ul>
+          ))}
+        </div>
+      </div>
+      <Link href={buttonAction} target="_blank">
+        <button
+          className={`${
+            isStandard ? 'bg-background text-primary' : 
+            isEnterprise ? 'bg-white text-violet-600' :
+            'bg-primary text-background'
+          } py-3 px-4 rounded-lg font-medium transition duration-300 hover:opacity-90 hover:scale-105 transform w-full`}
+        >
+          {buttonText}
+        </button>
+      </Link>
     </div>
-    <Link href={buttonAction} target="_blank">
-      <button
-        className={`${
-          isStandard ? 'bg-background text-primary' : 
-          isEnterprise ? 'bg-white text-violet-600' :
-          'bg-primary text-background'
-        } py-3 px-4 rounded-lg font-medium transition duration-300 hover:opacity-90 hover:scale-105 transform w-full`}
-      >
-        {buttonText}
-      </button>
-    </Link>
-  </div>
-)
+  )
+}
 
 const Plans: React.FC = () => {
-  const [billingCycle, setBillingCycle] = useState<string>('monthly')
+  const [billingCycle, setBillingCycle] = useState<string>('yearly') // Changed default to yearly
   const allModels = getModelArray()
   const freeModels = allModels.filter(model => !model.paid)
   const paidModels = allModels.filter(model => model.paid)
