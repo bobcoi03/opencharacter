@@ -9,6 +9,21 @@ type Models = {
 };
 
 export const models: Models = {
+    "DAW API - gpt-4o-free": {
+        id: "DAW API - gpt-4o-free",
+        name: "DAW API - gpt-4o-free",
+        paid: false
+    },
+    "DAW API - gemini-pro": {
+        id: "DAW API - gemini-pro",
+        name: "DAW API - gemini-pro",
+        paid: false
+    },
+    "DAW API - llama-3.1-405b-instruct-free": {
+        id: "DAW API - llama-3.1-405b-instruct-free",
+        name: "DAW API - llama-3.1-405b-instruct-free",
+        paid: false
+    },
     "mistralai/ministral-3b": {
         id: "mistralai/ministral-3b",
         name: "mistralai/ministral-3b",
@@ -231,3 +246,16 @@ export const getFreeModelArray = (): Model[] =>
 
 export const getModelsByType = (paid: boolean): Model[] => 
     Object.values(models).filter(model => model.paid === paid);
+
+// Add function to check if model is a DAW API model
+export const isDAWModel = (modelName: string): boolean => {
+    return modelName.startsWith('DAW API -');
+};
+
+// Get all DAW API models
+export const getDAWModelIds = (): string[] => 
+    Object.keys(models).filter(id => isDAWModel(id));
+
+// Get free DAW API models
+export const getFreeDAWModelIds = (): string[] =>
+    Object.keys(models).filter(id => isDAWModel(id) && !models[id].paid);

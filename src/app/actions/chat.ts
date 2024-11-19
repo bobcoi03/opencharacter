@@ -12,7 +12,7 @@ import {
 import { db } from "@/server/db";
 import { eq, and, desc, sql, or } from "drizzle-orm";
 import { auth } from "@/server/auth";
-import { isValidModel, isPaidModel } from "@/lib/llm_models";
+import { isValidModel, isPaidModel, isDAWModel } from "@/lib/llm_models";
 
 // TRIAL RUN!!
 const PAID_USER_IDS = [
@@ -195,22 +195,35 @@ export async function continueConversation(
     };
   }
 
-  let llm_provider = createOpenAI({
-    baseURL: "https://openrouter.helicone.ai/api/v1",
-    apiKey: process.env.OPENROUTER_API_KEY,
-    headers: {
-      Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-      "Helicone-Auth": `Bearer ${process.env.HELICONE_API_KEY}`,
-      "HTTP-Referer": "https://opencharacter.org", // Optional, for including your app on openrouter.ai rankings.
-      "X-Title": "OpenCharacter", // Optional. Shows in rankings on openrouter.ai.
-      "Helicone-User-Id": session?.user?.email ?? "guest",
-    },
-  });
-
+  let llm_provider;
+  if (isDAWModel(model_name)) {
+    console.log("DAW MODELS")
+    console.log("DAWAPIKEY ", process.env.DAW_API_KEY)
+    llm_provider = createOpenAI({
+      baseURL: "https://daw.isinyour.skin/v1",
+      apiKey: process.env.DAW_API_KEY,
+      headers: {
+        Authorization: `Bearer ${process.env.DAW_API_KEY}`
+      }
+    })
+  } else {
+    llm_provider = createOpenAI({
+      baseURL: "https://openrouter.helicone.ai/api/v1",
+      apiKey: process.env.OPENROUTER_API_KEY,
+      headers: {
+        Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        "Helicone-Auth": `Bearer ${process.env.HELICONE_API_KEY}`,
+        "HTTP-Referer": "https://opencharacter.org", // Optional, for including your app on openrouter.ai rankings.
+        "X-Title": "OpenCharacter", // Optional. Shows in rankings on openrouter.ai.
+        "Helicone-User-Id": session?.user?.email ?? "guest",
+      },
+    });
+  }
 
   const model = llm_provider(model_name);
 
   if (!isValidModel(model_name)) {
+    console.log("INVALID MODEL NAME")
     throw new Error("Invalid model: " + model_name);
   }
 
