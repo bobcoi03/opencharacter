@@ -100,7 +100,7 @@ const PlanCard: React.FC<PlanCardProps> = ({
 }
 
 const Plans: React.FC = () => {
-  const [billingCycle, setBillingCycle] = useState<string>('yearly') // Changed default to yearly
+  const [billingCycle, setBillingCycle] = useState<string>('monthly') // Changed default to yearly
   const allModels = getModelArray()
   const freeModels = allModels.filter(model => !model.paid)
   const paidModels = allModels.filter(model => model.paid)

@@ -79,7 +79,6 @@ export const models: Models = {
         name: "gryphe/mythomist-7b:free",
         paid: false
     },
-    
     "meta-llama/llama-3.2-3b-instruct": {
         id: "meta-llama/llama-3.2-3b-instruct",
         name: "meta-llama/llama-3.2-3b-instruct",
