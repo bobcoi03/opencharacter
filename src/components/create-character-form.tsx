@@ -41,6 +41,26 @@ export function CreateCharacterForm({
     return [];
   });
   const [isNSFW, setIsNSFW] = useState<boolean>(selectedTags.includes(CharacterTags.NSFW));
+  const [bannerPreviewUrl, setBannerPreviewUrl] = useState<string | null>(character?.banner_image_url ?? null);
+  const [bannerFileError, setBannerFileError] = useState<string | null>(null);
+
+  const handleBannerChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (file.size > MAX_FILE_SIZE) {
+        setBannerFileError("File size exceeds 5MB limit");
+        setBannerPreviewUrl(null);
+        event.target.value = "";
+      } else {
+        setBannerFileError(null);
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setBannerPreviewUrl(reader.result as string);
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+  };
 
   const handleTagToggle = (tag: CharacterTag) => {
     if (tag === CharacterTags.NSFW) return; // Ignore NSFW tag in this function
@@ -101,13 +121,13 @@ export function CreateCharacterForm({
     const formData = new FormData(event.currentTarget);
     formData.set('tags', JSON.stringify(selectedTags));
     try {
-      await action(formData);
+      action(formData);
     } catch (error) {
       console.error("Error submitting form:", error);
     } finally {
       setIsSubmitting(false);
     }
-  };
+  };  
 
   return (
     <div className="w-full bg-white dark:bg-neutral-900 min-h-screen p-6 overflow-y-auto mb-12 md:px-16 mx-auto">
@@ -122,6 +142,32 @@ export function CreateCharacterForm({
 
       <div className="max-w-3xl mx-auto overflow-x-hidden">
         <form className="space-y-4" onSubmit={handleSubmit}>
+          <div className="relative w-full h-48 bg-gray-200 dark:bg-gray-700 mb-6 overflow-hidden">
+            {bannerPreviewUrl ? (
+              <img
+                src={bannerPreviewUrl}
+                alt="Banner preview"
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Upload size={32} className="text-gray-400 dark:text-gray-500" />
+              </div>
+            )}
+            <input
+              type="file"
+              name="banner"
+              accept="image/*"
+              onChange={handleBannerChange}
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+            />
+            {bannerFileError && (
+              <p className="absolute bottom-2 left-2 text-red-500 text-sm bg-white/80 px-2 py-1 rounded">
+                {bannerFileError}
+              </p>
+            )}
+          </div>
+
           <div className="flex flex-col items-center mb-6">
             <div className="w-36 h-36 bg-gray-200 dark:bg-gray-700 rounded-full mb-2 flex items-center justify-center overflow-hidden relative">
               {previewUrl ? (

@@ -9,11 +9,12 @@ import { db } from "@/server/db";
 import { eq, and, or, desc } from "drizzle-orm";
 import { auth } from "@/server/auth";
 import { ChatBubbleIcon } from "@radix-ui/react-icons";
-import { User } from "lucide-react";
+import { User, Calendar } from "lucide-react";
+import ExpandableDescription from "@/components/expandable-description";
 
 export const runtime = "edge";
 
-const MAX_DESCRIPTION_LENGTH = 1000;
+const MAX_DESCRIPTION_LENGTH = 500;
 const MAX_MESSAGE_LENGTH = 100;
 
 export default async function CharacterProfilePage({
@@ -87,58 +88,61 @@ export default async function CharacterProfilePage({
   };
 
   return (
-    <div className="bg-white dark:bg-neutral-900 min-h-screen p-4 lg:p-6 overflow-y-auto mb-24 md:ml-16">
-      <header className="">
-        <Link
-          href={`/chat/${character.id}`}
-          className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-neutral-800 inline-block"
-        >
-          <ArrowLeft size={24} className="text-black dark:text-white" />
-        </Link>
-      </header>
+    <div className="bg-white dark:bg-neutral-900 min-h-screen max-w-2xl mx-auto">
+      {/* Banner Image */}
+      <div className="relative h-48 bg-gray-200 dark:bg-neutral-800">
+        {character.banner_image_url && (
+          <img
+            src={character.banner_image_url}
+            alt="Profile banner"
+            className="w-full h-full object-cover"
+          />
+        )}
+      </div>
 
-      <div className="max-w-6xl mx-auto lg:flex lg:space-x-8 overflow-x-hidden">
-        {/* Left column (Profile info) */}
-        <div className="lg:w-1/3 mb-6 lg:mb-0">
-          <div className="flex flex-col items-center mb-6">
-            <Avatar className="w-72 h-72 mb-4 rounded-md">
-              <img
-                src={character.avatar_image_url || "/default-avatar.jpg"}
-                alt={character.name}
-                className="w-full h-full object-cover rounded-md"
-              />
-            </Avatar>
-            <h1 className="text-2xl font-bold text-center text-black dark:text-white">
-              {character.name}
-            </h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              By @{userName || "unknown"}
-            </p>
-          </div>
+      {/* Profile Section */}
+      <div className="relative px-4">
+        {/* Avatar */}
+        <div className="absolute -top-16 left-4 border-4 border-white dark:border-neutral-900 rounded-full">
+          <Avatar className="w-32 h-32 rounded-full">
+            <img
+              src={character.avatar_image_url || "/default-avatar.jpg"}
+              alt={character.name}
+              className="w-full h-full object-cover rounded-full"
+            />
+          </Avatar>
+        </div>
 
-          <div className="flex justify-center space-x-4 mb-6">
-            <Button className="bg-black dark:bg-white text-white dark:text-black px-10 sm:px-16 max-w-[180px] rounded-full px-10 sm:px-16 py-6">
-              <Link href={`/chat/${character.id}`} className="font-semibold">
-                Chat
-              </Link>
-            </Button>
+        {/* Action Buttons */}
+        <div className="flex justify-end pt-4 pb-4">
+          <Button className="bg-black dark:bg-white text-white dark:text-black rounded-full font-semibold">
+            <Link href={`/chat/${character.id}`}>Chat</Link>
+          </Button>
+        </div>
 
-            <Button
-              variant="outline"
-              className="p-2 rounded-full border-gray-300 dark:border-gray-700 py-6 px-6"
-            >
-              <Share2 size={26} className="text-black dark:text-white" />
-            </Button>
-          </div>
+        {/* Profile Info */}
+        <div className="mt-2">
+          <h2 className="text-xl font-bold text-black dark:text-white">{character.name}</h2>
+          <Link className="text-blue-400" href={`/public-profile/${character.userId}`}>by @{userName || "unknown"}</Link>
+          
+          <ExpandableDescription 
+            description={character.greeting}
+          />
 
-          <div className="flex justify-center space-x-8 mb-6 text-sm text-gray-500 dark:text-gray-400">
+          <div className="flex items-center gap-4 mt-3 text-gray-500 dark:text-gray-400 text-sm">
             <div className="flex items-center">
-              <MessageSquare size={20} className="mr-2" />
-              <span>{character.interactionCount} Chats</span>
+              <Calendar size={16} className="mr-1" />
+              <span>Created {new Date(character.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span>
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-2 mb-6 justify-center">
+          <div className="flex gap-4 mt-3 text-sm">
+            <span className="text-gray-500 dark:text-gray-400">
+              <strong className="text-black dark:text-white">{character.interactionCount}</strong> Chats
+            </span>
+          </div>
+
+          <div className="flex flex-wrap gap-2 mt-4">
             {JSON.parse(character.tags).map((tag: string, index: number) => (
               <Badge
                 key={index}
@@ -151,83 +155,66 @@ export default async function CharacterProfilePage({
           </div>
         </div>
 
-        {/* Right column (About and Public Chats) */}
-        <div className="lg:w-2/3">
-          <div className="mb-8">
-            <div className="bg-gray-100 dark:bg-neutral-800 px-4 py-2 rounded-lg mb-4">
-              <h3 className="text-lg font-semibold mb-2 text-black dark:text-white">
-                About {character.name}
-              </h3>
-              <p className="text-sm text-gray-700 dark:text-gray-300 mb-4">
-                {truncateText(character.description, MAX_DESCRIPTION_LENGTH)}
-              </p>
+        {/* Tabs */}
+        <div className="border-b border-gray-200 dark:border-neutral-800 mt-4">
+          <nav className="flex">
+            <button className="px-4 py-4 text-sm font-medium border-b-2 border-black dark:border-white text-black dark:text-white">
+              Public Chats
+            </button>
+          </nav>
+        </div>
 
-              <h3 className="text-md font-semibold mb-2 text-black dark:text-white">
-                Greeting Message from {character.name}
-              </h3>
-              <p className="text-md text-gray-700 dark:text-gray-300 mb-4">
-                {character.tagline}
-              </p>
-            </div>
-          </div>
-
-          {/* Public Chats Section */}
-          <div className="mb-8">
-            <h3 className="text-lg font-bold mb-6 text-black dark:text-white">
-              Public chats
-            </h3>
-            {publicChats.length > 0 ? (
-              <div className="space-y-6">
-                {publicChats.map((chat) => (
-                  <Link 
-                    key={chat.id} 
-                    href={`/share/${chat.id}/`}
-                    className="block"
-                  >
-                    <div className="bg-white dark:bg-neutral-800 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden">
-                      <div className="p-4 border-b border-gray-200 dark:border-neutral-700">
-                        <div className="flex justify-between items-center mb-2">
-                          <div className="flex items-center space-x-2">
-                            <Avatar className="w-8 h-8 rounded-md">
-                              <img src={character.avatar_image_url || "/default-avatar.jpg"} alt={character.name} />
-                            </Avatar>
-                            <span className="font-medium text-gray-800 dark:text-gray-200">{character.name}</span>
-                          </div>
+        {/* Public Chats */}
+        <div className="py-4">
+          {publicChats.length > 0 ? (
+            <div className="space-y-4">
+              {publicChats.map((chat) => (
+                <Link 
+                  key={chat.id} 
+                  href={`/share/${chat.id}/`}
+                  className="block"
+                >
+                  <div className="p-4 border border-gray-200 dark:border-neutral-800 rounded-xl hover:bg-gray-50 dark:hover:bg-neutral-800 transition-colors">
+                    <div className="flex gap-3">
+                      <Avatar className="w-10 h-10 rounded-full">
+                        <img src={character.avatar_image_url || "/default-avatar.jpg"} alt={character.name} />
+                      </Avatar>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-black dark:text-white">{character.name}</span>
                           <Badge variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100">
                             Public
                           </Badge>
                         </div>
-                        <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2">
+                        <p className="mt-1 text-gray-600 dark:text-gray-300">
                           {truncateText(getLatestMessage(chat.messages), MAX_MESSAGE_LENGTH)}
                         </p>
-                      </div>
-                      <div className="px-4 py-2 bg-gray-50 dark:bg-neutral-900 text-xs text-gray-500 dark:text-gray-400 flex justify-between items-center">
-                        <div className="flex items-center space-x-4">
+                        <div className="mt-2 flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
                           <span className="flex items-center">
                             <MessageSquare size={14} className="mr-1" />
-                            {chat.interaction_count} messages
+                            {chat.interaction_count}
+                          </span>
+                          <span className="flex items-center">
+                            <Clock size={14} className="mr-1" />
+                            {new Date(chat.last_message_timestamp).toLocaleDateString()}
                           </span>
                         </div>
-                        <span className="flex items-center">
-                          <Clock size={14} className="mr-1" />
-                          {new Date(chat.last_message_timestamp).toLocaleDateString()}
-                        </span>
                       </div>
                     </div>
-                  </Link>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-10 bg-gray-100 dark:bg-neutral-800 rounded-lg">
-                <MessageSquare size={48} className="mx-auto text-gray-400 dark:text-gray-600 mb-4" />
-                <p className="text-gray-500 dark:text-gray-400 text-lg">No public conversations available yet.</p>
-                <p className="text-gray-400 dark:text-gray-500 mt-2">Be the first to start a public chat with {character.name}!</p>
-                <Button className="mt-4" variant="outline">
-                  <Link href={`/chat/${character.id}`}>Start a Conversation</Link>
-                </Button>
-              </div>
-            )}
-          </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-10">
+              <MessageSquare size={48} className="mx-auto text-gray-400 dark:text-gray-600 mb-4" />
+              <p className="text-gray-500 dark:text-gray-400 text-lg">No public conversations yet</p>
+              <p className="text-gray-400 dark:text-gray-500 mt-2">Start chatting with {character.name}!</p>
+              <Button className="mt-4" variant="outline">
+                <Link href={`/chat/${character.id}`}>Start a Conversation</Link>
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     </div>

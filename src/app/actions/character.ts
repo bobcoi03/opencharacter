@@ -14,7 +14,6 @@ const CreateCharacterSchema = z.object({
   description: z.string().min(1, "Description is required"),
   greeting: z.string().min(1, "Greeting is required"),
   visibility: z.enum(["public", "private"]).optional().default("public"),
-  // New AI behavior fields
   temperature: z.coerce.number().min(0).max(2).optional().default(1.0),
   top_p: z.coerce.number().min(0).max(1).optional().default(1.0),
   top_k: z.coerce.number().int().min(0).optional().default(0),
@@ -73,10 +72,18 @@ export async function createCharacter(formData: FormData) {
   } = validationResult.data;
 
   try {
+    // Handle avatar upload
     let avatarImageUrl = null;
     const avatarFile = formData.get("avatar") as File | null;
     if (avatarFile && avatarFile.size > 0) {
       avatarImageUrl = await uploadToR2(avatarFile);
+    }
+
+    // Handle banner upload
+    let bannerImageUrl = null;
+    const bannerFile = formData.get("banner") as File | null;
+    if (bannerFile && bannerFile.size > 0) {
+      bannerImageUrl = await uploadToR2(bannerFile);
     }
 
     const newCharacter = await db
@@ -89,13 +96,13 @@ export async function createCharacter(formData: FormData) {
         greeting,
         visibility,
         userId: session.user.id,
-        tags: JSON.stringify(tags), // Ensure tags are stored as a JSON string
+        tags: JSON.stringify(tags),
         interactionCount: 0,
         likeCount: 0,
         avatar_image_url: avatarImageUrl,
+        banner_image_url: bannerImageUrl, // Add banner image URL
         createdAt: sql`CURRENT_TIMESTAMP`,
         updatedAt: sql`CURRENT_TIMESTAMP`,
-        // AI behavior fields
         temperature,
         top_p,
         top_k,
@@ -162,16 +169,25 @@ export async function updateCharacter(characterId: string, formData: FormData) {
       };
     }
 
+    // Handle avatar update
     let avatarImageUrl = existingCharacter[0].avatar_image_url;
     const avatarFile = formData.get("avatar") as File | null;
     if (avatarFile && avatarFile.size > 0) {
       avatarImageUrl = await uploadToR2(avatarFile);
     }
 
+    // Handle banner update
+    let bannerImageUrl = existingCharacter[0].banner_image_url;
+    const bannerFile = formData.get("banner") as File | null;
+    if (bannerFile && bannerFile.size > 0) {
+      bannerImageUrl = await uploadToR2(bannerFile);
+    }
+
     // Prepare the update object
     const updateData: Partial<typeof characters.$inferSelect> = {
       ...validatedData,
       avatar_image_url: avatarImageUrl,
+      banner_image_url: bannerImageUrl,
       updatedAt: new Date(),
       tags: JSON.stringify(validatedData.tags)
     };
