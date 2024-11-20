@@ -9,6 +9,16 @@ type Models = {
 };
 
 export const models: Models = {
+    "DAW API - gpt-4o-mini": {
+        id: "DAW API - gpt-4o-mini",
+        name: "DAW API - gpt-4o-mini",
+        paid: false
+    },
+    "DAW API - gpt-3.5-turbo": {
+        id: "DAW API - gpt-3.5-turbo",
+        name: "DAW API - gpt-3.5-turbo",
+        paid: false
+    },
     "DAW API - gpt-4o-free": {
         id: "DAW API - gpt-4o-free",
         name: "DAW API - gpt-4o-free",
