@@ -16,10 +16,6 @@ export const runtime = "edge"
 export default async function ProfileLayout({ params }: { params: { user_id: string } }) {
     const session = await auth()
 
-    if (!session?.user) {
-        return <div className="flex justify-center items-center h-screen">Please sign in to view profiles.</div>
-    }
-
     // Fetch the user from the database
     const user: User | undefined = await db
         .select()
@@ -58,7 +54,7 @@ export default async function ProfileLayout({ params }: { params: { user_id: str
                     <p className="text-sm text-neutral-400 mb-2">
                         <MessageCircle className="inline w-4 h-4 mr-1" /> {totalInteractions} chats
                     </p>
-                    {session.user.id === params.user_id && <SettingsButton user={user} />}
+                    {session?.user?.id === params.user_id && <SettingsButton user={user} />}
                 </div>
         
                 <div className="space-y-4 mb-24">
