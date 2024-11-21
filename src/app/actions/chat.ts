@@ -22,7 +22,6 @@ const PAID_USER_IDS = [
   "16f0830a-f6a6-4755-8020-e5420fbbb356", // 1 16/10/24
   "b3abb1e8-8d95-482f-8deb-ea3f86b56348", // m 17/10/24
   "b4cd8ebb-2731-452d-ac6b-06d51e5a8369", // m 20/10/24
-  "8a4e0f89-15ba-4fde-ada8-54ff8b42da5d", // 21/10/24
   "3177bd61-74b2-46e9-a19c-c9ceb6fc591e", // Re 24/10/24 
   "221e44d6-9dee-4d73-a5e3-5cae0f8ead1c", // P 25/10/24
   "2c435f13-5ff7-434f-93c1-b3c0c90efe9b", // P friend 25/10/24,
