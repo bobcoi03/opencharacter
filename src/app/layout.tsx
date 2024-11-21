@@ -70,7 +70,6 @@ export default async function RootLayout({
           </main>
         </div>
         <Toaster />
-        <AgeVerificationPopup user={user} />
         <GoogleAnalytics gaId={process.env.GOOGLE_ANALYTICS_ID ?? ""} />
       </body>
     </html>
