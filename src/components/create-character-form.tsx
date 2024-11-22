@@ -121,7 +121,7 @@ export function CreateCharacterForm({
     const formData = new FormData(event.currentTarget);
     formData.set('tags', JSON.stringify(selectedTags));
     try {
-      action(formData);
+      await action(formData);
     } catch (error) {
       console.error("Error submitting form:", error);
     } finally {
@@ -457,17 +457,21 @@ export function CreateCharacterForm({
           <button
             type="submit"
             disabled={isSubmitting}
-            className="mt-6 text-black px-12 py-2 border border-gray-200 dark:border-gray-700 rounded-full tracking-widest uppercase font-bold bg-transparent hover:bg-[#616467] hover:text-white dark:text-neutral-200 transition duration-200 flex items-center justify-center"
+            className={`mt-6 px-12 py-2 border border-gray-200 dark:border-gray-700 rounded-full tracking-widest uppercase font-bold transition duration-200 flex items-center justify-center w-full md:w-auto
+              ${isSubmitting 
+                ? 'bg-gray-100 dark:bg-neutral-800 text-gray-500 dark:text-gray-400 cursor-not-allowed' 
+                : 'bg-transparent hover:bg-[#616467] hover:text-white text-black dark:text-neutral-200'
+              }`}
           >
             {isSubmitting ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Creating...
-              </>
+              <div className="flex items-center justify-center space-x-2">
+                <Loader2 className="h-4 w-4 animate-spin text-gray-500 dark:text-gray-400" />
+                <span>{editMode ? 'Saving...' : 'Creating...'}</span>
+              </div>
             ) : (
-              !editMode ? 'Create Character' : 'Save Changes'
+              editMode ? 'Save Changes' : 'Create Character'
             )}
-          </button>        
+          </button>      
         </form>
       </div>
     </div>
