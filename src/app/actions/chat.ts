@@ -228,16 +228,14 @@ export async function continueConversation(
 
   let llm_provider;
   if (isDAWModel(model_name)) {
-    console.log("DAW MODELS")
-    console.log("DAWAPIKEY ", process.env.DAW_API_KEY)
     llm_provider = createOpenAI({
       baseURL: "https://daw.isinyour.skin/v1",
       apiKey: process.env.DAW_API_KEY,
       headers: {
-        Authorization: `Bearer ${process.env.DAW_API_KEY}`,
-        UserID: session.user.id!,
-        SessionID: chatSession.id,
-        CharacterID: character.id!
+        "Authorization": `Bearer ${process.env.DAW_API_KEY}`,
+        "UserID": session.user.id!,
+        "SessionID": chatSession.id,
+        "CharacterID": character.id
       }
     })
   } else {
