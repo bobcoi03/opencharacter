@@ -193,6 +193,39 @@ export async function continueConversation(
     };
   }
 
+  let chatSession;
+
+  if (chat_session_id) {
+    // If chat_session_id is provided, fetch that specific session
+    chatSession = await db
+      .select()
+      .from(chat_sessions)
+      .where(
+        and(
+          eq(chat_sessions.id, chat_session_id),
+          eq(chat_sessions.user_id, session.user.id!),
+          eq(chat_sessions.character_id, character.id),
+        ),
+      )
+      .limit(1)
+      .then((rows) => rows[0]);
+
+  } else {
+    // If no chat_session_id, find the most recent session
+    chatSession = await db
+      .select()
+      .from(chat_sessions)
+      .where(
+        and(
+          eq(chat_sessions.user_id, session.user.id!),
+          eq(chat_sessions.character_id, character.id),
+        ),
+      )
+      .orderBy(desc(chat_sessions.updated_at))
+      .limit(1)
+      .then((rows) => rows[0]);
+  }
+
   let llm_provider;
   if (isDAWModel(model_name)) {
     console.log("DAW MODELS")
@@ -203,7 +236,7 @@ export async function continueConversation(
       headers: {
         Authorization: `Bearer ${process.env.DAW_API_KEY}`,
         UserID: session.user.id!,
-        SessionID: chat_session_id ?? ""
+        SessionID: chatSession.id
       }
     })
   } else {
@@ -269,39 +302,6 @@ export async function continueConversation(
       .where(eq(characters.id, character.id));
   } catch (error) {
     console.error("Failed to update interaction count:", error);
-  }
-
-  let chatSession;
-
-  if (chat_session_id) {
-    // If chat_session_id is provided, fetch that specific session
-    chatSession = await db
-      .select()
-      .from(chat_sessions)
-      .where(
-        and(
-          eq(chat_sessions.id, chat_session_id),
-          eq(chat_sessions.user_id, session.user.id!),
-          eq(chat_sessions.character_id, character.id),
-        ),
-      )
-      .limit(1)
-      .then((rows) => rows[0]);
-
-  } else {
-    // If no chat_session_id, find the most recent session
-    chatSession = await db
-      .select()
-      .from(chat_sessions)
-      .where(
-        and(
-          eq(chat_sessions.user_id, session.user.id!),
-          eq(chat_sessions.character_id, character.id),
-        ),
-      )
-      .orderBy(desc(chat_sessions.updated_at))
-      .limit(1)
-      .then((rows) => rows[0]);
   }
 
   if (chatSession && chatSession.summary) {
