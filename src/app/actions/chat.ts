@@ -201,7 +201,9 @@ export async function continueConversation(
       baseURL: "https://daw.isinyour.skin/v1",
       apiKey: process.env.DAW_API_KEY,
       headers: {
-        Authorization: `Bearer ${process.env.DAW_API_KEY}`
+        Authorization: `Bearer ${process.env.DAW_API_KEY}`,
+        UserID: session.user.id,
+        SessionID: chatSession.id
       }
     })
   } else {
