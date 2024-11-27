@@ -11,6 +11,49 @@ import { auth } from "@/server/auth";
 import { ChatBubbleIcon } from "@radix-ui/react-icons";
 import { User, Calendar } from "lucide-react";
 import ExpandableDescription from "@/components/expandable-description";
+import { Metadata, ResolvingMetadata } from 'next/types'
+
+type Props = {
+  params: { character_id: string }
+}
+
+export async function generateMetadata(
+  { params }: Props,
+  parent: ResolvingMetadata
+): Promise<Metadata> {
+  // Fetch character data
+  const character = await db.select({
+    name: characters.name,
+    greeting: characters.greeting,
+    avatar_image_url: characters.avatar_image_url,
+  })
+  .from(characters)
+  .where(eq(characters.id, params.character_id))
+  .limit(1)
+  .then(res => res[0]);
+
+  if (!character) {
+    return {
+      title: 'Character Not Found',
+    }
+  }
+
+  return {
+    title: character.name,
+    description: character.greeting,
+    openGraph: {
+      title: character.name,
+      description: character.greeting,
+      images: [character.avatar_image_url || '/default-avatar.jpg'],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: character.name,
+      description: character.greeting,
+      images: [character.avatar_image_url || '/default-avatar.jpg'],
+    },
+  }
+}
 
 export const runtime = "edge";
 

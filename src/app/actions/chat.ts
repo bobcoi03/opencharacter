@@ -210,7 +210,6 @@ export async function continueConversation(
       )
       .limit(1)
       .then((rows) => rows[0]);
-
   } else {
     // If no chat_session_id, find the most recent session
     chatSession = await db
@@ -229,16 +228,25 @@ export async function continueConversation(
 
   let llm_provider;
   if (isDAWModel(model_name)) {
+    if (!process.env.DAW_API_KEY) {
+      console.error("DAW API key not configured");
+      return { error: true, message: "DAW service is currently unavailable" };
+    }
+
+    if (!chatSession?.id) {
+      console.error("No chat session available for DAW request");
+      return { error: true, message: "Chat session initialization failed" };
+    }
+
     llm_provider = createOpenAI({
       baseURL: "https://daw.isinyour.skin/v1",
       apiKey: process.env.DAW_API_KEY,
       headers: {
-        "Authorization": `Bearer ${process.env.DAW_API_KEY}`,
         "UserID": session.user.id!,
         "SessionID": chatSession.id,
         "CharacterID": character.id
-      }
-    })
+      },
+    });
   } else {
     llm_provider = createOpenAI({
       baseURL: "https://openrouter.helicone.ai/api/v1",
