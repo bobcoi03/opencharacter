@@ -26,7 +26,8 @@ const PAID_USER_IDS = [
   "221e44d6-9dee-4d73-a5e3-5cae0f8ead1c", // P 25/10/24
   "2c435f13-5ff7-434f-93c1-b3c0c90efe9b", // P friend 25/10/24,
   "3fd781ff-8ad6-4a4c-806f-4a58aaa17526", // w 26/10/24
-  "918eb513-1b0c-4461-b07f-350d264540e4" // s 02/11/24
+  "918eb513-1b0c-4461-b07f-350d264540e4", // s 02/11/24,
+  "7916e019-3574-49e5-838c-97aacd2ff97c", // xeno 27/11/24
 ];
 
 type ErrorResponse = {
