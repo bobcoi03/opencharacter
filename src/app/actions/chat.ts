@@ -233,6 +233,7 @@ export async function continueConversation(
     }
 
     const sessionId = chat_session_id ?? chatSession?.id;
+    console.log("sessionID: ", sessionId)
     if (!sessionId) {
       console.error("No valid session ID found");
       return { error: true, message: "Invalid session configuration" };
