@@ -232,11 +232,6 @@ export async function continueConversation(
       return { error: true, message: "DAW service is currently unavailable" };
     }
 
-    if (!chatSession?.id) {
-      console.error("No chat session available for DAW request");
-      return { error: true, message: "Chat session initialization failed" };
-    }
-
     llm_provider = createOpenAI({
       baseURL: "https://daw.isinyour.skin/v1",
       apiKey: process.env.DAW_API_KEY,
