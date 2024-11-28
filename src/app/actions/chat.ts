@@ -232,13 +232,19 @@ export async function continueConversation(
       return { error: true, message: "DAW service is currently unavailable" };
     }
 
+    const sessionId = chat_session_id ?? chatSession?.id;
+    if (!sessionId) {
+      console.error("No valid session ID found");
+      return { error: true, message: "Invalid session configuration" };
+    }
+
     llm_provider = createOpenAI({
       baseURL: "https://daw.isinyour.skin/v1",
       apiKey: process.env.DAW_API_KEY,
       headers: {
         Authorization: `Bearer ${process.env.DAW_API_KEY}`,
         "UserID": session.user.id!,
-        "SessionID": chat_session_id ?? chatSession.id,
+        "SessionID": sessionId,
         "CharacterID": character.id
       },
     });
