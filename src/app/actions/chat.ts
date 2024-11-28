@@ -238,7 +238,7 @@ export async function continueConversation(
       headers: {
         Authorization: `Bearer ${process.env.DAW_API_KEY}`,
         "UserID": session.user.id!,
-        "SessionID": chatSession.id,
+        "SessionID": chat_session_id ?? chatSession.id,
         "CharacterID": character.id
       },
     });
