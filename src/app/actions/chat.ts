@@ -233,11 +233,6 @@ export async function continueConversation(
     }
 
     const sessionId = chat_session_id ?? chatSession?.id;
-    console.log("sessionID: ", sessionId)
-    if (!sessionId) {
-      console.error("No valid session ID found");
-      return { error: true, message: "Invalid session configuration" };
-    }
 
     llm_provider = createOpenAI({
       baseURL: "https://daw.isinyour.skin/v1",
@@ -245,7 +240,7 @@ export async function continueConversation(
       headers: {
         Authorization: `Bearer ${process.env.DAW_API_KEY}`,
         "UserID": session.user.id!,
-        "SessionID": sessionId,
+        "SessionID": sessionId ?? "00000000-0000-0000-0000-000000000000",
         "CharacterID": character.id
       },
     });
