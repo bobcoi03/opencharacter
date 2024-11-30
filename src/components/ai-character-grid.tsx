@@ -64,7 +64,7 @@ const safeTruncate = (str: string, n: number) => {
   );
 };
 
-const AICharacterCard: React.FC<{ character: Character }> = ({ character }) => {
+export const AICharacterCard: React.FC<{ character: Character }> = ({ character }) => {
   const truncatedTagline = React.useMemo(
     () => safeTruncate(character.tagline, 150),
     [character.tagline],

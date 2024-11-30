@@ -1,4 +1,3 @@
-import { searchCharacters } from "./actions/index";
 import { db } from "@/server/db";
 import { desc, eq, asc, sql, and, or, SQL } from "drizzle-orm";
 import { characters, users } from "@/server/db/schema";
@@ -6,8 +5,9 @@ import AICharacterGrid from "@/components/ai-character-grid";
 import Link from "next/link";
 import { Suspense } from "react";
 import { Star, ArrowRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Check } from "lucide-react";
+import { getConversations } from "./actions";
+import { Card, CardContent } from "@/components/ui/card";
 
 export const runtime = "edge";
 const ITEMS_PER_PAGE = 36;
@@ -95,6 +95,68 @@ async function getPaginatedCharacters(
     totalItems
   };
 }
+interface CharacterCardProps {
+  id: string;
+  character_id: string;
+  character_name: string | null;
+  character_avatar: string | null;
+  last_message_timestamp: string;
+  updated_at: string;
+  interaction_count: number;
+}
+
+const CharacterCard: React.FC<CharacterCardProps> = ({
+  id,
+  character_id,
+  character_name,
+  character_avatar,
+  last_message_timestamp,
+  updated_at,
+  interaction_count,
+}) => {
+  return (
+    <Link
+      href={`/chat/${character_id}`}
+      passHref
+      className="block w-full h-full max-w-48"
+    >
+      <Card className="bg-neutral-800 overflow-hidden rounded-lg h-full flex flex-col">
+        <CardContent className="flex flex-col px-0 flex-grow">
+          <div className="rounded-lg px-6 py-2">
+            <div className="w-24 h-24 mx-auto mt-4 relative">
+              <img
+                src={character_avatar ?? "/default-avatar.jpg"}
+                alt={character_name ?? ''}
+                className="rounded-xl object-cover w-full h-full"
+                style={{aspectRatio: "1/1"}}
+              />
+            </div>
+          </div>
+          <div className="px-1 mb-1 mt-1">
+            <h3 className="mt-2 text-xs font-semibold text-gray-200 truncate text-wrap break-words text-center">
+              {character_name}
+            </h3>
+          </div>
+        </CardContent>
+      </Card>
+    </Link>
+  );
+};
+
+const RecentConversation: React.FC<{ characters: CharacterCardProps[] }> = ({ characters }) => {
+  return (
+    <div>
+      <p className="text-sm text-slate-200 mb-2 mt-2 font-semibold">Continue Chatting</p>
+      <div className="flex gap-2 overflow-x-auto pb-4 snap-x snap-mandatory">
+        {characters.map((character) => (
+          <div key={character.id} className="flex-none snap-center">
+            <CharacterCard {...character} />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
 
 export default async function Page({ 
   searchParams 
@@ -126,10 +188,12 @@ export default async function Page({
     totalItems
   };
 
+  const conversations = await getConversations()
+
   return (
     <div className="text-white w-full overflow-y-auto overflow-x-hidden md:pl-16">
-      <Banner />
       <Suspense key={searchParams.id}>
+        {!conversations.error && conversations.conversations && conversations.conversations?.length > 0 && <RecentConversation characters={conversations.conversations} />}
         <AICharacterGrid 
           initialCharacters={paginatedCharacters} 
           paginationInfo={paginationInfo}

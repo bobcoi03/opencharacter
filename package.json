@@ -19,6 +19,7 @@
     "@auth/drizzle-adapter": "^1.4.2",
     "@clack/prompts": "^0.7.0",
     "@iarna/toml": "^2.2.5",
+    "@kontextso/sdk": "^0.1.7",
     "@libsql/client": "^0.10.0",
     "@next/third-parties": "^14.2.13",
     "@radix-ui/react-alert-dialog": "^1.1.2",
