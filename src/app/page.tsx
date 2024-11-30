@@ -148,7 +148,7 @@ const RecentConversation: React.FC<{ characters: CharacterCardProps[] }> = ({ ch
     <div>
       <p className="text-sm text-slate-200 mb-2 mt-2 font-semibold">Continue Chatting</p>
       <div className="flex gap-2 overflow-x-auto pb-4 snap-x snap-mandatory">
-        {characters.map((character) => (
+        {characters.slice(0, 10).map((character) => (
           <div key={character.id} className="flex-none snap-center">
             <CharacterCard {...character} />
           </div>
