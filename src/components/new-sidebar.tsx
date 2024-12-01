@@ -93,7 +93,7 @@ const NewSidebarContent: React.FC<NewSidebarProps> = ({ search }) => {
           <div className="w-full items-center gap-4 flex">
             <Link
               href="/"
-              className="text-2xl font-bold text-white"
+              className="text-lg font-bold text-white"
             >
               <div className={font.className}>
                 OpenCharacter
