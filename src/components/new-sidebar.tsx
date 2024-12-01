@@ -32,9 +32,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import AuthProvider from "./auth-provider";
-import { Nosifer } from '@next/font/google';
+import { Protest_Revolution } from '@next/font/google';
 
-const font = Nosifer({
+const font = Protest_Revolution({
   subsets: ['latin'], // Specify subsets you need
   weight: ['400', '400'], // Optional: Specify font weights
 });
@@ -93,7 +93,7 @@ const NewSidebarContent: React.FC<NewSidebarProps> = ({ search }) => {
           <div className="w-full items-center gap-4 flex">
             <Link
               href="/"
-              className="text-lg font-bold text-white"
+              className="text-2xl font-bold text-white"
             >
               <div className={font.className}>
                 OpenCharacter
