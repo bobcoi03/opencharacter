@@ -32,11 +32,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import AuthProvider from "./auth-provider";
-import { Comfortaa } from '@next/font/google';
+import { Protest_Revolution } from '@next/font/google';
 
-const comfortaa = Comfortaa({
+const font = Protest_Revolution({
   subsets: ['latin'], // Specify subsets you need
-  weight: ['400', '700'], // Optional: Specify font weights
+  weight: ['400', '400'], // Optional: Specify font weights
 });
 
 type Character = {
@@ -95,7 +95,7 @@ const NewSidebarContent: React.FC<NewSidebarProps> = ({ search }) => {
               href="/"
               className="text-2xl font-bold text-white"
             >
-              <div className={comfortaa.className}>
+              <div className={font.className}>
                 OpenCharacter
               </div>
             </Link>
