@@ -32,9 +32,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import AuthProvider from "./auth-provider";
-import { Protest_Revolution } from '@next/font/google';
+import { Audiowide } from '@next/font/google';
 
-const font = Protest_Revolution({
+const font = Audiowide({
   subsets: ['latin'], // Specify subsets you need
   weight: ['400', '400'], // Optional: Specify font weights
 });
