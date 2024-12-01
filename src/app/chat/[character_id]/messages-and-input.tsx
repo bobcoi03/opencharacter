@@ -41,6 +41,7 @@ import {
 } from "@/components/ui/dialog";  
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
+import { AdsProvider, InlineAd } from '@kontextso/sdk';
 
 const MAX_TEXTAREA_HEIGHT = 450; // maximum height in pixels
 
@@ -325,12 +326,8 @@ export default function MessageAndInput({
       .replace(/{{char}}/g, character.name || "");
   };
 
-  const processedMessages = messages.map((message) => ({
-    ...message,
-    content: replacePlaceholders(message.content as string),
-  })) as CoreMessage[];
   const [messagesState, setMessagesState] =
-    useState<CoreMessage[]>(processedMessages);
+    useState<CoreMessage[]>(messages);
   const [input, setInput] = useState("");
   const [selectedModel, setSelectedModel] = useState("gryphe/mythomax-l2-13b");
   const [isLoading, setIsLoading] = useState(false);
@@ -657,6 +654,17 @@ export default function MessageAndInput({
     }
   };
 
+  /**
+   *   const processedMessages = messages.map((message, index) => ({
+    ...message,
+    id: index.toString(), // Use index as the id
+    content: replacePlaceholders(message.content as string) as string,
+  })) // Ensure type includes 'id'
+
+  console.log(processedMessages)
+   * 
+   */
+
   return (
     <div className="flex flex-col h-full relative max-w-full overflow-x-hidden">
       <style jsx global>{`
@@ -725,7 +733,7 @@ export default function MessageAndInput({
           </div>
 
           <div className="pb-32 max-w-2xl mx-auto px-2">
-            {memoizedMessageList}
+            {memoizedMessageList}        
             <div ref={messagesEndRef} />
           </div>
         </div>

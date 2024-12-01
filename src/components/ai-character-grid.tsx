@@ -18,7 +18,7 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination"
 
-type Character = {
+export type Character = {
   id: string;
   name: string;
   tagline: string;
