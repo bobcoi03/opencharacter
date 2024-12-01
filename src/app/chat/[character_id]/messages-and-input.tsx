@@ -654,18 +654,23 @@ export default function MessageAndInput({
     }
   };
 
-  /**
-   *   const processedMessages = messages.map((message, index) => ({
+  const processedMessages = messages.map((message, index) => ({
     ...message,
     id: index.toString(), // Use index as the id
     content: replacePlaceholders(message.content as string) as string,
   })) // Ensure type includes 'id'
 
   console.log(processedMessages)
-   * 
-   */
 
   return (
+    <AdsProvider
+      publisherToken='opencharacter-dev'
+      isLoading={isLoading}
+      messages={processedMessages}
+      userId='1'
+      conversationId='1'
+      isDisabled={false}
+    >
     <div className="flex flex-col h-full relative max-w-full overflow-x-hidden">
       <style jsx global>{`
         /* Webkit browsers (Chrome, Safari) */
@@ -733,7 +738,10 @@ export default function MessageAndInput({
           </div>
 
           <div className="pb-32 max-w-2xl mx-auto px-2">
-            {memoizedMessageList}        
+            {memoizedMessageList}    
+            <div className="w-full mx-auto px-8 pl-16 border border-red-300 h-40 text-white">
+              <InlineAd code="inlineAd" messageId={String(processedMessages.length - 1)} />              
+            </div>     
             <div ref={messagesEndRef} />
           </div>
         </div>
@@ -903,5 +911,6 @@ export default function MessageAndInput({
       </Link>
       }
     </div>
+    </AdsProvider>
   );
 }
