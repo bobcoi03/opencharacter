@@ -667,9 +667,9 @@ export default function MessageAndInput({
       publisherToken='opencharacter-dev'
       isLoading={isLoading}
       messages={processedMessages}
-      userId='1'
-      conversationId='1'
-      isDisabled={false}
+      userId='3'
+      conversationId='3'
+      isDisabled={true}
     >
     <div className="flex flex-col h-full relative max-w-full overflow-x-hidden">
       <style jsx global>{`
@@ -739,9 +739,14 @@ export default function MessageAndInput({
 
           <div className="pb-32 max-w-2xl mx-auto px-2">
             {memoizedMessageList}    
-            {/* <div className="w-full mx-auto px-8 pl-16 border border-red-300 h-40 text-white">
+            {
+              /**
+               * 
+               *             <div className="w-full mx-auto px-8 pl-16 border border-red-300 h-40 text-white">
               <InlineAd code="inlineAd" messageId={String(processedMessages.length - 1)} />              
-            </div>     */}
+            </div>
+               */
+            }
             <div ref={messagesEndRef} />
           </div>
         </div>
