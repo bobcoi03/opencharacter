@@ -15,7 +15,7 @@ import { auth } from "@/server/auth";
 import { isValidModel, isPaidModel, isDAWModel } from "@/lib/llm_models";
 
 // TRIAL RUN!!
-const PAID_USER_IDS = [
+export const PAID_USER_IDS = [
   "fc735725-b774-4376-bb38-538a3aada18f", // me local
   "ed84afc0-d6d9-4c15-8e4c-757618597ba1", // me prod
   "774657ea-b091-4f9a-af88-be659a0a9ffd", // other me prod

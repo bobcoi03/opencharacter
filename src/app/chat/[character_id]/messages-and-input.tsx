@@ -3,7 +3,7 @@
 import { type CoreMessage } from "ai";
 import React, { useState, useEffect, useRef, useMemo, FormEvent } from "react";
 import { readStreamableValue } from "ai/rsc";
-import { continueConversation } from "@/app/actions/chat";
+import { continueConversation, PAID_USER_IDS } from "@/app/actions/chat";
 import { saveChat, createChatSession } from "@/app/actions/index";
 import { User } from "next-auth";
 import Image from "next/image";
@@ -664,7 +664,7 @@ export default function MessageAndInput({
     `chat-${character.id}-${new Date().getTime()}-${Math.random().toString(36).substring(2, 10)}`,
     [] // Empty dependency array means it won't change on re-renders
   );
-  
+
   return (
     <AdsProvider
       publisherToken='opencharacter-jh56hf9cl'
@@ -672,7 +672,7 @@ export default function MessageAndInput({
       messages={processedMessages}
       userId={user?.id ?? "guest"}
       conversationId={id}
-      isDisabled={false}
+      isDisabled={user?.id ? PAID_USER_IDS.includes(user.id) : false}
     >
     <div className="flex flex-col h-full relative max-w-full overflow-x-hidden">
       <style jsx global>{`
