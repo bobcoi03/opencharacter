@@ -655,16 +655,15 @@ export default function MessageAndInput({
     }
   };
 
-  const processedMessages = messages.map((message, index) => ({
-    ...message,
-    id: index.toString(), // Use index as the id
-    content: replacePlaceholders(message.content as string) as string,
-  })) // Ensure type includes 'id'
-
-  const id = useMemo(() => 
-    `chat-${character.id}-${new Date().getTime()}-${Math.random().toString(36).substring(2, 10)}`,
-    [] // Empty dependency array means it won't change on re-renders
-  );
+  const [processedMessages, setProcessedMessages] = useState<any>([]);
+  useEffect(() => {
+    const processedMessages = messagesState.map((message, index) => ({
+      ...message,
+      id: index.toString(), // Use index as the id
+      content: replacePlaceholders(message.content as string) as string,
+    })) // Ensure type includes 'id'
+    setProcessedMessages(processedMessages);
+  }, [messagesState]);
 
   return (
     <AdsProvider
@@ -672,7 +671,7 @@ export default function MessageAndInput({
       isLoading={isLoading}
       messages={processedMessages}
       userId={user?.id ?? "guest"}
-      conversationId={id}
+      conversationId={chat_session}
       isDisabled={user?.id ? PAID_USER_IDS.includes(user.id) : false}
     >
     <div className="flex flex-col h-full relative max-w-full overflow-x-hidden">
