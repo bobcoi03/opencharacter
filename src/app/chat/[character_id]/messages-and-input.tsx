@@ -660,16 +660,19 @@ export default function MessageAndInput({
     content: replacePlaceholders(message.content as string) as string,
   })) // Ensure type includes 'id'
 
-  console.log(processedMessages)
-
+  const id = useMemo(() => 
+    `chat-${character.id}-${new Date().getTime()}-${Math.random().toString(36).substring(2, 10)}`,
+    [] // Empty dependency array means it won't change on re-renders
+  );
+  
   return (
     <AdsProvider
-      publisherToken='opencharacter-dev'
+      publisherToken='opencharacter-jh56hf9cl'
       isLoading={isLoading}
       messages={processedMessages}
-      userId='3'
-      conversationId='3'
-      isDisabled={true}
+      userId={user?.id ?? "guest"}
+      conversationId={id}
+      isDisabled={false}
     >
     <div className="flex flex-col h-full relative max-w-full overflow-x-hidden">
       <style jsx global>{`
@@ -737,16 +740,13 @@ export default function MessageAndInput({
             </Link>
           </div>
 
-          <div className="pb-32 max-w-2xl mx-auto px-2">
+          <div className="pb-32">
             {memoizedMessageList}    
-            {
-              /**
-               * 
-               *             <div className="w-full mx-auto px-8 pl-16 border border-red-300 h-40 text-white">
-              <InlineAd code="inlineAd" messageId={String(processedMessages.length - 1)} />              
+            <div className="w-full mx-auto text-white flex flex-row">
+              <div className="">
+                <InlineAd code="inlineAd" messageId={String(processedMessages.length - 1)}/>              
+              </div>
             </div>
-               */
-            }
             <div ref={messagesEndRef} />
           </div>
         </div>

@@ -343,8 +343,6 @@ export default async function ChatPage({
     madeByUsername = characterCreator?.name ?? "anon";
   }
 
-  
-
   return (
     <div className="flex flex-col dark:bg-neutral-900 relative overflow-x-hidden max-w-full">
       <ChatHeader 
@@ -410,7 +408,6 @@ function ChatHeader({
       <div className="flex items-center space-x-2">
         <Suspense fallback={<div className="w-10 h-10" />}>
           <EllipsisButton
-            
             chat_session={chatSession}
             messages={messages}
             character={character}
