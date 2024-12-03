@@ -3,7 +3,7 @@
 import { type CoreMessage } from "ai";
 import React, { useState, useEffect, useRef, useMemo, FormEvent } from "react";
 import { readStreamableValue } from "ai/rsc";
-import { continueConversation, PAID_USER_IDS } from "@/app/actions/chat";
+import { continueConversation } from "@/app/actions/chat";
 import { saveChat, createChatSession } from "@/app/actions/index";
 import { User } from "next-auth";
 import Image from "next/image";
@@ -42,6 +42,7 @@ import {
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { AdsProvider, InlineAd } from '@kontextso/sdk';
+import { PAID_USER_IDS } from "@/lib/utils";
 
 const MAX_TEXTAREA_HEIGHT = 450; // maximum height in pixels
 
