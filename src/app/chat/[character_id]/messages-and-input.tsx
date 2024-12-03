@@ -671,7 +671,7 @@ export default function MessageAndInput({
       isLoading={isLoading}
       messages={processedMessages}
       userId={user?.id ?? "guest"}
-      conversationId={chat_session}
+      conversationId={`${character.id.slice(24)}-${user?.id?.slice(24)}`}
       isDisabled={user?.id ? PAID_USER_IDS.includes(user.id) : false}
     >
     <div className="flex flex-col h-full relative max-w-full overflow-x-hidden">
