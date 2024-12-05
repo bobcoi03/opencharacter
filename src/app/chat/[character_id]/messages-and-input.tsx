@@ -327,6 +327,13 @@ export default function MessageAndInput({
       .replace(/{{char}}/g, character.name || "");
   };
 
+  // @ts-ignore
+  // make sure first message has runs replaceplaceholders
+  messages = messages.map(message => ({
+    ...message,
+    content: replacePlaceholders(message.content as string)
+  }));
+
   const [messagesState, setMessagesState] =
     useState<CoreMessage[]>(messages);
   const [input, setInput] = useState("");
