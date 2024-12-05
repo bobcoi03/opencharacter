@@ -95,6 +95,11 @@ const NewSidebarContent: React.FC<NewSidebarProps> = ({ search }) => {
               href="/"
               className="text-2xl font-bold text-white"
             >
+              <img
+                src="/christmas-hat.png"
+                alt="Christmas Hat"
+                className="w-5 h-5 absolute top-1 left-5"
+              />
               <div className={font.className}>
                 OpenCharacter
               </div>
@@ -259,15 +264,6 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
               }}
             >
               Persona
-            </Button>
-            <Button
-              variant="ghost"
-              className="w-full justify-start rounded-none text-left px-4 py-2 text-sm text-gray-300 hover:bg-neutral-700"
-              onClick={() => {
-                router.push("/twitter");
-              }}
-            >
-              Twitter Profile
             </Button>
           </div>
         </PopoverContent>
