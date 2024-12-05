@@ -139,6 +139,11 @@ export const models: Models = {
         name: "mistralai/mistral-nemo",
         paid: true,
     },
+    "thedrummer/unslopnemo-12b": {
+        id: "thedrummer/unslopnemo-12b",
+        name: "thedrummer/unslopnemo-12b",
+        paid: true,
+    },
     "meta-llama/llama-3.1-70b-instruct": {
         id: "meta-llama/llama-3.1-70b-instruct",
         name: "meta-llama/llama-3.1-70b-instruct",
