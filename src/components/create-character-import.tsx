@@ -37,6 +37,37 @@ export default function CreateCharacterImport() {
     const router = useRouter()
 
     const validateRequiredFields = (content: any): CharacterData | null => {
+        // Handle Character.AI format
+        if (content.char_name || content.char_persona || content.example_dialogue || content.mes_example) {
+            // Combine all descriptive fields into one comprehensive description
+            const descriptionParts = [
+                content.char_persona ? `Character Persona:\n${content.char_persona}\n\n` : '',
+                content.description ? `Description:\n${content.description}\n\n` : '',
+                content.example_dialogue ? `Example Dialogue:\n${content.example_dialogue}\n\n` : '',
+                content.mes_example ? `Message Examples:\n${content.mes_example}` : ''
+            ].filter(Boolean);
+
+            const combinedDescription = descriptionParts.join('').trim();
+
+            return {
+                name: content.char_name || content.name,
+                tagline: content.char_persona || content.personality || '',
+                description: combinedDescription,
+                greeting: content.char_greeting || content.first_mes,
+                visibility: "public",
+                temperature: 1.0,
+                top_p: 1.0,
+                top_k: 0,
+                frequency_penalty: 0.0,
+                presence_penalty: 0.0,
+                repetition_penalty: 1.0,
+                min_p: 0.0,
+                top_a: 0.0,
+                max_tokens: 600,
+                tags: []
+            }
+        }
+
         // Handle Chara Card V2 format
         if (content.spec === "chara_card_v2" && content.data) {
             return {
