@@ -49,6 +49,11 @@ export const models: Models = {
         name: "MythomaxL213B",
         paid: false
     },
+    "amazon/nova-micro-v1": {
+        id: "amazon/nova-micro-v1",
+        name: "amazon/nova-micro-v1",
+        paid: false,
+    },
     "microsoft/wizardlm-2-7b": {
         id: "microsoft/wizardlm-2-7b",
         name: "microsoft/wizardlm-2-7b",
