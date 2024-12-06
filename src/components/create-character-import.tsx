@@ -48,12 +48,18 @@ export default function CreateCharacterImport() {
             ].filter(Boolean);
 
             const combinedDescription = descriptionParts.join('').trim();
+            
+            // Get tagline from personality or first line of char_persona
+            const tagline = content.personality || 
+                          (content.char_persona ? content.char_persona.split('\n')[0] : '') || 
+                          content.description || 
+                          'No description available';
 
             return {
-                name: content.char_name || content.name,
-                tagline: content.char_persona || content.personality || '',
-                description: combinedDescription,
-                greeting: content.char_greeting || content.first_mes,
+                name: content.char_name || content.name || '',
+                tagline: tagline,
+                description: combinedDescription || content.description || content.char_persona || '',
+                greeting: content.char_greeting || content.first_mes || 'Hello!',
                 visibility: "public",
                 temperature: 1.0,
                 top_p: 1.0,
