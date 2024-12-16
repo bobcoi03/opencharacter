@@ -23,5 +23,5 @@ export const PAID_USER_IDS = [
   "3fd781ff-8ad6-4a4c-806f-4a58aaa17526", // w 26/10/24
   "918eb513-1b0c-4461-b07f-350d264540e4", // s 02/11/24,
   "7916e019-3574-49e5-838c-97aacd2ff97c", // xeno 27/11/24,
-  "5f13568b-8f4f-470a-82db-ba248d2ff347", // chibi
+  "5f13568b-8f4f-470a-82db-ba248d2ff347", // chibi 1/12/24
 ];

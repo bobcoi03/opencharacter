@@ -74,41 +74,6 @@ export const models: Models = {
         name: "google/gemma-2-9b-it",
         paid: false
     },
-    "liquid/lfm-40b:free": {
-        id: "liquid/lfm-40b:free",
-        name: "liquid/lfm-40b:free",
-        paid: false,
-    },
-    "nousresearch/hermes-3-llama-3.1-405b:free": {
-        id: "nousresearch/hermes-3-llama-3.1-405b:free",
-        name: "nousresearch/hermes-3-llama-3.1-405b:free",
-        paid: false,
-    },
-    "meta-llama/llama-3.1-405b-instruct:free": {
-        id: "meta-llama/llama-3.1-405b-instruct:free",
-        name: "meta-llama/llama-3.1-405b-instruct:free",
-        paid: false,
-    },
-    "meta-llama/llama-3.1-70b-instruct:free": {
-        id: "meta-llama/llama-3.1-70b-instruct:free",
-        name: "meta-llama/llama-3.1-70b-instruct:free",
-        paid: false,
-    },
-    "qwen/qwen-2-7b-instruct:free": {
-        id: "qwen/qwen-2-7b-instruct:free",
-        name: "qwen/qwen-2-7b-instruct:free",
-        paid: false,
-    },
-    "microsoft/phi-3-mini-128k-instruct:free": {
-        id: "microsoft/phi-3-mini-128k-instruct:free",
-        name: "microsoft/phi-3-mini-128k-instruct:free",
-        paid: false
-    },
-    "gryphe/mythomist-7b:free": {
-        id: "gryphe/mythomist-7b:free",
-        name: "gryphe/mythomist-7b:free",
-        paid: false
-    },
     "meta-llama/llama-3.2-3b-instruct": {
         id: "meta-llama/llama-3.2-3b-instruct",
         name: "meta-llama/llama-3.2-3b-instruct",
@@ -142,7 +107,7 @@ export const models: Models = {
     "mistralai/mistral-nemo": {
         id: "mistralai/mistral-nemo",
         name: "mistralai/mistral-nemo",
-        paid: true,
+        paid: false,
     },
     "thedrummer/unslopnemo-12b": {
         id: "thedrummer/unslopnemo-12b",
