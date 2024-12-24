@@ -69,23 +69,41 @@ export const AICharacterCard: React.FC<{ character: Character }> = ({ character 
     () => safeTruncate(character.tagline, 150),
     [character.tagline],
   );
-  const [showNSFW, setShowNSFW] = useState(false);
 
   const characterTags = parseTags(character.tags);
   const isNSFW = characterTags.some(tag => NSFWCharacterTags.includes(tag as any));
 
+  // Check if NSFW content should be shown at all
+  const [showNSFWContent] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem("nsfw") === "true"; 
+    }
+    return false;
+  });
+
   const [shouldBlur, setShouldBlur] = useState(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem("nsfw") !== "true" && isNSFW;
+      return localStorage.getItem("nsfw-blur") === "true" && isNSFW;
     }
     return isNSFW;
   });
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const shouldBlurNSFW = localStorage.getItem("nsfw-blur") === "true" && isNSFW;
+      setShouldBlur(shouldBlurNSFW);
+    }
+  }, [isNSFW]);
+
+  // If NSFW is disabled and this is NSFW content, don't render
+  if (!showNSFWContent && isNSFW) {
+    return null;
+  }
+
   const handleViewNSFW = (e: React.MouseEvent) => {
-    e.preventDefault();
+    e.preventDefault(); 
     e.stopPropagation();
     setShouldBlur(false);
-    setShowNSFW(true);
   };
 
   return (

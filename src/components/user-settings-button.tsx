@@ -11,6 +11,7 @@ import { users } from '@/server/db/schema';
 import Image from 'next/image';
 import { saveUser } from '@/app/actions/index';
 import NSFWToggle from './nsfw-toggle';
+import NSFWBlur from './nsfw-blur';
 
 type User = typeof users.$inferSelect;
 
@@ -222,6 +223,7 @@ const SettingsButton = ({ user }: SettingsButtonProps) => {
                     </div>
                   </div>
                   <NSFWToggle />
+                  <NSFWBlur />
                 </div>
               )}
               {errorMessage && (
