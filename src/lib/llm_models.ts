@@ -109,11 +109,27 @@ export const models: Models = {
         name: "mistralai/mistral-nemo",
         paid: false,
     },
+    "sao10k/l3-lunaris-8b": {
+        id: "sao10k/l3-lunaris-8b",
+        name: "sao10k/l3-lunaris-8b",
+        paid: false,
+    },
+    "nousresearch/hermes-2-pro-llama-3-8b": {
+        id: "nousresearch/hermes-2-pro-llama-3-8b",
+        name: "nousresearch/hermes-2-pro-llama-3-8b",
+        paid: false,
+    },
+    "openchat/openchat-7b": {
+        id: "openchat/openchat-7b",
+        name: "openchat/openchat-7b",
+        paid: false,
+    },
     "thedrummer/unslopnemo-12b": {
         id: "thedrummer/unslopnemo-12b",
         name: "thedrummer/unslopnemo-12b",
         paid: true,
     },
+    
     "meta-llama/llama-3.1-70b-instruct": {
         id: "meta-llama/llama-3.1-70b-instruct",
         name: "meta-llama/llama-3.1-70b-instruct",
@@ -203,7 +219,7 @@ export const models: Models = {
         id: "mistralai/mistral-small",
         name: "mistralai/mistral-small",
         paid: true,
-    }
+    },
 };
 
 export const getModelIds = (): string[] => Object.keys(models);
