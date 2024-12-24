@@ -145,9 +145,9 @@ const CharacterCard: React.FC<CharacterCardProps> = ({
 
 const RecentConversation: React.FC<{ characters: CharacterCardProps[] }> = ({ characters }) => {
   return (
-    <div>
+    <div className="mb-4">
       <p className="text-sm text-slate-200 mb-2 mt-2 font-semibold">Continue Chatting</p>
-      <div className="flex gap-2 overflow-x-auto pb-4 snap-x snap-mandatory">
+      <div className="flex gap-2 overflow-x-auto pb-4 snap-x snap-mandatory [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:bg-neutral-800 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-neutral-600">
         {characters.slice(0, 10).map((character) => (
           <div key={character.id} className="flex-none snap-center">
             <CharacterCard {...character} />
