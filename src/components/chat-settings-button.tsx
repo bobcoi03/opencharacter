@@ -219,6 +219,13 @@ export default function EllipsisButton({ character, made_by_username, chat_sessi
     setIsLoadingAutoSummarize(false)
   };
 
+  const [characterIcon, setCharacterIcon] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('character_icon_style') || 'circle';
+    }
+    return 'circle';
+  });
+
   return (
     <Sheet>
       <SheetTrigger asChild>
@@ -229,14 +236,14 @@ export default function EllipsisButton({ character, made_by_username, chat_sessi
       <SheetContent className="w-80 bg-neutral-800 border-l border-neutral-700 overflow-y-auto">
         <div className="py-4">
           <div className="flex items-center mb-4 gap-4">
-            <div className="w-16 h-16 overflow-hidden rounded-full">
+            <div className={`w-16 h-16 overflow-hidden ${characterIcon === 'circle' ? 'rounded-full' : 'rounded-lg'}`}>
               <div className="w-full h-full relative">
                 <Image 
                   src={character.avatar_image_url ?? "/default-avatar.jpg"} 
                   alt={character.name} 
                   layout="fill"
                   objectFit="cover"
-                  className="rounded-full"
+                  className={characterIcon === 'circle' ? 'rounded-full' : 'rounded-lg'}
                 />
               </div>
             </div>

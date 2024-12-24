@@ -12,6 +12,7 @@ import Image from 'next/image';
 import { saveUser } from '@/app/actions/index';
 import NSFWToggle from './nsfw-toggle';
 import NSFWBlur from './nsfw-blur';
+import { ChatDialogStyling } from './chat-dialog-styling';
 
 type User = typeof users.$inferSelect;
 
@@ -178,7 +179,7 @@ const SettingsButton = ({ user }: SettingsButtonProps) => {
               {activeTab === 'Preferences' && (
                 <div className="space-y-6">
                   <div>
-                    <label className="block mb-2">Character Icon</label>
+                    <label className="block mb-2 font-semibold">Character Icon</label>
                     <div className="flex gap-4">
                       <Button
                         variant={characterIcon === 'circle' ? 'default' : 'outline'}
@@ -222,8 +223,11 @@ const SettingsButton = ({ user }: SettingsButtonProps) => {
                       />
                     </div>
                   </div>
-                  <NSFWToggle />
-                  <NSFWBlur />
+                  <div className='w-full flex flex-col gap-4 mt-4'>
+                    <NSFWToggle />
+                    <NSFWBlur />
+                    <ChatDialogStyling />
+                  </div>
                 </div>
               )}
               {errorMessage && (

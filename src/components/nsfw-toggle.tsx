@@ -14,12 +14,12 @@ export default function NSFWToggle() {
     };
 
     return (
-        <div className="flex flex-col">
+        <div className="flex flex-col mt-8">
             <div className="flex items-center">
-                <span className="mr-2 text-gray-200">NSFW Content</span>
+                <span className="mr-2 text-gray-200 text-sm">NSFW Content</span>
                 <Switch checked={isNSFW} onCheckedChange={handleToggle} />
             </div>
-            <span className="text-xs text-gray-400 mt-1">
+            <span className="text-[10px] text-gray-400 mt-1">
                 Toggle on to show NSFW characters, off to hide them completely
             </span>
         </div>

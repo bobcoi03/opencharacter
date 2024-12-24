@@ -168,7 +168,7 @@ const MessageContent: React.FC<MessageContentProps> = ({
 
   return (
     <div 
-      className="flex items-start mb-8 w-full"
+      className={`flex items-start mb-8 ${localStorage.getItem("chat-style") === "bubble" && isUser ? "flex-row-reverse" : ""}`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => {
         setIsHovered(false);
@@ -177,7 +177,7 @@ const MessageContent: React.FC<MessageContentProps> = ({
         }
       }}
     >
-      <Link className="mr-4 flex-shrink-0 overflow-hidden" style={{ width: `${localStorage.getItem("character_icon_size") ?? '40'}px`, height: `${localStorage.getItem("character_icon_size") ?? '40'}px` }}
+      <Link className={`mr-2 flex-shrink-0 overflow-hidden`} style={{ width: `${localStorage.getItem("character_icon_size") ?? '40'}px`, height: `${localStorage.getItem("character_icon_size") ?? '40'}px` }}
         href={isUser ? "/profile" : `/character/${characterId}/profile`}
       >
         <img 
@@ -186,9 +186,9 @@ const MessageContent: React.FC<MessageContentProps> = ({
           className={`w-full h-full object-cover ${localStorage.getItem("character_icon_style") === "circle" ? "rounded-full" : "rounded-lg"}`}
         />
       </Link>
-      <div className="flex flex-col max-w-full flex-grow overflow-hidden">
-        <div className="flex justify-between items-center mb-2">
-          <span className="text-xs text-neutral-400">
+      <div className={`flex flex-col max-w-full w-full flex-grow ${localStorage.getItem("chat-style") === "bubble" && isUser ? "justify-end" : ""}`}>
+        <div className={`flex justify-between items-center mb-2 flex-grow ${localStorage.getItem("chat-style") === "bubble" && isUser ? "flex-row-reverse " : ""}`}>
+          <span className={`text-xs text-neutral-400 ${localStorage.getItem("chat-style") === "bubble" && isUser ? "mr-2" : ""}`}>
             {isUser ? userName || "You" : characterName}
           </span>
           {!isEditing && (isHovered || isDropdownOpen) && (
@@ -219,7 +219,7 @@ const MessageContent: React.FC<MessageContentProps> = ({
             </DropdownMenu>
           )}
         </div>
-        <div className="max-w-xl text-wrap break-words">
+        <div className={`text-wrap break-words w-full flex ${localStorage.getItem("chat-style") === "bubble" && isUser ? "flex justify-end" : ""}`}>
           {isEditing ? (
             <div className="flex flex-col gap-2">
               <Textarea
@@ -239,12 +239,17 @@ const MessageContent: React.FC<MessageContentProps> = ({
               </div>
             </div>
           ) : (
-            <ReactMarkdown
-              className="text-md text-white text-wrap break-words flex flex-wrap max-w-full"
-              components={markdownComponents}
-            >
-              {message.content as string}
-            </ReactMarkdown>
+              <div className={`inline-block ${localStorage.getItem("chat-style") === "bubble" && isUser ? "w-full" : ""}`}>
+                <ReactMarkdown
+                  className={
+                    `text-md text-white text-wrap break-words ${localStorage.getItem("chat-style") === "bubble" && isUser && "bg-neutral-800 px-4 py-2 rounded-xl float-right mr-2"} 
+                    ${localStorage.getItem("chat-style") === "bubble" && !isUser && "bg-neutral-700 px-4 py-2 rounded-xl"}
+                  `}
+                  components={markdownComponents}
+                >
+                  {message.content as string}
+                </ReactMarkdown>
+              </div>
           )}
         </div>
         {!isUser && showRetries && index != 1 && (
