@@ -21,7 +21,7 @@ interface PlanCardProps {
   buttonText: string
   buttonAction: string
   isStandard?: boolean
-  isEnterprise?: boolean
+  isPro?: boolean
 }
 
 interface PricingOption {
@@ -40,57 +40,59 @@ const PlanCard: React.FC<PlanCardProps> = ({
   buttonText, 
   buttonAction, 
   isStandard,
-  isEnterprise 
+  isPro 
 }) => {
   const [isModelsOpen, setIsModelsOpen] = useState(false)
 
   return (
     <div
-      className={`p-8 rounded-xl ${
+      className={`p-6 rounded-xl ${
         isStandard ? 'bg-gradient-to-br from-primary to-primary/90 text-black' : 
-        isEnterprise ? 'bg-gradient-to-br from-violet-600 to-violet-500 text-white' : 
+        isPro ? 'bg-gradient-to-br from-violet-600 to-violet-500 text-white' : 
         'bg-secondary'
       } shadow-lg flex flex-col h-full transition-all duration-300 hover:shadow-xl`}
     >
-      <h2 className="text-2xl font-bold mb-2">{title}</h2>
-      <div className="mb-6">
-        <p className="text-4xl font-bold">{price}</p>
+      <h2 className="text-xl font-bold mb-2">{title}</h2>
+      <div className="mb-4">
+        <p className="text-3xl font-bold">{price}</p>
         {subPrice && <p className="text-sm opacity-75 mt-1">{subPrice}</p>}
       </div>
-      <ul className="mb-6 flex-grow space-y-3">
+      <ul className="mb-4 flex-grow space-y-2">
         {features.map((feature, index) => (
           <li key={index} className="flex items-center">
-            <Check className="mr-3 text-green-400" size={18} />
+            <Check className="mr-2 text-green-400" size={16} />
             <span className="text-sm">{feature}</span>
           </li>
         ))}
       </ul>
-      <div className="mb-6">
-        <button 
-          onClick={() => setIsModelsOpen(!isModelsOpen)}
-          className="w-full flex items-center justify-between font-semibold text-sm uppercase tracking-wide hover:opacity-80 transition-opacity"
-        >
-          <span>Included Models</span>
-          <ChevronDown 
-            size={20} 
-            className={`transition-transform duration-200 ${isModelsOpen ? 'rotate-180' : ''}`}
-          />
-        </button>
-        <div className={`grid grid-cols-2 gap-2 overflow-hidden transition-all duration-200 ${
-          isModelsOpen ? 'mt-2 max-h-96' : 'max-h-0'
-        }`}>
-          {models.map((model, index) => (
-            <ul key={index} className="text-[9px] bg-background/10 rounded px-2 py-1">{model.name}</ul>
-          ))}
+      {!isPro && (
+        <div className="mb-4">
+          <button 
+            onClick={() => setIsModelsOpen(!isModelsOpen)}
+            className="w-full flex items-center justify-between font-semibold text-sm uppercase tracking-wide hover:opacity-80 transition-opacity"
+          >
+            <span>Included Models</span>
+            <ChevronDown 
+              size={18} 
+              className={`transition-transform duration-200 ${isModelsOpen ? 'rotate-180' : ''}`}
+            />
+          </button>
+          <div className={`grid grid-cols-2 gap-2 overflow-hidden transition-all duration-200 ${
+            isModelsOpen ? 'mt-2 max-h-96' : 'max-h-0'
+          }`}>
+            {models.map((model, index) => (
+              <ul key={index} className="text-[9px] bg-background/10 rounded px-2 py-1">{model.name}</ul>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
       <Link href={buttonAction} target="_blank">
         <button
           className={`${
             isStandard ? 'bg-background text-primary' : 
-            isEnterprise ? 'bg-white text-violet-600' :
+            isPro ? 'bg-white text-violet-600' :
             'bg-primary text-background'
-          } py-3 px-4 rounded-lg font-medium transition duration-300 hover:opacity-90 hover:scale-105 transform w-full`}
+          } py-2 px-3 rounded-lg font-medium transition duration-300 hover:opacity-90 hover:scale-105 transform w-full`}
         >
           {buttonText}
         </button>
@@ -100,7 +102,7 @@ const PlanCard: React.FC<PlanCardProps> = ({
 }
 
 const Plans: React.FC = () => {
-  const [billingCycle, setBillingCycle] = useState<string>('monthly') // Changed default to yearly
+  const [billingCycle, setBillingCycle] = useState<string>('monthly')
   const allModels = getModelArray()
   const freeModels = allModels.filter(model => !model.paid)
   const paidModels = allModels.filter(model => model.paid)
@@ -131,7 +133,34 @@ const Plans: React.FC = () => {
     }
   ]
 
+  const proPricingOptions: PricingOption[] = [
+    {
+      label: "Monthly",
+      value: "monthly",
+      monthlyPrice: 50,
+    },
+    {
+      label: "3 Months",
+      value: "quarterly",
+      monthlyPrice: 45,
+      savings: 10
+    },
+    {
+      label: "6 Months",
+      value: "biannual",
+      monthlyPrice: 40,
+      savings: 20
+    },
+    {
+      label: "Yearly",
+      value: "yearly",
+      monthlyPrice: 35,
+      savings: 30
+    }
+  ]
+
   const selectedOption = pricingOptions.find(option => option.value === billingCycle)!
+  const selectedProOption = proPricingOptions.find(option => option.value === billingCycle)!
 
   const getStandardPlanPrice = () => {
     const monthlyPrice = selectedOption.monthlyPrice
@@ -150,21 +179,38 @@ const Plans: React.FC = () => {
     return `$${selectedOption.monthlyPrice}/month, billed ${billingCycle}ly${selectedOption.savings ? ` (Save ${selectedOption.savings}%)` : ''}`
   }
 
+  const getProPlanPrice = () => {
+    const monthlyPrice = selectedProOption.monthlyPrice
+    const months = {
+      monthly: 1,
+      quarterly: 3,
+      biannual: 6,
+      yearly: 12
+    }[billingCycle]
+    
+    return `$${monthlyPrice * months!}/${billingCycle === 'monthly' ? 'month' : 'total'}`
+  }
+
+  const getProPlanSubPrice = () => {
+    if (billingCycle === 'monthly') return undefined
+    return `$${selectedProOption.monthlyPrice}/month, billed ${billingCycle}ly${selectedProOption.savings ? ` (Save ${selectedProOption.savings}%)` : ''}`
+  }
+
   return (
-    <div className="container mx-auto px-4 py-16 text-foreground">
-      <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-8 rounded">
+    <div className="container mx-auto px-4 py-4 text-foreground mb-24">
+      <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-6 rounded">
         <p className="font-bold text-center">Note:</p>
         <p className='text-center'>I haven{"'"}t implemented payments yet, so you{"'"}ll have to <Link href="https://discordapp.com/users/368400765754277889" target="_blank" className="text-blue-500 underline">DM me on Discord</Link></p>
       </div>
-      <h1 className="text-4xl font-bold text-center mb-12">Choose Your Plan</h1>
+      <h1 className="text-3xl font-bold text-center mb-8">Choose Your Plan</h1>
       
-      <div className="flex justify-center items-center gap-4 mb-8">
+      <div className="flex justify-center items-center gap-2 mb-6 max-w-full">
         <div className="inline-flex p-1 bg-secondary rounded-lg">
           {pricingOptions.map((option) => (
             <button
               key={option.value}
               onClick={() => setBillingCycle(option.value)}
-              className={`px-4 py-2 rounded-md text-sm transition-all duration-200 ${
+              className={`px-2 py-1 rounded-md text-[10px] transition-all duration-200 ${
                 billingCycle === option.value
                   ? 'bg-primary text-background'
                   : 'hover:bg-background/10'
@@ -181,7 +227,7 @@ const Plans: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
         <PlanCard
           title="Free Plan"
           price="$0/month"
@@ -208,7 +254,6 @@ const Plans: React.FC = () => {
             "Unlimited messages",
             "Profile Badge",
             "Creator Dashboard",
-            selectedOption.savings ? `Save ${selectedOption.savings}%` : undefined
           ].filter((feature): feature is string => feature !== undefined)}
           models={paidModels}
           buttonText="Upgrade Now"
@@ -216,21 +261,27 @@ const Plans: React.FC = () => {
           isStandard
         />
         <PlanCard
-          title="Enterprise"
-          price="Custom"
-          subPrice="Tailored to your needs"
+          title="Pro Plan"
+          price={getProPlanPrice()}
+          subPrice={getProPlanSubPrice()}
           features={[
-            "Everything in Standard",
-            "Dedicated support",
-            "API access",
-            "Custom integrations",
-            "Advanced analytics",
-            "Priority feature requests"
-          ]}
+            "Everything in Standard Plan",
+            "Highest quality messages",
+            "Unlimited messages",
+            "Profile Badge",
+            "Creator Dashboard",
+            "Priority support",
+            "Access to GPT-4o",
+            "GPT-o1",
+            "GPT-o1-mini",
+            "Claude 3.5 Sonnet",
+            "Claude Opus",
+            "Gemini 1.5 Pro",
+          ].filter((feature): feature is string => feature !== undefined)}
           models={paidModels}
-          buttonText="Contact Sales"
-          buttonAction="mailto:minh@everythingcompany.co"
-          isEnterprise
+          buttonText="Upgrade Now"
+          buttonAction="https://discordapp.com/users/368400765754277889"
+          isPro
         />
       </div>
     </div>
