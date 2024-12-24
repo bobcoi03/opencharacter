@@ -201,36 +201,41 @@ export default async function Page({
         />
       </Suspense>
       <PricingBanner />
-      <div className="text-gray-500 flex gap-4 mb-24 text-md flex-wrap">
-        <Link href={"/about"}>
-          About 
-        </Link>
-        <Link href={"/blog"}>
-          Blog
-        </Link>
-        <Link href={"https://www.tiktok.com/@opencharacter"} target="_blank">
-          TikTok
-        </Link>
-        <Link href={"https://www.reddit.com/r/OpenCharacterAI/"} target="_blank">
-          Reddit
-        </Link>
-        <Link href={"/plans"}>
-          Premium
-        </Link>
-        <Link href={"https://github.com/bobcoi03/opencharacter"} target="_blank">
-          Github
-        </Link>
-        <Link href={"https://buymeacoffee.com/luongquangn"} target="_blank">
-          Donate
-        </Link>
-        <Link href={"/privacy-policy"}>
-          Privacy Policy         
-        </Link>
-        <Link href={"/terms-of-service"}>
-          Terms of Service       
-        </Link>
+      <div className="text-muted-foreground py-8 px-4 md:flex md:flex-row md:justify-center md:items-center md:gap-6 text-sm">
+        <div className="grid grid-cols-2 md:flex md:flex-row gap-4 md:gap-6 justify-items-center">
+          <Link href="/about" className="hover:text-foreground transition-colors duration-200">
+            About
+          </Link>
+          <Link href="/blog" className="hover:text-foreground transition-colors duration-200">
+            Blog
+          </Link>
+          <Link href="https://www.tiktok.com/@opencharacter" target="_blank" className="hover:text-foreground transition-colors duration-200">
+            TikTok
+          </Link>
+          <Link href="https://www.reddit.com/r/OpenCharacterAI/" target="_blank" className="hover:text-foreground transition-colors duration-200">
+            Reddit
+          </Link>
+          <Link href="/plans" className="hover:text-foreground transition-colors duration-200">
+            Premium
+          </Link>
+          <Link href="https://github.com/bobcoi03/opencharacter" target="_blank" className="hover:text-foreground transition-colors duration-200">
+            Github
+          </Link>
+          <Link href="https://buymeacoffee.com/luongquangn" target="_blank" className="hover:text-foreground transition-colors duration-200">
+            Donate
+          </Link>
+          <Link href="/privacy-policy" className="hover:text-foreground transition-colors duration-200">
+            Privacy Policy
+          </Link>
+          <Link href="/terms-of-service" className="hover:text-foreground transition-colors duration-200">
+            Terms of Service
+          </Link>
+          <Link href="/opencharacter-free-access-to-premium-plan-limited-time-offer" className="hover:text-foreground transition-colors duration-200 font-semibold text-yellow-400 col-span-2 md:col-span-1">
+            Free Access To Paid Tier
+          </Link>
+        </div>
       </div>
-    </div>
+      </div>
   );
 }
 
