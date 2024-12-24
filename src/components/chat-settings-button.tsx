@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Ellipsis, Share, Flag, Edit, MessageSquarePlus, UserPlus, MoreVertical } from 'lucide-react';
+import { Ellipsis, Share, Flag, Edit, MessageSquarePlus, UserPlus, MoreVertical, Globe } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import Image from 'next/image';
 import { Button } from "@/components/ui/button";
@@ -246,53 +246,61 @@ export default function EllipsisButton({ character, made_by_username, chat_sessi
               <p className="text-xs text-gray-400">{character.interactionCount} chats</p>
             </div>
           </div>
-          <div className="flex justify-between mb-4 items-center">
-            <Button variant="ghost" size="icon" className="p-2 rounded-full hover:bg-neutral-700" onClick={handleShare}>
+          <div className="flex flex-col justify-between mb-4">
+            <div 
+              className="flex items-center cursor-pointer hover:bg-neutral-700 p-2 rounded-lg transition-colors" 
+              onClick={handleShare}
+            >
               <Share className="w-5 h-5 text-gray-400" />
-            </Button>
-            <Button variant="ghost" size="icon" className="p-2 rounded-full hover:bg-neutral-700">
-              <Flag className="w-5 h-5 text-gray-400" />
-            </Button>
-            <Link href={`/character/${character.id}/edit`} passHref>
-              <Button variant="ghost" size="icon" className="p-2 rounded-full hover:bg-neutral-700">
-                <Edit className="w-5 h-5 text-gray-400" />
-              </Button>
+              <span className="ml-2 text-gray-400">Share</span>
+            </div>
+            <Link 
+              href={`/character/${character.id}/edit`}
+              className="flex items-center cursor-pointer hover:bg-neutral-700 p-2 rounded-lg transition-colors"
+            >
+              <Edit className="w-5 h-5 text-gray-400" />
+              <span className="ml-2 text-gray-400">Edit</span>
             </Link>
           </div>
           <Link href={`/chat/${character.id}`} passHref>
             <Button 
               onClick={handleNewChat}
               disabled={isCreatingSession}
-              className="w-full mb-4 bg-gray-100 bg-neutral-700 hover:bg-neutral-600 text-gray-200 flex items-center justify-center py-2 rounded-full transition-colors"
+              className="w-full mb-4 bg-neutral-700 hover:bg-neutral-600 text-gray-200 flex items-center justify-between py-2 px-4 rounded-full transition-colors"
             >
               {isCreatingSession ? (
                 'Creating...'
               ) : (
-                <>
+                <div className='flex items-center'>
                   <MessageSquarePlus className="w-4 h-4 mr-2" />
                   New Chat
-                </>
+                </div>
               )}
             </Button>
           </Link>
           <div 
-            className="w-full mb-4 bg-gray-100 bg-neutral-700 hover:bg-neutral-600 text-gray-200 flex items-center justify-center py-2 rounded-full transition-colors gap-2"
+            className="w-full mb-4 bg-neutral-700 hover:bg-neutral-600 text-gray-200 flex items-center justify-between py-2 px-4 rounded-full transition-colors"
           >
-            <p className='text-sm font-semibold'>Make Chat Public</p>
-            <Switch 
-              checked={shareStatus} 
-              onCheckedChange={handleToggleShare}
-              disabled={isTogglingShare}
-              className='text-green-300'
-            />
+            <div className='flex items-center'>
+              <Globe className='w-4 h-4 mr-2'/>
+              <p className='text-sm font-semibold mr-2'>Make Chat Public</p>
+              <Switch 
+                checked={shareStatus} 
+                onCheckedChange={handleToggleShare}
+                disabled={isTogglingShare}
+                className='text-green-300'
+              />
+            </div>
           </div>
           <Dialog>
             <DialogTrigger asChild>
               <Button 
-                className="w-full mb-4 bg-neutral-700 hover:bg-neutral-600 text-gray-200 flex items-center justify-center py-2 rounded-full transition-colors"
+                className="w-full mb-4 bg-neutral-700 hover:bg-neutral-600 text-gray-200 flex items-center justify-between py-2 px-4 rounded-full transition-colors"
               >
-                <Brain className="w-4 h-4 mr-2" />
-                Memory
+                <div className='flex items-center'>
+                  <Brain className="w-4 h-4 mr-2" />
+                  Memory
+                </div>
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px] bg-neutral-900 text-white">
@@ -335,7 +343,7 @@ export default function EllipsisButton({ character, made_by_username, chat_sessi
                 className="w-full mb-4 bg-neutral-700 hover:bg-neutral-600 text-gray-200 flex items-center justify-between py-2 px-4 rounded-full transition-colors"
                 onClick={fetchPersonas}
               >
-                <div className="flex items-center text">
+                <div className="flex items-center">
                   <UserPlus className="w-4 h-4 mr-2" />
                   Personas
                 </div>
