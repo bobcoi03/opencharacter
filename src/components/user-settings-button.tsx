@@ -223,7 +223,7 @@ const SettingsButton = ({ user }: SettingsButtonProps) => {
                       />
                     </div>
                   </div>
-                  <div className='w-full flex flex-col gap-4 mt-4'>
+                  <div className='w-full flex flex-col gap-4 '>
                     <NSFWToggle />
                     <NSFWBlur />
                     <ChatDialogStyling />

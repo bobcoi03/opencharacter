@@ -46,7 +46,7 @@ export const models: Models = {
     },
     "gryphe/mythomax-l2-13b": {
         id: "gryphe/mythomax-l2-13b",
-        name: "MythomaxL213B",
+        name: "gryphe/mythomax-l2-13b",
         paid: false
     },
     "amazon/nova-micro-v1": {
