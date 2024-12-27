@@ -147,14 +147,26 @@ export async function continueConversation(
   character: typeof characters.$inferSelect,
   chat_session_id?: string,
 ) {
+  console.log("Starting continueConversation with:", {
+    modelName: model_name,
+    characterId: character.id,
+    chatSessionId: chat_session_id,
+    messagesCount: messages.length
+  });
+
   const session = await auth();
 
   if (!session?.user) {
+    console.log("Authentication failed - no user session");
     return { error: true, message: "Failed to authenticate user" };
   }
 
   // Check if the model is paid and if the user has access
   if (isPaidModel(model_name) && !PAID_USER_IDS.includes(session.user.id!)) {
+    console.log("User attempted to use paid model without access:", {
+      userId: session.user.id,
+      model: model_name
+    });
     return { error: true, message: "Model is only available to valued anons" };
   }
 
@@ -173,6 +185,10 @@ export async function continueConversation(
   });
 
   if (!characterCheck) {
+    console.log("Character access check failed:", {
+      characterId: character.id,
+      userId: session.user.id
+    });
     return {
       error: true,
       message: "You don't have permission to interact with this character",
@@ -182,6 +198,7 @@ export async function continueConversation(
   let chatSession;
 
   if (chat_session_id) {
+    console.log("Fetching specific chat session:", chat_session_id);
     // If chat_session_id is provided, fetch that specific session
     chatSession = await db
       .select()
@@ -196,6 +213,7 @@ export async function continueConversation(
       .limit(1)
       .then((rows) => rows[0]);
   } else {
+    console.log("Fetching most recent chat session for character:", character.id);
     // If no chat_session_id, find the most recent session
     chatSession = await db
       .select()
@@ -211,67 +229,6 @@ export async function continueConversation(
       .then((rows) => rows[0]);
   }
 
-  let llm_provider;
-  if (isDAWModel(model_name)) {
-    if (!process.env.DAW_API_KEY) {
-      console.error("DAW API key not configured");
-      return { error: true, message: "DAW service is currently unavailable" };
-    }
-
-    const sessionId = chat_session_id ?? chatSession?.id;
-
-    llm_provider = createOpenAI({
-      baseURL: "https://daw.isinyour.skin/v1",
-      apiKey: process.env.DAW_API_KEY,
-      headers: {
-        Authorization: `Bearer ${process.env.DAW_API_KEY}`,
-        "UserID": session.user.id!,
-        "SessionID": sessionId ?? "00000000-0000-0000-0000-000000000000",
-        "CharacterID": character.id
-      },
-    });
-  } else {
-    llm_provider = createOpenAI({
-      baseURL: "https://openrouter.helicone.ai/api/v1",
-      apiKey: process.env.OPENROUTER_API_KEY,
-      headers: {
-        Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-        "Helicone-Auth": `Bearer ${process.env.HELICONE_API_KEY}`,
-        "HTTP-Referer": "https://opencharacter.org", // Optional, for including your app on openrouter.ai rankings.
-        "X-Title": "OpenCharacter", // Optional. Shows in rankings on openrouter.ai.
-        "Helicone-User-Id": session?.user?.email ?? "guest",
-      },
-    });
-  }
-
-  const model = llm_provider(model_name);
-
-  if (!isValidModel(model_name)) {
-    console.log("INVALID MODEL NAME")
-    throw new Error("Invalid model: " + model_name);
-  }
-
-  // Fetch the default persona for the user
-  const defaultPersona = await db
-    .select()
-    .from(personas)
-    .where(
-      and(eq(personas.userId, session.user.id!), eq(personas.isDefault, true)),
-    )
-    .limit(1)
-    .then((rows) => rows[0]);
-
-  // Modify the first message to include persona information
-  if (defaultPersona && messages.length > 0) {
-    const personaInfo = `The user you are chatting to is called: ${defaultPersona.displayName} {{user}}\nBackground information:${defaultPersona.background}\n`;
-    messages[0] = {
-      ...messages[0],
-      role: "system",
-      content: `${messages[0].content}\n\n${personaInfo}`,
-      id: crypto.randomUUID(), // Add unique id to the first message
-    };
-  }
-
   try {
     // Update character interaction count
     const [currentCharacter] = await db
@@ -281,8 +238,14 @@ export async function continueConversation(
       .limit(1);
 
     if (!currentCharacter) {
+      console.log("Character not found for interaction count update:", character.id);
       throw new Error("Character not found");
     }
+
+    console.log("Updating character interaction count:", {
+      characterId: character.id,
+      currentCount: currentCharacter.interactionCount
+    });
 
     await db
       .update(characters)
@@ -296,7 +259,7 @@ export async function continueConversation(
   }
 
   if (chatSession && chatSession.summary) {
-    console.log("Injecting chat session summary")
+    console.log("Injecting chat session summary for session:", chatSession.id);
     messages[0] = {
       ...messages[0],
       role: "system",
@@ -306,40 +269,226 @@ export async function continueConversation(
   }
 
   try {
-    const result = await streamText({
-      model: model,
-      messages: messages,
-      temperature: character.temperature ?? 1.0,
-      topP: character.top_p ?? 1.0,
-      topK: character.top_k ?? 0,
-      frequencyPenalty: character.frequency_penalty ?? 0.0,
-      presencePenalty: character.presence_penalty ?? 0.0,
-      maxTokens: character.max_tokens ?? 1000,
-      maxRetries: 5,
-      onFinish: async (completion) => {
+    let response;
+
+    if (isDAWModel(model_name)) {
+      console.log("Using DAW model:", model_name);
+      if (!process.env.DAW_API_KEY) {
+        console.error("DAW API key not configured");
+        return { error: true, message: "DAW service is currently unavailable" };
+      }
+
+      const sessionId = chat_session_id ?? chatSession?.id;
+      console.log("Making DAW API request with session:", sessionId);
+
+      response = await fetch("https://daw.isinyour.skin/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${process.env.DAW_API_KEY}`,
+          "UserID": session.user.id!,
+          "SessionID": sessionId ?? "00000000-0000-0000-0000-000000000000",
+          "CharacterID": character.id
+        },
+        body: JSON.stringify({
+          messages,
+          model: model_name,
+          temperature: character.temperature ?? 1.0,
+          top_p: character.top_p ?? 1.0,
+          top_k: character.top_k ?? 0,
+          frequency_penalty: character.frequency_penalty ?? 0.0,
+          presence_penalty: character.presence_penalty ?? 0.0,
+          max_tokens: character.max_tokens ?? 1000,
+          stream: true,
+        })
+      });
+    } else {
+      if (!isValidModel(model_name)) {
+        console.log("INVALID MODEL NAME:", model_name);
+        throw new Error("Invalid model: " + model_name);
+      }
+
+      console.log("Making OpenRouter API request with model:", model_name);
+      response = await fetch("https://openrouter.helicone.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+          "Helicone-Auth": `Bearer ${process.env.HELICONE_API_KEY}`,
+          "HTTP-Referer": "https://opencharacter.org",
+          "X-Title": "OpenCharacter",
+          "Helicone-User-Id": session?.user?.email ?? "guest",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model: model_name,
+          messages,
+          temperature: character.temperature ?? 1.0,
+          top_p: character.top_p ?? 1.0,
+          top_k: character.top_k ?? 0,
+          frequency_penalty: character.frequency_penalty ?? 0.0,
+          presence_penalty: character.presence_penalty ?? 0.0,
+          max_tokens: character.max_tokens ?? 1000,
+          provider: {
+            allow_fallbacks: false
+          },
+          stream: true,
+        })
+      });
+    }
+
+    if (!response.ok) {
+      console.error("API request failed:", response.status);
+      throw new Error(`API request failed with status ${response.status}`);
+    }
+
+    const stream = response.body;
+    if (!stream) {
+      console.error("No response stream available");
+      throw new Error("No response stream available");
+    }
+
+    console.log("Starting stream processing");
+    const reader = stream.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    const textStream = new ReadableStream({
+      async start(controller) {
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop() || '';
+
+            for (const line of lines) {
+              if (line.trim() === '') continue;
+              if (line.trim() === 'data: [DONE]') continue;
+              if (!line.startsWith('data: ')) continue;
+
+              try {
+                const json = JSON.parse(line.slice(6)) as {
+                  id: string;
+                  object: 'chat.completion' | 'chat.completion.chunk';
+                  choices: Array<{
+                    delta?: {
+                      content?: string;
+                    };
+                    message?: {
+                      content: string;
+                    };
+                    index: number;
+                    finish_reason: string | null;
+                  }>;
+                };
+
+                // Skip if this is the final usage message (empty choices)
+                if (json.choices.length === 0) continue;
+
+                const choice = json.choices[0];
+                const content = choice.delta?.content ?? choice.message?.content;
+
+                if (content) {
+                  controller.enqueue(content);
+                }
+
+                // If we get a finish_reason, we're done
+                if (choice.finish_reason) {
+                  break;
+                }
+              } catch (e) {
+                console.error('Error parsing SSE JSON:', e);
+                console.log('Problematic line:', line);
+              }
+            }
+          }
+
+          // Final buffer processing
+          if (buffer) {
+            try {
+              if (buffer.startsWith('data: ')) {
+                const json = JSON.parse(buffer.slice(6)) as {
+                  choices: Array<{
+                    delta?: {
+                      content?: string;
+                    };
+                    message?: {
+                      content: string;
+                    };
+                  }>;
+                };
+
+                const content = json.choices[0].delta?.content ?? json.choices[0].message?.content;
+                if (content) {
+                  controller.enqueue(content);
+                }
+              }
+            } catch (e) {
+              console.error('Error parsing final buffer:', e);
+              console.log('Final buffer:', buffer);
+            }
+          }
+
+          controller.close();
+        } catch (error) {
+          console.error("Stream processing error:", error);
+          controller.error(error);
+        }
+      },
+    });
+
+    console.log("Creating stream branches");
+    // Create a TransformStream to fork the stream
+    const transformStream = new TransformStream({
+      transform(chunk, controller) {
+        controller.enqueue(chunk);
+      },
+    });
+
+    // Create two branches of the stream
+    const [stream1, stream2] = textStream.tee();
+
+    // Create the streamable value from the first branch
+    const streamValue = createStreamableValue(stream1);
+
+    // Use the second branch for accumulating the full completion
+    let fullCompletion = '';
+    stream2.pipeTo(new WritableStream({
+      write(chunk) {
+        fullCompletion += chunk;
+        console.log("Accumulated response:", fullCompletion);
+      },
+      close() {
         if (session?.user) {
+          console.log("Stream completed, updating chat session");
           try {
             messages.push({
               role: "assistant",
-              content: completion.text,
+              content: fullCompletion,
               time: Date.now(),
               id: crypto.randomUUID()
             });
 
             if (chatSession) {
-              await db
-                .update(chat_sessions)
+              console.log("Updating existing chat session:", chatSession.id);
+              db.update(chat_sessions)
                 .set({
                   messages: messages as ChatMessageArray,
                   interaction_count: chatSession.interaction_count + 1,
                   last_message_timestamp: new Date(),
                   updated_at: new Date(),
                 })
-                .where(eq(chat_sessions.id, chatSession.id));
-              console.log(`Updated chat session: ${chatSession.id}`);
+                .where(eq(chat_sessions.id, chatSession.id))
+                .then(() => {
+                  console.log(`Updated chat session: ${chatSession.id}`);
+                })
+                .catch((error) => {
+                  console.error("Failed to update chat session:", error);
+                });
             } else {
-              const newSession = await db
-                .insert(chat_sessions)
+              console.log("Creating new chat session");
+              db.insert(chat_sessions)
                 .values({
                   user_id: session.user.id!,
                   character_id: character.id,
@@ -349,20 +498,26 @@ export async function continueConversation(
                   created_at: new Date(),
                   updated_at: new Date(),
                 })
-                .returning({ id: chat_sessions.id });
-              console.log(`Created new chat session: ${newSession[0].id}`);
+                .returning({ id: chat_sessions.id })
+                .then((newSession) => {
+                  console.log(`Created new chat session: ${newSession[0].id}`);
+                })
+                .catch((error) => {
+                  console.error("Failed to create chat session:", error);
+                });
             }
           } catch (error) {
-            console.error("Failed to update chat session:", error);
+            console.error("Failed to handle chat session:", error);
           }
         }
-      },
+      }
+    })).catch((error) => {
+      console.error("Failed to process stream:", error);
     });
 
-    const stream = createStreamableValue(result.textStream);
-    return stream.value;
+    return streamValue.value;
   } catch (error) {
-    console.log("Failed to generate or stream response:", error);
+    console.error("Failed to generate response:", error);
     throw new Error("Failed to generate response. Please try again.");
   }
 }
