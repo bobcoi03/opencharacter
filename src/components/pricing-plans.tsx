@@ -176,7 +176,7 @@ const Plans: React.FC = () => {
 
   const getStandardPlanSubPrice = () => {
     if (billingCycle === 'monthly') return undefined
-    return `$${selectedOption.monthlyPrice}/month, billed ${billingCycle}ly${selectedOption.savings ? ` (Save ${selectedOption.savings}%)` : ''}`
+    return `$${selectedOption.monthlyPrice}/month, billed ${billingCycle}${selectedOption.savings ? ` (Save ${selectedOption.savings}%)` : ''}`
   }
 
   const getProPlanPrice = () => {
