@@ -459,7 +459,7 @@ export async function continueConversation(
         fullCompletion += chunk;
         console.log("Accumulated response:", fullCompletion);
       },
-      close() {
+      async close() {
         if (session?.user) {
           console.log("Stream completed, updating chat session");
           try {
@@ -472,39 +472,37 @@ export async function continueConversation(
 
             if (chatSession) {
               console.log("Updating existing chat session:", chatSession.id);
-              db.update(chat_sessions)
-                .set({
-                  messages: messages as ChatMessageArray,
-                  interaction_count: chatSession.interaction_count + 1,
-                  last_message_timestamp: new Date(),
-                  updated_at: new Date(),
-                })
-                .where(eq(chat_sessions.id, chatSession.id))
-                .then(() => {
-                  console.log(`Updated chat session: ${chatSession.id}`);
-                })
-                .catch((error) => {
-                  console.error("Failed to update chat session:", error);
-                });
+              try {
+                await db.update(chat_sessions)
+                  .set({
+                    messages: messages as ChatMessageArray,
+                    interaction_count: chatSession.interaction_count + 1,
+                    last_message_timestamp: new Date(),
+                    updated_at: new Date(),
+                  })
+                  .where(eq(chat_sessions.id, chatSession.id));
+                console.log(`Updated chat session: ${chatSession.id}`);
+              } catch (error) {
+                console.error("Failed to update chat session:", error);
+              }
             } else {
               console.log("Creating new chat session");
-              db.insert(chat_sessions)
-                .values({
-                  user_id: session.user.id!,
-                  character_id: character.id,
-                  messages: messages as ChatMessageArray,
-                  interaction_count: 1,
-                  last_message_timestamp: new Date(),
-                  created_at: new Date(),
-                  updated_at: new Date(),
-                })
-                .returning({ id: chat_sessions.id })
-                .then((newSession) => {
-                  console.log(`Created new chat session: ${newSession[0].id}`);
-                })
-                .catch((error) => {
-                  console.error("Failed to create chat session:", error);
-                });
+              try {
+                const newSession = await db.insert(chat_sessions)
+                  .values({
+                    user_id: session.user.id!,
+                    character_id: character.id,
+                    messages: messages as ChatMessageArray,
+                    interaction_count: 1,
+                    last_message_timestamp: new Date(),
+                    created_at: new Date(),
+                    updated_at: new Date(),
+                  })
+                  .returning({ id: chat_sessions.id });
+                console.log(`Created new chat session: ${newSession[0].id}`);
+              } catch (error) {
+                console.error("Failed to create chat session:", error);
+              }
             }
           } catch (error) {
             console.error("Failed to handle chat session:", error);

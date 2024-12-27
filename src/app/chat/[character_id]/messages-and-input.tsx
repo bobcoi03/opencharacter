@@ -221,7 +221,7 @@ const MessageContent: React.FC<MessageContentProps> = ({
         </div>
         <div className={`text-wrap break-words w-full flex ${localStorage.getItem("chat-style") === "bubble" && isUser ? "flex justify-end" : ""}`}>
           {isEditing ? (
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2 w-full">
               <Textarea
                 ref={textareaRef}
                 value={editedContent}
@@ -378,6 +378,13 @@ export default function MessageAndInput({
     }
   };
 
+  useEffect(() => {
+    const saveChatAsync = async () => {
+      await saveChat(messagesState, character, chat_session);
+    };
+    saveChatAsync();
+  }, [messagesState])
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (window.innerWidth > 768) {
       // Desktop
@@ -406,7 +413,6 @@ export default function MessageAndInput({
       await saveChat(newMessages, character, chat_session);
     } catch (error) {
       console.error("Failed to save edited message:", error);
-      // Optionally, revert the change in the UI or show an error message to the user
     }
   };
 
