@@ -316,7 +316,8 @@ export async function continueConversation(
           "HTTP-Referer": "https://opencharacter.org",
           "X-Title": "OpenCharacter",
           "Helicone-User-Id": session?.user?.email ?? "guest",
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          "Helicone-Cache-Enabled": "true",
         },
         body: JSON.stringify({
           model: model_name,
