@@ -378,13 +378,6 @@ export default function MessageAndInput({
     }
   };
 
-  useEffect(() => {
-    const saveChatAsync = async () => {
-      await saveChat(messagesState, character, chat_session);
-    };
-    saveChatAsync();
-  }, [messagesState])
-
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (window.innerWidth > 768) {
       // Desktop
