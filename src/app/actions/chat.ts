@@ -290,7 +290,7 @@ export async function continueConversation(
           "CharacterID": character.id
         },
         body: JSON.stringify({
-          messages,
+          messages: messages,
           model: model_name,
           temperature: character.temperature ?? 1.0,
           top_p: character.top_p ?? 1.0,
@@ -320,7 +320,7 @@ export async function continueConversation(
         },
         body: JSON.stringify({
           model: model_name,
-          messages,
+          messages: messages,
           temperature: character.temperature ?? 1.0,
           top_p: character.top_p ?? 1.0,
           top_k: character.top_k ?? 0,
