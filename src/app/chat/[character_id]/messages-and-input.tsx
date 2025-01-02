@@ -524,6 +524,10 @@ export default function MessageAndInput({
           setCurrentRegenerationIndex(0)
           setRegenerations([replacePlaceholders(content) as string])
         }
+        saveChat([...newMessages, {
+          role: "assistant",
+          content: replacePlaceholders(content) as string,
+        }], character, chat_session)
       }
     } catch (err) {
       console.log(err)
