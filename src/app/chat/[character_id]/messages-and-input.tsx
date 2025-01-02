@@ -507,28 +507,43 @@ export default function MessageAndInput({
         setErrorMessage(result.message)
         return;
       }
-      console.log("result: ", result)
+      
+      let finalContent = '';
       for await (const content of readStreamableValue(result)) {
+        const processedContent = replacePlaceholders(content) as string;
+        finalContent = processedContent;
+        
         setMessagesState([
           ...newMessages,
           {
             role: "assistant",
-            content: replacePlaceholders(content) as string,
+            content: processedContent,
           },
         ]);
+        
         setRegenerations([
           ...regenerations,
-          replacePlaceholders(content) as string,
+          processedContent,
         ]);
+        
         if (!regenerate && !error) {
           setCurrentRegenerationIndex(0)
-          setRegenerations([replacePlaceholders(content) as string])
+          setRegenerations([processedContent])
         }
-        saveChat([...newMessages, {
-          role: "assistant",
-          content: replacePlaceholders(content) as string,
-        }], character, chat_session)
       }
+
+      // Save the complete conversation after stream ends
+      const finalMessages = [
+        ...newMessages,
+        {
+          role: "assistant" as const,
+          content: finalContent,
+          id: crypto.randomUUID()
+        }
+      ];
+
+      await saveChat(finalMessages, character, chat_session);
+
     } catch (err) {
       console.log(err)
       setError(true);
