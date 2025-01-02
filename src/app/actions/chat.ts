@@ -453,65 +453,6 @@ export async function continueConversation(
     const streamValue = createStreamableValue(stream1);
 
     // Use the second branch for accumulating the full completion
-    let fullCompletion = '';
-    stream2.pipeTo(new WritableStream({
-      write(chunk) {
-        fullCompletion += chunk;
-        console.log("Accumulated response:", fullCompletion);
-      },
-      async close() {
-        if (session?.user) {
-          console.log("Stream completed, updating chat session");
-          try {
-            messages.push({
-              role: "assistant",
-              content: fullCompletion,
-              time: Date.now(),
-              id: crypto.randomUUID()
-            });
-
-            if (chatSession) {
-              console.log("Updating existing chat session:", chatSession.id);
-              try {
-                await db.update(chat_sessions)
-                  .set({
-                    messages: messages as ChatMessageArray,
-                    interaction_count: chatSession.interaction_count + 1,
-                    last_message_timestamp: new Date(),
-                    updated_at: new Date(),
-                  })
-                  .where(eq(chat_sessions.id, chatSession.id));
-                console.log(`Updated chat session: ${chatSession.id}`);
-              } catch (error) {
-                console.error("Failed to update chat session:", error);
-              }
-            } else {
-              console.log("Creating new chat session");
-              try {
-                const newSession = await db.insert(chat_sessions)
-                  .values({
-                    user_id: session.user.id!,
-                    character_id: character.id,
-                    messages: messages as ChatMessageArray,
-                    interaction_count: 1,
-                    last_message_timestamp: new Date(),
-                    created_at: new Date(),
-                    updated_at: new Date(),
-                  })
-                  .returning({ id: chat_sessions.id });
-                console.log(`Created new chat session: ${newSession[0].id}`);
-              } catch (error) {
-                console.error("Failed to create chat session:", error);
-              }
-            }
-          } catch (error) {
-            console.error("Failed to handle chat session:", error);
-          }
-        }
-      }
-    })).catch((error) => {
-      console.error("Failed to process stream:", error);
-    });
 
     return streamValue.value;
   } catch (error) {

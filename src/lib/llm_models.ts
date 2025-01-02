@@ -124,6 +124,11 @@ export const models: Models = {
         name: "openchat/openchat-7b",
         paid: false,
     },
+    "undi95/toppy-m-7b:nitro": {
+        id: "undi95/toppy-m-7b:nitro",
+        name: "undi95/toppy-m-7b:nitro",
+        paid: false,
+    },
     "thedrummer/unslopnemo-12b": {
         id: "thedrummer/unslopnemo-12b",
         name: "thedrummer/unslopnemo-12b",
