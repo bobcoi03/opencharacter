@@ -15,7 +15,6 @@ interface Model {
 interface PlanCardProps {
   title: string
   price: string
-  subPrice?: string
   features: string[]
   models: Model[]
   buttonText: string
@@ -24,17 +23,9 @@ interface PlanCardProps {
   isPro?: boolean
 }
 
-interface PricingOption {
-  label: string
-  value: string
-  monthlyPrice: number
-  savings?: number
-}
-
 const PlanCard: React.FC<PlanCardProps> = ({ 
   title, 
   price, 
-  subPrice, 
   features, 
   models, 
   buttonText, 
@@ -55,7 +46,6 @@ const PlanCard: React.FC<PlanCardProps> = ({
       <h2 className="text-xl font-bold mb-2">{title}</h2>
       <div className="mb-4">
         <p className="text-3xl font-bold">{price}</p>
-        {subPrice && <p className="text-sm opacity-75 mt-1">{subPrice}</p>}
       </div>
       <ul className="mb-4 flex-grow space-y-2">
         {features.map((feature, index) => (
@@ -107,101 +97,41 @@ const Plans: React.FC = () => {
   const freeModels = allModels.filter(model => !model.paid)
   const paidModels = allModels.filter(model => model.paid)
 
-  const pricingOptions: PricingOption[] = [
+  const pricingOptions = [
     {
       label: "Monthly",
       value: "monthly",
       monthlyPrice: 12,
     },
     {
-      label: "3 Months",
-      value: "quarterly",
-      monthlyPrice: 11,
-      savings: 8.3
-    },
-    {
-      label: "6 Months",
-      value: "biannual",
-      monthlyPrice: 10,
-      savings: 16.7
-    },
-    {
       label: "Yearly",
       value: "yearly",
       monthlyPrice: 9,
-      savings: 25
     }
   ]
 
-  const proPricingOptions: PricingOption[] = [
+  const proPricingOptions = [
     {
       label: "Monthly",
       value: "monthly",
       monthlyPrice: 50,
     },
     {
-      label: "3 Months",
-      value: "quarterly",
-      monthlyPrice: 45,
-      savings: 10
-    },
-    {
-      label: "6 Months",
-      value: "biannual",
-      monthlyPrice: 40,
-      savings: 20
-    },
-    {
       label: "Yearly",
       value: "yearly",
       monthlyPrice: 35,
-      savings: 30
     }
   ]
 
   const selectedOption = pricingOptions.find(option => option.value === billingCycle)!
   const selectedProOption = proPricingOptions.find(option => option.value === billingCycle)!
 
-  const getStandardPlanPrice = () => {
-    const monthlyPrice = selectedOption.monthlyPrice
-    const months = {
-      monthly: 1,
-      quarterly: 3,
-      biannual: 6,
-      yearly: 12
-    }[billingCycle]
-    
-    return `$${monthlyPrice * months!}/${billingCycle === 'monthly' ? 'month' : 'total'}`
-  }
-
-  const getStandardPlanSubPrice = () => {
-    if (billingCycle === 'monthly') return undefined
-    return `$${selectedOption.monthlyPrice}/month, billed ${billingCycle}${selectedOption.savings ? ` (Save ${selectedOption.savings}%)` : ''}`
-  }
-
-  const getProPlanPrice = () => {
-    const monthlyPrice = selectedProOption.monthlyPrice
-    const months = {
-      monthly: 1,
-      quarterly: 3,
-      biannual: 6,
-      yearly: 12
-    }[billingCycle]
-    
-    return `$${monthlyPrice * months!}/${billingCycle === 'monthly' ? 'month' : 'total'}`
-  }
-
-  const getProPlanSubPrice = () => {
-    if (billingCycle === 'monthly') return undefined
-    return `$${selectedProOption.monthlyPrice}/month, billed ${billingCycle}${selectedProOption.savings ? ` (Save ${selectedProOption.savings}%)` : ''}`
-  }
+  const getStandardPlanPrice = () => `$${selectedOption.monthlyPrice}/month`
+  const getProPlanPrice = () => `$${selectedProOption.monthlyPrice}/month`
 
   return (
     <div className="container mx-auto px-4 py-4 text-foreground mb-24">
-      <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-6 rounded">
-        <p className="font-bold text-center">Note:</p>
-        <p className='text-center'>I haven{"'"}t implemented payments yet, so you{"'"}ll have to <Link href="https://discordapp.com/users/368400765754277889" target="_blank" className="text-blue-500 underline">DM me on Discord</Link></p>
-      </div>
+      
       <h1 className="text-3xl font-bold text-center mb-8">Choose Your Plan</h1>
       
       <div className="flex justify-center items-center gap-2 mb-6 max-w-full">
@@ -217,11 +147,6 @@ const Plans: React.FC = () => {
               }`}
             >
               {option.label}
-              {option.savings && (
-                <span className="ml-1 text-xs opacity-75">
-                  (-{option.savings}%)
-                </span>
-              )}
             </button>
           ))}
         </div>
@@ -245,7 +170,6 @@ const Plans: React.FC = () => {
         <PlanCard
           title="Standard Plan"
           price={getStandardPlanPrice()}
-          subPrice={getStandardPlanSubPrice()}
           features={[
             "Access to all models (free + paid)",
             "Up to 64x more memory",
@@ -254,7 +178,7 @@ const Plans: React.FC = () => {
             "Unlimited messages",
             "Profile Badge",
             "Creator Dashboard",
-          ].filter((feature): feature is string => feature !== undefined)}
+          ]}
           models={paidModels}
           buttonText="Upgrade Now"
           buttonAction="https://discordapp.com/users/368400765754277889"
@@ -263,7 +187,6 @@ const Plans: React.FC = () => {
         <PlanCard
           title="Pro Plan"
           price={getProPlanPrice()}
-          subPrice={getProPlanSubPrice()}
           features={[
             "Everything in Standard Plan",
             "Highest quality messages",
@@ -277,7 +200,7 @@ const Plans: React.FC = () => {
             "Claude 3.5 Sonnet",
             "Claude Opus",
             "Gemini 1.5 Pro",
-          ].filter((feature): feature is string => feature !== undefined)}
+          ]}
           models={paidModels}
           buttonText="Upgrade Now"
           buttonAction="https://discordapp.com/users/368400765754277889"
