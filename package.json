@@ -67,6 +67,7 @@
     "react-virtualized-auto-sizer": "^1.0.24",
     "react-window": "^1.8.10",
     "recharts": "^2.13.0",
+    "stripe": "^17.5.0",
     "tailwind-merge": "^2.5.2",
     "tailwindcss-animate": "^1.0.7",
     "uuid": "^10.0.0",

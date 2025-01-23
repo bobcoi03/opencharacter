@@ -2,8 +2,7 @@
 
 import React from 'react'
 import { getModelArray } from "@/lib/llm_models"
-import { Check, ChevronDown } from "lucide-react"
-import Link from 'next/link'
+import { Check, ChevronDown, Loader2 } from "lucide-react"
 import { useState } from 'react'
 
 interface Model {
@@ -18,7 +17,6 @@ interface PlanCardProps {
   features: string[]
   models: Model[]
   buttonText: string
-  buttonAction: string
   isStandard?: boolean
   isPro?: boolean
 }
@@ -29,11 +27,27 @@ const PlanCard: React.FC<PlanCardProps> = ({
   features, 
   models, 
   buttonText, 
-  buttonAction, 
   isStandard,
   isPro 
 }) => {
   const [isModelsOpen, setIsModelsOpen] = useState(false)
+
+  const handleUpgrade = async () => {
+    const response = await fetch('/api/subscriptions/create', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ plan: title })
+    });
+
+    if (response.ok) {
+      const { url } = await response.json() as any;
+      window.location.href = url;
+    } else {
+      console.error('Failed to create subscription');
+    }
+  }
 
   return (
     <div
@@ -76,17 +90,16 @@ const PlanCard: React.FC<PlanCardProps> = ({
           </div>
         </div>
       )}
-      <Link href={buttonAction} target="_blank">
-        <button
-          className={`${
-            isStandard ? 'bg-background text-primary' : 
-            isPro ? 'bg-white text-violet-600' :
-            'bg-primary text-background'
-          } py-2 px-3 rounded-lg font-medium transition duration-300 hover:opacity-90 hover:scale-105 transform w-full`}
-        >
-          {buttonText}
-        </button>
-      </Link>
+      <button
+        onClick={handleUpgrade}
+        className={`${
+          isStandard ? 'bg-background text-primary' : 
+          isPro ? 'bg-white text-violet-600' :
+          'bg-primary text-background'
+        } py-2 px-3 rounded-lg font-medium transition duration-300 hover:opacity-90 hover:scale-105 transform w-full`}
+      >
+        {buttonText}
+      </button>
     </div>
   )
 }
@@ -94,7 +107,6 @@ const PlanCard: React.FC<PlanCardProps> = ({
 const Plans: React.FC = () => {
   const [billingCycle, setBillingCycle] = useState<string>('monthly')
   const allModels = getModelArray()
-  const freeModels = allModels.filter(model => !model.paid)
   const paidModels = allModels.filter(model => model.paid)
 
   const pricingOptions = [
@@ -152,21 +164,7 @@ const Plans: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-        <PlanCard
-          title="Free Plan"
-          price="$0/month"
-          features={[
-            "Access to all free models",
-            "Standard memory allocation",
-            "Regular response speed",
-            "Unlimited messages",
-            "Creator Dashboard"
-          ]}
-          models={freeModels}
-          buttonText="Get Started"
-          buttonAction="/signin"
-        />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
         <PlanCard
           title="Standard Plan"
           price={getStandardPlanPrice()}
@@ -181,7 +179,6 @@ const Plans: React.FC = () => {
           ]}
           models={paidModels}
           buttonText="Upgrade Now"
-          buttonAction="https://discordapp.com/users/368400765754277889"
           isStandard
         />
         <PlanCard
@@ -203,7 +200,6 @@ const Plans: React.FC = () => {
           ]}
           models={paidModels}
           buttonText="Upgrade Now"
-          buttonAction="https://discordapp.com/users/368400765754277889"
           isPro
         />
       </div>
