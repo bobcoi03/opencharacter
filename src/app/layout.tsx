@@ -9,6 +9,7 @@ import { searchCharacters } from "./actions";
 import NewSidebar from "@/components/new-sidebar";
 import IconStyleInitializer from "@/components/icon-style-onmount";
 import AgeVerificationPopup from "@/components/age-verification-popup";
+import AuthProvider from "@/components/auth-provider";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -55,9 +56,10 @@ export default async function RootLayout({
   }
 
   return (
-    <html lang="en" className="dark">
-      <head>
-        <ThemeScript/>
+    <AuthProvider>
+      <html lang="en" className="dark">
+        <head>
+          <ThemeScript/>
         <link rel="icon" href="/opencharacter_icon.png" sizes="any" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
       </head>
@@ -65,13 +67,14 @@ export default async function RootLayout({
         <IconStyleInitializer />
         <NewSidebar search={search} />
         <div className="flex flex-col min-h-screen pt-12">
-          <main className="flex-1 p-4">
+          <main className="flex-1">
             {children}
           </main>
         </div>
         <Toaster />
         <GoogleAnalytics gaId={process.env.GOOGLE_ANALYTICS_ID ?? ""} />
       </body>
-    </html>
+      </html>
+    </AuthProvider>
   );
 }

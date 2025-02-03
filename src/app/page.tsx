@@ -4,7 +4,6 @@ import { characters, users } from "@/server/db/schema";
 import AICharacterGrid from "@/components/ai-character-grid";
 import Link from "next/link";
 import { Suspense } from "react";
-import { Star, ArrowRight } from "lucide-react";
 import { Check } from "lucide-react";
 import { getConversations } from "./actions";
 import { Card, CardContent } from "@/components/ui/card";
@@ -192,6 +191,7 @@ export default async function Page({
 
   return (
     <div className="text-white w-full overflow-y-auto overflow-x-hidden md:pl-16">
+      <PricingBanner />
       <Suspense key={searchParams.id}>
         {!conversations.error && conversations.conversations && conversations.conversations?.length > 0 && <RecentConversation characters={conversations.conversations} />}
         <AICharacterGrid 
@@ -200,7 +200,6 @@ export default async function Page({
           totalPublicCharacters={totalPublicCharacters}
         />
       </Suspense>
-      <PricingBanner />
       <div className="text-muted-foreground py-8 px-4 md:flex md:flex-row md:justify-center md:items-center md:gap-6 text-sm">
         <div className="grid grid-cols-2 md:flex md:flex-row gap-4 md:gap-6 justify-items-center">
           <Link href="/about" className="hover:text-foreground transition-colors duration-200">
@@ -239,46 +238,6 @@ export default async function Page({
   );
 }
 
-const Banner = () => {
-  return (
-    <div className="mb-4">
-      <Link href="/opencharacter-free-access-to-premium-plan-limited-time-offer" className="block">
-        <div className="relative overflow-hidden rounded-lg border border-slate-600 p-12 hover:border-slate-500 transition-colors duration-200 bg-[url('/bg-banner.webp')] bg-cover">
-          <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2">
-            <div className="h-24 w-24 rounded-full bg-purple-500/20 blur-2xl"></div>
-          </div>
-          
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="flex-1 space-y-2">
-              <div className="flex items-center gap-2">
-                <Star className="h-5 w-5 text-yellow-400 animate-pulse" />
-                <span className="text-sm font-medium text-white">Limited Time Offer</span>
-              </div>
-              
-              <h2 className="text-2xl md:text-3xl font-bold text-white">
-                Want Free Access To The Premium Plan?
-              </h2>
-              
-              <p className="text-white">
-                Post about OpenCharacter on social media and get free access to the Premium Plan!
-              </p>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <div 
-                className="bg-purple-500 hover:bg-purple-600 text-white font-semibold px-6 py-2 rounded-lg transition-all duration-200 flex items-center gap-2"
-              >
-                Learn More
-                <ArrowRight className="h-4 w-4" />
-              </div>
-            </div>
-          </div>
-        </div>
-      </Link>
-    </div>
-  );
-};
-
 const PricingBanner = () => {
   const features = [
     "Access to all models (free + paid)",
@@ -288,7 +247,7 @@ const PricingBanner = () => {
   ];
 
   return (
-    <div className="my-12">
+    <div className="my-12 p-4">
       <Link href="/plans" className="block">
         <div className="relative overflow-hidden rounded-lg border border-slate-600 p-8 md:p-12 hover:border-slate-500 transition-colors duration-200 bg-[url('/bg-banner-premium.webp')] bg-cover">
           <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2">
@@ -302,7 +261,7 @@ const PricingBanner = () => {
                   Upgrade to Premium
                 </h2>
                 <p className="text-gray-300 text-lg">
-                  Starting at just <span className="text-white font-semibold">$9/month</span> with yearly plan
+                  Starting at just <span className="text-white font-semibold">$12/month</span>
                 </p>
               </div>
               
@@ -316,14 +275,6 @@ const PricingBanner = () => {
               </div>
             </div>
 
-            <div className="flex items-center gap-4 w-full md:w-auto">
-              <div 
-                className="w-full md:w-auto bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-semibold px-4 py-2 rounded-lg transition-all duration-200 flex items-center justify-center gap-2"
-              >
-                View Plans
-                <ArrowRight className="h-4 w-4" />
-              </div>
-            </div>
           </div>
         </div>
       </Link>

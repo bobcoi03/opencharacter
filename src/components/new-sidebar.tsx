@@ -5,20 +5,17 @@ import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import {
   Home,
-  Rss,
-  PlusCircle,
   MessageCircle,
   Users,
   Search,
   User,
   LogOut,
-  HandCoins,
   Github,
   Plus,
   LayoutDashboard,
   DollarSign,
 } from "lucide-react";
-import { useSession, signIn, signOut } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import {
   Popover,
   PopoverContent,
@@ -66,24 +63,7 @@ const NewSidebarContent: React.FC<NewSidebarProps> = ({ search }) => {
   const pathname = usePathname();
 
   const isChatRoute = pathname.startsWith("/chat/");
-  const isShareRoute = pathname.startsWith("/share/");
-
-  const handleSearch = async (query: string): Promise<void> => {
-    setSearchQuery(query);
-    if (query.trim()) {
-      const results = await search(query);
-      setSuggestions(results);
-    } else {
-      setSuggestions([]);
-    }
-  };
-
-  const handleSelectCharacter = (character: Character): void => {
-    router.push(`/chat/${character.id}`);
-    setIsSearchExpanded(false);
-    setSuggestions([]);
-    setSearchQuery("");
-  };
+  const isPlansRoute = pathname === "/plans";
 
   return (
     <>
@@ -178,7 +158,7 @@ const NewSidebarContent: React.FC<NewSidebarProps> = ({ search }) => {
       )}
 
       {/* Desktop Sidebar */}
-      {!isChatRoute && (
+      {!isChatRoute && !isPlansRoute && (
         <div className="hidden md:flex flex-col items-center fixed left-0 top-12 bottom-0 w-16 bg-neutral-900 py-4 z-40">
           <SidebarContent
             isCreateOpen={isCreateOpen}
@@ -188,7 +168,7 @@ const NewSidebarContent: React.FC<NewSidebarProps> = ({ search }) => {
       )}
 
       {/* Mobile Bottom Navigation */}
-      {!isChatRoute && (
+      {!isChatRoute && !isPlansRoute && (
         <div className="md:hidden fixed bottom-0 left-0 right-0 bg-neutral-900 flex justify-around items-center h-16 z-[9999]">
           <SidebarContent
             isCreateOpen={isCreateOpen}
@@ -296,9 +276,7 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
 
 const NewSidebar: React.FC<NewSidebarProps> = ({ search }) => {
   return (
-    <AuthProvider>
       <NewSidebarContent search={search} />
-    </AuthProvider>
   );
 };
 

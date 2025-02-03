@@ -257,3 +257,38 @@ export const personas = sqliteTable("persona", {
     .$defaultFn(() => sql`CURRENT_TIMESTAMP`),
   image: text("image")
 });
+
+export const subscriptions = sqliteTable("subscription", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  userId: text("userId")
+    .notNull()
+    .unique()
+    .references(() => users.id, { onDelete: "cascade" }),
+  stripeCustomerId: text("stripeCustomerId").notNull(),
+  stripeSubscriptionId: text("stripeSubscriptionId").notNull(),
+  stripePriceId: text("stripePriceId").notNull(),
+  stripeCurrentPeriodStart: integer("stripeCurrentPeriodStart", { mode: "timestamp_ms" }).notNull(),
+  stripeCurrentPeriodEnd: integer("stripeCurrentPeriodEnd", { mode: "timestamp_ms" }).notNull(),
+  status: text("status").notNull(), // 'active', 'canceled', 'past_due', 'unpaid', 'incomplete', 'incomplete_expired', 'trialing'
+  planType: text("planType").notNull(), // 'pro', etc.
+  cancelAtPeriodEnd: integer("cancelAtPeriodEnd", { mode: "boolean" }).notNull().default(false),
+  createdAt: integer("createdAt", { mode: "timestamp_ms" })
+    .notNull()
+    .$defaultFn(() => sql`CURRENT_TIMESTAMP`),
+  updatedAt: integer("updatedAt", { mode: "timestamp_ms" })
+    .notNull()
+    .$defaultFn(() => sql`CURRENT_TIMESTAMP`),
+}, (table) => ({
+  userIdIdx: index('subscription_user_id_idx').on(table.userId),
+  stripeCustomerIdIdx: index('subscription_stripe_customer_id_idx').on(table.stripeCustomerId),
+  stripeSubscriptionIdIdx: index('subscription_stripe_subscription_id_idx').on(table.stripeSubscriptionId),
+}));
+
+export const stripe_customer_id = sqliteTable("stripe_customer_id", {
+  userId: text("userId")
+    .primaryKey()
+    .references(() => users.id, { onDelete: "cascade" }),
+  stripeCustomerId: text("stripeCustomerId").notNull().unique()
+})

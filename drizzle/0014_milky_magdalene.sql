@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX `subscription_userId_unique` ON `subscription` (`userId`);
