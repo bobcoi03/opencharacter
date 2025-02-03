@@ -14,6 +14,7 @@ import {
   Plus,
   LayoutDashboard,
   DollarSign,
+  Landmark,
 } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
 import {
@@ -118,9 +119,15 @@ const NewSidebarContent: React.FC<NewSidebarProps> = ({ search }) => {
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem className="text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">
+                    <Link href={"/subscription"} className="w-full flex">
+                      <Landmark className="mr-2 h-4 w-4" />
+                      <span>Subscription</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">
                     <Link href={"/plans"} className="w-full flex">
                       <DollarSign className="mr-2 h-4 w-4" />
-                      <span>Premium</span>
+                      <span>Plans</span>
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem className="text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">
