@@ -421,8 +421,6 @@ const AICharacterGrid: React.FC<AICharacterGridProps> = ({
           {totalPublicCharacters.toLocaleString()} total public characters
         </div>
       </div>
-      
-      <div className="border-t border-gray-700 mt-8" />
     </div>
   );
 };

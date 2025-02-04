@@ -18,7 +18,7 @@ const FeatureComparison = () => {
     <div className="mt-16">
       <h2 className="text-2xl font-bold text-center mb-8">Feature Comparison</h2>
       <div className="overflow-x-auto">
-        <table className="w-full max-w-3xl mx-auto">
+        <table className="w-full max-w-4xl mx-auto">
           <thead>
             <tr className="border-b border-zinc-800">
               <th className="py-4 px-6 text-left">Feature</th>

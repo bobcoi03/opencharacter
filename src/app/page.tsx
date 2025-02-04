@@ -7,6 +7,7 @@ import { Suspense } from "react";
 import { Check } from "lucide-react";
 import { getConversations } from "./actions";
 import { Card, CardContent } from "@/components/ui/card";
+import { Footer } from "@/components/footer";
 
 export const runtime = "edge";
 const ITEMS_PER_PAGE = 36;
@@ -200,41 +201,8 @@ export default async function Page({
           totalPublicCharacters={totalPublicCharacters}
         />
       </Suspense>
-      <div className="text-muted-foreground py-8 px-4 md:flex md:flex-row md:justify-center md:items-center md:gap-6 text-sm">
-        <div className="grid grid-cols-2 md:flex md:flex-row gap-4 md:gap-6 justify-items-center">
-          <Link href="/about" className="hover:text-foreground transition-colors duration-200">
-            About
-          </Link>
-          <Link href="/blog" className="hover:text-foreground transition-colors duration-200">
-            Blog
-          </Link>
-          <Link href="https://www.tiktok.com/@opencharacter" target="_blank" className="hover:text-foreground transition-colors duration-200">
-            TikTok
-          </Link>
-          <Link href="https://www.reddit.com/r/OpenCharacterAI/" target="_blank" className="hover:text-foreground transition-colors duration-200">
-            Reddit
-          </Link>
-          <Link href="/plans" className="hover:text-foreground transition-colors duration-200">
-            Premium
-          </Link>
-          <Link href="https://github.com/bobcoi03/opencharacter" target="_blank" className="hover:text-foreground transition-colors duration-200">
-            Github
-          </Link>
-          <Link href={"https://www.instagram.com/opencharacter_/"} target="_blank" className="hover:text-foreground transition-colors duration-200">
-            Instagram            
-          </Link>
-          <Link href="/privacy-policy" className="hover:text-foreground transition-colors duration-200">
-            Privacy Policy
-          </Link>
-          <Link href="/terms-of-service" className="hover:text-foreground transition-colors duration-200">
-            Terms of Service
-          </Link>
-          <Link href="/opencharacter-free-access-to-premium-plan-limited-time-offer" className="hover:text-foreground transition-colors duration-200 font-semibold text-yellow-400 col-span-2 md:col-span-1">
-            Free Access To Paid Tier
-          </Link>
-        </div>
-      </div>
-      </div>
+      <Footer />
+    </div>
   );
 }
 
