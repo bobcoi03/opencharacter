@@ -73,9 +73,15 @@ export async function POST(request: Request) {
 
         break;
       }
-      case 'customer.subscription.updated': {
+      case 'customer.subscription.updated':
+      case 'customer.subscription.resumed':
+      case 'customer.subscription.paused':
+      case 'customer.subscription.pending_update_applied':
+      case 'customer.subscription.pending_update_expired':
+      case 'customer.subscription.trial_will_end':
+      {
         const subscription = event.data.object as Stripe.Subscription;
-        console.log(`Subscription updated: ${JSON.stringify(subscription)}`);
+        console.log(`Subscription ${event.type}: ${subscription.id}`);
 
         // Update subscription in database
         await db
@@ -86,6 +92,22 @@ export async function POST(request: Request) {
             stripeCurrentPeriodEnd: new Date(subscription.current_period_end * 1000),
             status: subscription.status,
             cancelAtPeriodEnd: Boolean(subscription.cancel_at_period_end),
+            updatedAt: new Date()
+          })
+          .where(eq(subscriptions.stripeSubscriptionId, subscription.id));
+
+        break;
+      }
+      case 'customer.subscription.deleted': {
+        const subscription = event.data.object as Stripe.Subscription;
+        console.log(`Subscription deleted: ${subscription.id}`);
+
+        // Update subscription status to cancelled in database
+        await db
+          .update(subscriptions)
+          .set({
+            status: subscription.status,
+            cancelAtPeriodEnd: true,
             updatedAt: new Date()
           })
           .where(eq(subscriptions.stripeSubscriptionId, subscription.id));

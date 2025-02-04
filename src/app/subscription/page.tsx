@@ -95,7 +95,7 @@ export default async function SubscriptionPage() {
                     <div className="space-y-4">
                       <div className="flex justify-between items-center">
                         <span className="text-sm font-medium">Status</span>
-                        <span className="text-sm capitalize">{subscription.status}</span>
+                        <span className="text-sm capitalize">{subscription?.status}</span>
                       </div>
                       
                       <div className="flex justify-between items-center">

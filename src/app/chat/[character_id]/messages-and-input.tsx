@@ -43,6 +43,7 @@ import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { AdsProvider, InlineAd } from '@kontextso/sdk';
 import { PAID_USER_IDS } from "@/lib/utils";
+import { ModelSelector } from "@/components/model-selector";
 
 const MAX_TEXTAREA_HEIGHT = 450; // maximum height in pixels
 
@@ -704,7 +705,7 @@ export default function MessageAndInput({
       conversationId={`${character.id.slice(24)}-${user?.id?.slice(24)}`}
       isDisabled={user?.id ? PAID_USER_IDS.includes(user.id) : false}
     >
-    <div className="flex flex-col h-full relative max-w-full overflow-x-hidden">
+    <div className="flex flex-col h-full relative max-w-full overflow-x-hidden p-4">
       <style jsx global>{`
         /* Webkit browsers (Chrome, Safari) */
         ::-webkit-scrollbar {
@@ -792,7 +793,7 @@ export default function MessageAndInput({
         </Link>
       }
       {!share && 
-        <div className="fixed bottom-6 left-0 right-0 py-4 pointer-events-none w-full max-w-full">
+        <div className="fixed bottom-0 left-0 right-0 py-4 pointer-events-none w-full max-w-full">
         <div className="max-w-2xl mx-auto w-full">
           {error && (
             <div className="mb-2 p-2 bg-red-900 border border-red-800 rounded-lg text-red-200 text-sm pointer-events-auto flex justify-between items-center">
@@ -824,30 +825,10 @@ export default function MessageAndInput({
             <div className="relative flex-grow">
               <div className="absolute inset-0 bg-slate-600 bg-opacity-20 backdrop-blur-md rounded-3xl border-neutral-700"></div>
               <div className="absolute left-3 top-1/2 transform -translate-y-1/2 z-20">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button
-                      type="button"
-                      className="bg-neutral-600 rounded-full p-2 transition-opacity opacity-70 hover:opacity-100 focus:opacity-100 hover:cursor-pointer"
-                    >
-                      <Cpu className="w-3 h-3 text-gray-300" />
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="max-h-96 overflow-y-auto">
-                    {getModelArray().map((model) => (
-                      <DropdownMenuItem
-                        key={model.id}
-                        onClick={() => handleModelSelect(model.id)}
-                        className={`flex items-center justify-between rounded-none text-xs`}
-                      >
-                        {model.name} {model.paid && "PREMIUM"}
-                        {selectedModel === model.id && (
-                          <Check className="w-4 h-4 text-green-500" />
-                        )}
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <ModelSelector 
+                  selectedModel={selectedModel}
+                  onModelSelect={handleModelSelect}
+                />
               </div>
               <textarea
                 ref={textareaRef}
@@ -934,16 +915,6 @@ export default function MessageAndInput({
 
         </div>
       </div>      
-      }
-
-      {!share &&
-      <Link 
-        className="fixed bottom-4 text-center left-0 right-0 text-[11px] text-light text-slate-200 underline" 
-        href={"/plans"}
-        target="_blank"
-      >
-        Want access to better models?
-      </Link>
       }
     </div>
     </AdsProvider>

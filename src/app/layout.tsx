@@ -4,11 +4,9 @@ import "./globals.css";
 import { ThemeScript } from "@/lib/theme/theme-script";
 import { Toaster } from "@/components/ui/toaster"
 import { GoogleAnalytics } from '@next/third-parties/google'
-import { auth } from "@/server/auth";
 import { searchCharacters } from "./actions";
 import NewSidebar from "@/components/new-sidebar";
 import IconStyleInitializer from "@/components/icon-style-onmount";
-import AgeVerificationPopup from "@/components/age-verification-popup";
 import AuthProvider from "@/components/auth-provider";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -46,9 +44,6 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const session = await auth();
-  const user = session?.user
-
   async function search(query: string) {
     'use server'
     const characters = await searchCharacters(query, 30);

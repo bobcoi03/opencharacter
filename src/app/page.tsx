@@ -190,7 +190,7 @@ export default async function Page({
   const conversations = await getConversations()
 
   return (
-    <div className="text-white w-full overflow-y-auto overflow-x-hidden md:pl-16">
+    <div className="text-white w-full overflow-y-auto overflow-x-hidden md:pl-16 p-2">
       <PricingBanner />
       <Suspense key={searchParams.id}>
         {!conversations.error && conversations.conversations && conversations.conversations?.length > 0 && <RecentConversation characters={conversations.conversations} />}
@@ -220,8 +220,8 @@ export default async function Page({
           <Link href="https://github.com/bobcoi03/opencharacter" target="_blank" className="hover:text-foreground transition-colors duration-200">
             Github
           </Link>
-          <Link href="https://buymeacoffee.com/luongquangn" target="_blank" className="hover:text-foreground transition-colors duration-200">
-            Donate
+          <Link href={"https://www.instagram.com/opencharacter_/"} target="_blank" className="hover:text-foreground transition-colors duration-200">
+            Instagram            
           </Link>
           <Link href="/privacy-policy" className="hover:text-foreground transition-colors duration-200">
             Privacy Policy
