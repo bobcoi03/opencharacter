@@ -7,14 +7,12 @@ import {
   characters,
   chat_sessions,
   ChatMessageArray,
-  personas,
   subscriptions,
 } from "@/server/db/schema";
 import { db } from "@/server/db";
 import { eq, and, desc, sql, or } from "drizzle-orm";
 import { auth } from "@/server/auth";
-import { isValidModel, isPaidModel, isDAWModel } from "@/lib/llm_models";
-import { PAID_USER_IDS } from "@/lib/utils";
+import { isValidModel, isPaidModel } from "@/lib/llm_models";
 
 type ErrorResponse = {
   error: {
@@ -147,6 +145,8 @@ export async function continueConversation(
   model_name: string,
   character: typeof characters.$inferSelect,
   chat_session_id?: string,
+  base_url?: string,
+  api_key?: string,
 ) {
   console.log("Starting continueConversation with:", {
     modelName: model_name,
@@ -280,43 +280,56 @@ export async function continueConversation(
 
   try {
     let response;
+    if (!isValidModel(model_name) && !base_url) {
+      console.log("INVALID MODEL NAME:", model_name);
+      throw new Error("Invalid model: " + model_name);
+    }
 
-    if (isDAWModel(model_name)) {
-      console.log("Using DAW model:", model_name);
-      if (!process.env.DAW_API_KEY) {
-        console.error("DAW API key not configured");
-        return { error: true, message: "DAW service is currently unavailable" };
+    if (base_url) {
+      console.log("Using custom base URL:", base_url);
+      console.log("Using custom API key:", api_key);
+      console.log("Using custom model:", model_name);
+
+      // Clean messages by removing id field
+      const cleanMessages = messages.map(({ id, ...rest }) => rest);
+
+      // Prepare headers with required fields but allow for API-specific headers
+      const headers: Record<string, string> = {
+        "Authorization": `Bearer ${api_key}`,
+        "Content-Type": "application/json",
+      };
+
+      // Prepare the request body with all possible parameters
+      const requestBody = {
+        model: model_name,
+        messages: cleanMessages,
+        stream: true,
+        temperature: character.temperature ?? 1.0,
+        top_p: character.top_p ?? 1.0,
+        max_tokens: character.max_tokens ?? 1000,
+      };
+
+      try {
+        response = await fetch(base_url, {
+          method: "POST",
+          headers,
+          body: JSON.stringify(requestBody),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.text();
+          console.error("API Error Response:", {
+            status: response.status,
+            statusText: response.statusText,
+            data: errorData,
+          });
+          throw new Error(`API request failed: ${errorData}`);
+        }
+      } catch (error) {
+        console.error("Failed to make API request:", error);
+        throw error;
       }
-
-      const sessionId = chat_session_id ?? chatSession?.id;
-      console.log("Making DAW API request with session:", sessionId);
-
-      response = await fetch("https://daw.isinyour.skin/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${process.env.DAW_API_KEY}`,
-          "UserID": session.user.id!,
-          "SessionID": sessionId ?? "00000000-0000-0000-0000-000000000000",
-          "CharacterID": character.id
-        },
-        body: JSON.stringify({
-          messages: messages,
-          model: model_name,
-          temperature: character.temperature ?? 1.0,
-          top_p: character.top_p ?? 1.0,
-          top_k: character.top_k ?? 0,
-          frequency_penalty: character.frequency_penalty ?? 0.0,
-          presence_penalty: character.presence_penalty ?? 0.0,
-          max_tokens: character.max_tokens ?? 1000,
-          stream: true,
-        })
-      });
     } else {
-      if (!isValidModel(model_name)) {
-        console.log("INVALID MODEL NAME:", model_name);
-        throw new Error("Invalid model: " + model_name);
-      }
-
       console.log("Making OpenRouter API request with model:", model_name);
       response = await fetch("https://openrouter.helicone.ai/api/v1/chat/completions", {
         method: "POST",
@@ -463,11 +476,10 @@ export async function continueConversation(
     const streamValue = createStreamableValue(stream1);
 
     // Use the second branch for accumulating the full completion
-
     return streamValue.value;
   } catch (error) {
     console.error("Failed to generate response:", error);
-    throw new Error("Failed to generate response. Please try again.");
+    throw new Error(error as string);
   }
 }
 

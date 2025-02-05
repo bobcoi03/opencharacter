@@ -102,7 +102,7 @@ export function ModelSelector({ selectedModel, onModelSelect }: ModelSelectorPro
             {!isSubscribed && (
               <Link
                 href="/plans"
-                className="w-full p-4 bg-stone-900 rounded-lg text-white text-[9px] flex items-center justify-center"
+                className="w-full border-black border p-4 bg-black rounded-lg text-white text-[9px] flex items-center justify-center"
               >
                 Upgrade for all models, faster response times, more memory
               </Link>

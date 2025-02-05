@@ -9,31 +9,6 @@ type Models = {
 };
 
 export const models: Models = {
-    "DAW API - gpt-4o-mini": {
-        id: "DAW API - gpt-4o-mini",
-        name: "DAW API - gpt-4o-mini",
-        paid: false
-    },
-    "DAW API - gpt-3.5-turbo": {
-        id: "DAW API - gpt-3.5-turbo",
-        name: "DAW API - gpt-3.5-turbo",
-        paid: false
-    },
-    "DAW API - gpt-4o-free": {
-        id: "DAW API - gpt-4o-free",
-        name: "DAW API - gpt-4o-free",
-        paid: false
-    },
-    "DAW API - gemini-pro": {
-        id: "DAW API - gemini-pro",
-        name: "DAW API - gemini-pro",
-        paid: false
-    },
-    "DAW API - llama-3.1-405b-instruct-free": {
-        id: "DAW API - llama-3.1-405b-instruct-free",
-        name: "DAW API - llama-3.1-405b-instruct-free",
-        paid: false
-    },
     "liquid/lfm-7b": {
         id: "liquid/lfm-7b",
         name: "liquid/lfm-7b",

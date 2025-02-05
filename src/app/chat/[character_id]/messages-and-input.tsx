@@ -501,6 +501,8 @@ export default function MessageAndInput({
         selectedModel,
         character,
         chat_session,
+        localStorage.getItem('openai_base_url') ?? undefined,
+        localStorage.getItem('openai_api_key') ?? undefined,
       );
       if ("error" in result) {
         setError(true);
@@ -548,6 +550,7 @@ export default function MessageAndInput({
     } catch (err) {
       console.log(err)
       setError(true);
+      setErrorMessage((err as any).message)
     } finally {
       setIsLoading(false);
       if (regenerate) {
@@ -809,7 +812,7 @@ export default function MessageAndInput({
                     clipRule="evenodd"
                   />
                 </svg>
-                {errorMessage}, please try again
+                {errorMessage}
               </p>
               <RotateCcw
                 className="w-5 h-5 text-red-500 cursor-pointer hover:text-red-600 ml-2"
