@@ -299,6 +299,21 @@ export const models: Models = {
         name: "meta-llama/llama-3.3-70b-instruct",
         paid: true,
     },
+    "deepseek/deepseek-r1-distill-llama-3.1-70b": {
+        id: "deepseek/deepseek-r1-distill-llama-3.1-70b",
+        name: "deepseek/deepseek-r1-distill-llama-3.1-70b",
+        paid: true,
+    },
+    "deepseek/deepseek-r1:free": {
+        id: "deepseek/deepseek-r1:free",
+        name: "deepseek/deepseek-r1:free",
+        paid: false,
+    },
+    "deepseek/deepseek-r1": {
+        id: "deepseek/deepseek-r1",
+        name: "deepseek/deepseek-r1",
+        paid: false,
+    },
 };
 
 export const getModelIds = (): string[] => Object.keys(models);

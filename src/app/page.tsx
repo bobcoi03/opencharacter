@@ -7,7 +7,7 @@ import { Suspense } from "react";
 import { Check } from "lucide-react";
 import { getConversations } from "./actions";
 import { Card, CardContent } from "@/components/ui/card";
-import { Footer } from "@/components/footer";
+import { CTACard, Footer } from "@/components/footer";
 
 export const runtime = "edge";
 const ITEMS_PER_PAGE = 36;
@@ -192,7 +192,7 @@ export default async function Page({
 
   return (
     <div className="text-white w-full overflow-y-auto overflow-x-hidden md:pl-16 p-2">
-      <PricingBanner />
+      <CTACard />
       <Suspense key={searchParams.id}>
         {!conversations.error && conversations.conversations && conversations.conversations?.length > 0 && <RecentConversation characters={conversations.conversations} />}
         <AICharacterGrid 
@@ -205,47 +205,3 @@ export default async function Page({
     </div>
   );
 }
-
-const PricingBanner = () => {
-  const features = [
-    "Access to all models (free + paid)",
-    "Up to 64x more memory",
-    "Up to 3x faster response time",
-    "Unlimited messages"
-  ];
-
-  return (
-    <div className="my-12 p-4">
-      <Link href="/plans" className="block">
-        <div className="relative overflow-hidden rounded-lg border border-slate-600 p-8 md:p-12 hover:border-slate-500 transition-colors duration-200 bg-[url('/bg-banner-premium.webp')] bg-cover">
-          <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2">
-            <div className="h-24 w-24 rounded-full bg-blue-500/20 blur-2xl"></div>
-          </div>
-          
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-            <div className="flex-1 space-y-4">
-              <div>
-                <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">
-                  Upgrade to Premium
-                </h2>
-                <p className="text-gray-300 text-lg">
-                  Starting at just <span className="text-white font-semibold">$12/month</span>
-                </p>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                {features.map((feature, index) => (
-                  <div key={index} className="flex items-center gap-2">
-                    <Check className="h-5 w-5 text-green-400 flex-shrink-0" />
-                    <span className="text-sm text-gray-200">{feature}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-          </div>
-        </div>
-      </Link>
-    </div>
-  );
-};
