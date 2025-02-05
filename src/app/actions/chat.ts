@@ -8,6 +8,7 @@ import {
   chat_sessions,
   ChatMessageArray,
   personas,
+  subscriptions,
 } from "@/server/db/schema";
 import { db } from "@/server/db";
 import { eq, and, desc, sql, or } from "drizzle-orm";
@@ -162,12 +163,21 @@ export async function continueConversation(
   }
 
   // Check if the model is paid and if the user has access
-  if (isPaidModel(model_name) && !PAID_USER_IDS.includes(session.user.id!)) {
-    console.log("User attempted to use paid model without access:", {
-      userId: session.user.id,
-      model: model_name
+  if (isPaidModel(model_name)) {
+    // Check if user has an active subscription
+    const subscription = await db.query.subscriptions.findFirst({
+      where: eq(subscriptions.userId, session.user.id!),
     });
-    return { error: true, message: "Model is only available to valued anons" };
+
+    const isSubscribed = subscription?.status === "active" || subscription?.status === "trialing";
+
+    if (!isSubscribed) {
+      console.log("User attempted to use paid model without active subscription:", {
+        userId: session.user.id,
+        model: model_name
+      });
+      return { error: true, message: "You must be a paid user to use this model" };
+    }
   }
 
   // Check if the character is public or if it's private and belongs to the user

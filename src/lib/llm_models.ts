@@ -304,15 +304,10 @@ export const models: Models = {
         name: "deepseek/deepseek-r1-distill-llama-3.1-70b",
         paid: true,
     },
-    "deepseek/deepseek-r1:free": {
-        id: "deepseek/deepseek-r1:free",
-        name: "deepseek/deepseek-r1:free",
-        paid: false,
-    },
     "deepseek/deepseek-r1": {
         id: "deepseek/deepseek-r1",
         name: "deepseek/deepseek-r1",
-        paid: false,
+        paid: true,
     },
 };
 
