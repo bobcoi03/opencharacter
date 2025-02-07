@@ -29,7 +29,7 @@ export async function POST() {
     // Create customer portal session
     const portalSession = await stripe.billingPortal.sessions.create({
         customer: customerData.stripeCustomerId,
-        return_url: `http://localhost:3000/subscription`,
+        return_url: `https://opencharacter.org/subscription`,
     });
 
     return NextResponse.json({ url: portalSession.url });
