@@ -9,30 +9,15 @@ type Models = {
 };
 
 export const models: Models = {
-    "DAW API - gpt-4o-mini": {
-        id: "DAW API - gpt-4o-mini",
-        name: "DAW API - gpt-4o-mini",
-        paid: false
+    "liquid/lfm-7b": {
+        id: "liquid/lfm-7b",
+        name: "liquid/lfm-7b",
+        paid: false,
     },
-    "DAW API - gpt-3.5-turbo": {
-        id: "DAW API - gpt-3.5-turbo",
-        name: "DAW API - gpt-3.5-turbo",
-        paid: false
-    },
-    "DAW API - gpt-4o-free": {
-        id: "DAW API - gpt-4o-free",
-        name: "DAW API - gpt-4o-free",
-        paid: false
-    },
-    "DAW API - gemini-pro": {
-        id: "DAW API - gemini-pro",
-        name: "DAW API - gemini-pro",
-        paid: false
-    },
-    "DAW API - llama-3.1-405b-instruct-free": {
-        id: "DAW API - llama-3.1-405b-instruct-free",
-        name: "DAW API - llama-3.1-405b-instruct-free",
-        paid: false
+    "liquid/lfm-3b": {
+        id: "liquid/lfm-3b",
+        name: "liquid/lfm-3b",
+        paid: false,
     },
     "mistralai/ministral-3b": {
         id: "mistralai/ministral-3b",
@@ -52,6 +37,11 @@ export const models: Models = {
     "amazon/nova-micro-v1": {
         id: "amazon/nova-micro-v1",
         name: "amazon/nova-micro-v1",
+        paid: false,
+    },
+    "microsoft/phi-4": {
+        id: "microsoft/phi-4",
+        name: "microsoft/phi-4",
         paid: false,
     },
     "microsoft/wizardlm-2-7b": {
@@ -129,12 +119,16 @@ export const models: Models = {
         name: "undi95/toppy-m-7b:nitro",
         paid: false,
     },
+    "amazon/nova-lite-v1": {
+        id: "amazon/nova-lite-v1",
+        name: "amazon/nova-lite-v1",
+        paid: false,
+    },
     "thedrummer/unslopnemo-12b": {
         id: "thedrummer/unslopnemo-12b",
         name: "thedrummer/unslopnemo-12b",
         paid: true,
     },
-    
     "meta-llama/llama-3.1-70b-instruct": {
         id: "meta-llama/llama-3.1-70b-instruct",
         name: "meta-llama/llama-3.1-70b-instruct",
@@ -223,6 +217,71 @@ export const models: Models = {
     "mistralai/mistral-small": {
         id: "mistralai/mistral-small",
         name: "mistralai/mistral-small",
+        paid: true,
+    },
+    "qwen/qwen-turbo": {
+        id: "qwen/qwen-turbo",
+        name: "qwen/qwen-turbo",
+        paid: true,
+    },
+    "qwen/qwen-plus": {
+        id: "qwen/qwen-plus",
+        name: "qwen/qwen-plus",
+        paid: true,
+    },
+    "deepseek/deepseek-r1-distill-qwen-1.5b": {
+        id: "deepseek/deepseek-r1-distill-qwen-1.5b",
+        name: "deepseek/deepseek-r1-distill-qwen-1.5b",
+        paid: true,
+    },
+    "mistralai/mistral-small-24b-instruct-2501": {
+        id: "mistralai/mistral-small-24b-instruct-2501",
+        name: "mistralai/mistral-small-24b-instruct-2501",
+        paid: true,
+    },
+    "deepseek/deepseek-r1-distill-qwen-32b": {
+        id: "deepseek/deepseek-r1-distill-qwen-32b",
+        name: "deepseek/deepseek-r1-distill-qwen-32b",
+        paid: true,
+    },
+    "deepseek/deepseek-r1-distill-llama-70b": {
+        id: "deepseek/deepseek-r1-distill-llama-70b",
+        name: "deepseek/deepseek-r1-distill-llama-70b",
+        paid: true,
+    },
+    "qwen/qvq-72b-preview": {
+        id: "qwen/qvq-72b-preview",
+        name: "qwen/qvq-72b-preview",
+        paid: true,
+    },
+    "qwen/qwq-32b-preview": {
+        id: "qwen/qwq-32b-preview",
+        name: "qwen/qwq-32b-preview",
+        paid: true,
+    },
+    "qwen/qwen-2.5-coder-32b-instruct": {
+        id: "qwen/qwen-2.5-coder-32b-instruct",
+        name: "qwen/qwen-2.5-coder-32b-instruct",
+        paid: true,
+    },
+    "mistralai/codestral-2501": {
+        id: "mistralai/codestral-2501",
+        name: "mistralai/codestral-2501",
+        paid: true,
+    },
+    "meta-llama/llama-3.3-70b-instruct": {
+        id: "meta-llama/llama-3.3-70b-instruct",
+        name: "meta-llama/llama-3.3-70b-instruct",
+        paid: true,
+    },
+    "deepseek/deepseek-r1-distill-llama-3.1-70b": {
+        id: "deepseek/deepseek-r1-distill-llama-3.1-70b",
+        name: "deepseek/deepseek-r1-distill-llama-3.1-70b",
+        paid: true,
+    },
+    "deepseek/deepseek-r1": {
+        id: "deepseek/deepseek-r1",
+        name: "deepseek/deepseek-r1",
         paid: true,
     },
 };

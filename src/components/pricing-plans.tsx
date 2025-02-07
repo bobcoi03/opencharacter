@@ -1,287 +1,240 @@
 "use client"
 
-import React from 'react'
-import { getModelArray } from "@/lib/llm_models"
-import { Check, ChevronDown } from "lucide-react"
-import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useEffect } from "react"
+import { useSession, signIn } from "next-auth/react"
+import { useRouter } from "next/navigation"
+import { Check, Loader2 } from "lucide-react"
+import { motion } from "framer-motion"
+import { Button } from "@/components/ui/button"
 
-interface Model {
-  id: string
-  name: string
-  paid: boolean
+interface PricingOption {
+  label: string
+  value: string
+  price: number
+  priceId: string
 }
 
 interface PlanCardProps {
   title: string
   price: string
-  subPrice?: string
   features: string[]
-  models: Model[]
   buttonText: string
-  buttonAction: string
-  isStandard?: boolean
-  isPro?: boolean
+  isPro: boolean
+  billingCycle: string
+  pricingOptions: PricingOption[]
 }
 
-interface PricingOption {
-  label: string
-  value: string
-  monthlyPrice: number
-  savings?: number
-}
-
-const PlanCard: React.FC<PlanCardProps> = ({ 
-  title, 
-  price, 
-  subPrice, 
-  features, 
-  models, 
-  buttonText, 
-  buttonAction, 
-  isStandard,
-  isPro 
+const PlanCard: React.FC<PlanCardProps> = ({
+  title,
+  price,
+  features,
+  buttonText,
+  isPro,
+  billingCycle,
+  pricingOptions,
 }) => {
-  const [isModelsOpen, setIsModelsOpen] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const { data: session } = useSession()
+  const [hasSubscription, setHasSubscription] = useState(false)
+  const router = useRouter()
+
+  useEffect(() => {
+    async function checkSubscription() {
+      if (session?.user?.id) {
+        try {
+          const response = await fetch("/api/subscriptions/check")
+          const data = (await response.json()) as { hasActiveSubscription: boolean }
+          setHasSubscription(data.hasActiveSubscription)
+        } catch (error) {
+          console.error("Failed to check subscription status", error)
+        }
+      }
+    }
+    checkSubscription()
+  }, [session?.user?.id])
+
+  const handleUpgrade = async () => {
+    if (!session) {
+      signIn("google", { redirect: true })
+      return
+    }
+
+    if (hasSubscription && isPro) {
+      router.push("/subscription")
+      return
+    }
+
+    setIsLoading(true)
+    const selectedPriceId = pricingOptions.find((option) => option.value === billingCycle)?.priceId
+
+    const response = await fetch("/api/subscriptions/create", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ priceId: selectedPriceId }),
+    })
+
+    if (response.ok) {
+      const { url } = (await response.json()) as any
+      window.location.href = url
+    } else {
+      console.error("Failed to create subscription")
+    }
+    setIsLoading(false)
+  }
+
+  // Don't show button for free tier if user is signed in
+  if (!isPro && session) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="relative rounded-[32px] border border-zinc-800 bg-black p-6 transition-all duration-300 hover:border-zinc-700 w-full max-w-sm"
+      >
+        <div className="flex flex-col h-full">
+          <h3 className="text-xl font-semibold mb-1">{title}</h3>
+          <div className="mb-4">
+            <div className="flex items-baseline">
+              <span className="text-5xl font-bold">{price}</span>
+            </div>
+          </div>
+
+          <h2 className="text-sm text-zinc-400 mb-3">{isPro ? "Everything in Hobby, plus" : "Includes"}</h2>
+
+          <ul className="space-y-2 mb-6 flex-1">
+            {features.map((feature, index) => (
+              <li key={index} className="flex items-center text-xs text-zinc-300">
+                <Check className="mr-2 h-3.5 w-3.5 text-white shrink-0" />
+                <span>{feature}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </motion.div>
+    )
+  }
+
+  const getButtonText = () => {
+    if (isLoading) return <Loader2 className="animate-spin mx-auto h-4" />
+    if (hasSubscription && isPro) return "Manage"
+    return buttonText
+  }
 
   return (
-    <div
-      className={`p-6 rounded-xl ${
-        isStandard ? 'bg-gradient-to-br from-primary to-primary/90 text-black' : 
-        isPro ? 'bg-gradient-to-br from-violet-600 to-violet-500 text-white' : 
-        'bg-secondary'
-      } shadow-lg flex flex-col h-full transition-all duration-300 hover:shadow-xl`}
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className={`relative rounded-[32px] border flex flex-col w-full max-w-sm ${
+        isPro ? "bg-gradient-to-t from-pink-900 to-black" : "bg-black"
+      } border-zinc-800 p-6 transition-all duration-300 hover:border-zinc-700`}
     >
-      <h2 className="text-xl font-bold mb-2">{title}</h2>
-      <div className="mb-4">
-        <p className="text-3xl font-bold">{price}</p>
-        {subPrice && <p className="text-sm opacity-75 mt-1">{subPrice}</p>}
-      </div>
-      <ul className="mb-4 flex-grow space-y-2">
-        {features.map((feature, index) => (
-          <li key={index} className="flex items-center">
-            <Check className="mr-2 text-green-400" size={16} />
-            <span className="text-sm">{feature}</span>
-          </li>
-        ))}
-      </ul>
-      {!isPro && (
+      <div className="flex flex-col h-full">
+        <h3 className="text-xl font-semibold mb-1">{title}</h3>
         <div className="mb-4">
-          <button 
-            onClick={() => setIsModelsOpen(!isModelsOpen)}
-            className="w-full flex items-center justify-between font-semibold text-sm uppercase tracking-wide hover:opacity-80 transition-opacity"
-          >
-            <span>Included Models</span>
-            <ChevronDown 
-              size={18} 
-              className={`transition-transform duration-200 ${isModelsOpen ? 'rotate-180' : ''}`}
-            />
-          </button>
-          <div className={`grid grid-cols-2 gap-2 overflow-hidden transition-all duration-200 ${
-            isModelsOpen ? 'mt-2 max-h-96' : 'max-h-0'
-          }`}>
-            {models.map((model, index) => (
-              <ul key={index} className="text-[9px] bg-background/10 rounded px-2 py-1">{model.name}</ul>
-            ))}
+          <div className="flex items-baseline">
+            <span className="text-5xl font-bold">{price}</span>
+            {price !== "Free" && (
+              <span className="text-zinc-400 ml-2 text-xs">{billingCycle === "yearly" ? "/user/month" : "/month"}</span>
+            )}
           </div>
         </div>
-      )}
-      <Link href={buttonAction} target="_blank">
-        <button
-          className={`${
-            isStandard ? 'bg-background text-primary' : 
-            isPro ? 'bg-white text-violet-600' :
-            'bg-primary text-background'
-          } py-2 px-3 rounded-lg font-medium transition duration-300 hover:opacity-90 hover:scale-105 transform w-full`}
+
+        <h2 className="text-sm text-zinc-400 mb-3">{isPro ? "Everything in Hobby, plus" : "Includes"}</h2>
+
+        <ul className="space-y-2 mb-6 flex-1">
+          {features.map((feature, index) => (
+            <li key={index} className="flex items-center text-xs text-zinc-300">
+              <Check className="mr-2 h-3.5 w-3.5 text-white shrink-0" />
+              <span>{feature}</span>
+            </li>
+          ))}
+        </ul>
+
+        <Button
+          variant={isPro ? "default" : "secondary"}
+          size="default"
+          disabled={isLoading}
+          onClick={handleUpgrade}
+          className="w-full rounded-full bg-white text-black hover:bg-zinc-200 text-sm py-2"
         >
-          {buttonText}
-        </button>
-      </Link>
-    </div>
+          {getButtonText()}
+        </Button>
+      </div>
+    </motion.div>
   )
 }
 
 const Plans: React.FC = () => {
-  const [billingCycle, setBillingCycle] = useState<string>('monthly')
-  const allModels = getModelArray()
-  const freeModels = allModels.filter(model => !model.paid)
-  const paidModels = allModels.filter(model => model.paid)
+  const [billingCycle, setBillingCycle] = useState<string>("monthly")
 
   const pricingOptions: PricingOption[] = [
     {
       label: "Monthly",
       value: "monthly",
-      monthlyPrice: 12,
-    },
-    {
-      label: "3 Months",
-      value: "quarterly",
-      monthlyPrice: 11,
-      savings: 8.3
-    },
-    {
-      label: "6 Months",
-      value: "biannual",
-      monthlyPrice: 10,
-      savings: 16.7
+      price: 15,
+      priceId: "price_1QpzDAAT8u0C5FCyLTyBSZQg",
     },
     {
       label: "Yearly",
       value: "yearly",
-      monthlyPrice: 9,
-      savings: 25
-    }
+      price: 10,
+      priceId: "price_1QpzEKAT8u0C5FCyUP29l0SV",
+    },
   ]
 
-  const proPricingOptions: PricingOption[] = [
-    {
-      label: "Monthly",
-      value: "monthly",
-      monthlyPrice: 50,
-    },
-    {
-      label: "3 Months",
-      value: "quarterly",
-      monthlyPrice: 45,
-      savings: 10
-    },
-    {
-      label: "6 Months",
-      value: "biannual",
-      monthlyPrice: 40,
-      savings: 20
-    },
-    {
-      label: "Yearly",
-      value: "yearly",
-      monthlyPrice: 35,
-      savings: 30
-    }
-  ]
-
-  const selectedOption = pricingOptions.find(option => option.value === billingCycle)!
-  const selectedProOption = proPricingOptions.find(option => option.value === billingCycle)!
-
-  const getStandardPlanPrice = () => {
-    const monthlyPrice = selectedOption.monthlyPrice
-    const months = {
-      monthly: 1,
-      quarterly: 3,
-      biannual: 6,
-      yearly: 12
-    }[billingCycle]
-    
-    return `$${monthlyPrice * months!}/${billingCycle === 'monthly' ? 'month' : 'total'}`
-  }
-
-  const getStandardPlanSubPrice = () => {
-    if (billingCycle === 'monthly') return undefined
-    return `$${selectedOption.monthlyPrice}/month, billed ${billingCycle}${selectedOption.savings ? ` (Save ${selectedOption.savings}%)` : ''}`
-  }
-
-  const getProPlanPrice = () => {
-    const monthlyPrice = selectedProOption.monthlyPrice
-    const months = {
-      monthly: 1,
-      quarterly: 3,
-      biannual: 6,
-      yearly: 12
-    }[billingCycle]
-    
-    return `$${monthlyPrice * months!}/${billingCycle === 'monthly' ? 'month' : 'total'}`
-  }
-
-  const getProPlanSubPrice = () => {
-    if (billingCycle === 'monthly') return undefined
-    return `$${selectedProOption.monthlyPrice}/month, billed ${billingCycle}${selectedProOption.savings ? ` (Save ${selectedProOption.savings}%)` : ''}`
-  }
+  const selectedOption = pricingOptions.find((option) => option.value === billingCycle)!
 
   return (
-    <div className="container mx-auto px-4 py-4 text-foreground mb-24">
-      <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-6 rounded">
-        <p className="font-bold text-center">Note:</p>
-        <p className='text-center'>I haven{"'"}t implemented payments yet, so you{"'"}ll have to <Link href="https://discordapp.com/users/368400765754277889" target="_blank" className="text-blue-500 underline">DM me on Discord</Link></p>
-      </div>
-      <h1 className="text-3xl font-bold text-center mb-8">Choose Your Plan</h1>
-      
-      <div className="flex justify-center items-center gap-2 mb-6 max-w-full">
-        <div className="inline-flex p-1 bg-secondary rounded-lg">
-          {pricingOptions.map((option) => (
-            <button
-              key={option.value}
-              onClick={() => setBillingCycle(option.value)}
-              className={`px-2 py-1 rounded-md text-[10px] transition-all duration-200 ${
-                billingCycle === option.value
-                  ? 'bg-primary text-background'
-                  : 'hover:bg-background/10'
-              }`}
-            >
-              {option.label}
-              {option.savings && (
-                <span className="ml-1 text-xs opacity-75">
-                  (-{option.savings}%)
-                </span>
-              )}
-            </button>
-          ))}
+    <div>
+      <div className="flex justify-center mb-8">
+        <div className="inline-flex items-center rounded-full border border-zinc-800 p-1 bg-black">
+          <button
+            onClick={() => setBillingCycle("monthly")}
+            className={`px-3 py-1.5 text-xs rounded-full transition-all ${
+              billingCycle === "monthly" ? "bg-zinc-800 text-white" : "text-zinc-400"
+            }`}
+          >
+            MONTHLY
+          </button>
+          <button
+            onClick={() => setBillingCycle("yearly")}
+            className={`px-3 py-1.5 text-xs rounded-full transition-all flex items-center gap-2 ${
+              billingCycle === "yearly" ? "bg-zinc-800 text-white" : "text-zinc-400"
+            }`}
+          >
+            YEARLY <span className="text-[10px] text-green-500">(SAVE 33%)</span>
+          </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+      <div className="grid w-full grid-cols-1 md:grid-cols-2 gap-6 mx-auto max-w-3xl place-items-center md:place-items-stretch">
         <PlanCard
-          title="Free Plan"
-          price="$0/month"
-          features={[
-            "Access to all free models",
-            "Standard memory allocation",
-            "Regular response speed",
-            "Unlimited messages",
-            "Creator Dashboard"
-          ]}
-          models={freeModels}
-          buttonText="Get Started"
-          buttonAction="/signin"
+          title="Hobby"
+          price="Free"
+          features={["Access to basic models", "Unlimited completions", "Characters", "Personas"]}
+          buttonText="GET STARTED"
+          billingCycle={billingCycle}
+          pricingOptions={pricingOptions}
+          isPro={false}
         />
         <PlanCard
-          title="Standard Plan"
-          price={getStandardPlanPrice()}
-          subPrice={getStandardPlanSubPrice()}
+          title="Pro"
+          price={`$${selectedOption.price}`}
           features={[
-            "Access to all models (free + paid)",
-            "Up to 64x more memory",
-            "Up to 3x faster response time",
-            "Higher quality messages",
-            "Unlimited messages",
-            "Profile Badge",
-            "Creator Dashboard",
-          ].filter((feature): feature is string => feature !== undefined)}
-          models={paidModels}
-          buttonText="Upgrade Now"
-          buttonAction="https://discordapp.com/users/368400765754277889"
-          isStandard
-        />
-        <PlanCard
-          title="Pro Plan"
-          price={getProPlanPrice()}
-          subPrice={getProPlanSubPrice()}
-          features={[
-            "Everything in Standard Plan",
-            "Highest quality messages",
-            "Unlimited messages",
-            "Profile Badge",
+            "No ads",
+            "Access to all models",
+            "Unlimited premium model completions",
             "Creator Dashboard",
             "Priority support",
-            "Access to GPT-4o",
-            "GPT-o1",
-            "GPT-o1-mini",
-            "Claude 3.5 Sonnet",
-            "Claude Opus",
-            "Gemini 1.5 Pro",
-          ].filter((feature): feature is string => feature !== undefined)}
-          models={paidModels}
-          buttonText="Upgrade Now"
-          buttonAction="https://discordapp.com/users/368400765754277889"
-          isPro
+            "Profile badge",
+          ]}
+          buttonText="GET STARTED"
+          isPro={true}
+          billingCycle={billingCycle}
+          pricingOptions={pricingOptions}
         />
       </div>
     </div>
@@ -289,3 +242,4 @@ const Plans: React.FC = () => {
 }
 
 export default Plans
+

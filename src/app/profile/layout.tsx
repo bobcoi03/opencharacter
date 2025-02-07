@@ -7,6 +7,8 @@ import SettingsButton from "@/components/user-settings-button"
 import { db } from "@/server/db"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import ReactMarkdown from "react-markdown"
+import { Components } from "react-markdown"
 
 type User = typeof users.$inferSelect;
 
@@ -42,6 +44,21 @@ export default async function ProfileLayout({ children, params }: { children: Re
 
     const chatCountDisplay = chatCount?.totalInteractions ?? 0;
 
+    const markdownComponents: Partial<Components> = {
+        p: ({ children }) => <p className="mb-2 last:mb-0 text-wrap break-words text-neutral-300">{children}</p>,
+        em: ({ children }) => <em className="text-neutral-300 text-wrap break-words">{children}</em>,
+        code: ({ children }) => (
+            <code className="bg-neutral-800 px-1 py-0.5 rounded text-sm text-neutral-200">
+                {children}
+            </code>
+        ),
+        pre: ({ children }) => (
+            <pre className="bg-neutral-800 p-2 rounded text-sm text-neutral-200 whitespace-pre-wrap break-words overflow-x-auto">
+                {children}
+            </pre>
+        ),
+    };
+
     return (
         <div className="flex justify-center bg-neutral-900">
             <div className="bg-neutral-900 text-white p-4 w-full max-w-lg">
@@ -54,7 +71,12 @@ export default async function ProfileLayout({ children, params }: { children: Re
                         />
                     </div>
                     <h1 className="text-xl font-bold mb-1">{user.name ?? 'User'}</h1>
-                    <p>{user.bio}</p>
+                    <ReactMarkdown
+                        className="text-md text-wrap break-words text-center"
+                        components={markdownComponents}
+                    >
+                        {user.bio ?? ''}
+                    </ReactMarkdown>
                     <p className="text-sm text-neutral-400 mb-2">
                     <MessageCircle className="inline w-4 h-4 mr-1" /> {chatCountDisplay} Chats
                     </p>

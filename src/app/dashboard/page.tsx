@@ -1,11 +1,15 @@
 import { auth } from "@/server/auth";
+import { redirect } from "next/navigation";
 import { db } from "@/server/db";
-import { chat_sessions, characters } from "@/server/db/schema";
+import { chat_sessions, characters, subscriptions } from "@/server/db/schema";
 import { eq, and, gte, sql } from "drizzle-orm";
 import { ChatMessageArray } from "@/server/db/schema";
 import LineChartDashboard from "@/components/line-chart";
 import RecentMessages from "@/components/recent-messages";
 import BarChartDashboard from "@/components/bar-chart";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Showcase } from "@/components/showcase";
 
 export const runtime = "edge";
 
@@ -201,6 +205,43 @@ async function getUserCountData() {
 }
     
 export default async function Dashboard() {
+  const session = await auth();
+  const user = session?.user;
+
+  if (!user?.id) {
+    redirect("/login");
+  }
+
+  // Check if user has an active Pro subscription
+  const userSubscription = await db.query.subscriptions.findFirst({
+    where: and(
+      eq(subscriptions.userId, user.id),
+      eq(subscriptions.status, "active"),
+    ),
+  });
+
+  if (!userSubscription) {
+    return (
+      <div className="text-white">
+        <div className="max-w-7xl mx-auto px-2 md:px-4 py-12">
+          <div className="flex flex-col items-center justify-center">
+            <Button asChild className="rounded-full mx-auto">
+              <Link href="/plans">View Plans</Link>
+            </Button>
+          </div>
+          <Showcase
+            className={""}
+            backgroundImage="/gradient.jpeg"
+            description="Get access to the Creator Dashboard and track how users interact with your characters"
+            title="Upgrade to Pro"
+            videoClassName="w-[95%] md:w-[90%] absolute bottom-0 left-0 right-0 mx-auto rounded-t-xl"
+            videoUrl="https://random-stuff-everythingcompany.s3.us-west-1.amazonaws.com/dashboard-showcase.mp4"
+          />
+        </div>
+      </div>
+    );
+  }
+
   const messageData = await getMessageData();
   const recentMessages = await getRecentMessages();
   const userCountData = await getUserCountData();

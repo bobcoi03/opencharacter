@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Ellipsis, Share, Flag, Edit, MessageSquarePlus, UserPlus, MoreVertical, Globe } from 'lucide-react';
+import { Ellipsis, Share, Flag, Edit, MessageSquarePlus, UserPlus, MoreVertical, Globe, Settings } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import Image from 'next/image';
 import { Button } from "@/components/ui/button";
@@ -17,9 +17,10 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { personas as PersonaType } from '@/server/db/schema';
-import { toast, useToast } from "@/hooks/use-toast"
+import { useToast } from "@/hooks/use-toast"
 import ChatSessionDeleteButton from './chat-session-delete-button';
 import { Textarea } from './ui/textarea';
 import { Brain } from 'lucide-react';
@@ -27,6 +28,8 @@ import { CoreMessage } from 'ai';
 import { summarizeConversation, saveSummarization, fetchSummary, toggleChatSessionSharing, getChatSessionShareStatus } from '@/app/actions/chat';
 import { readStreamableValue } from 'ai/rsc';
 import { Switch } from './ui/switch';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 
 export default function EllipsisButton({ character, made_by_username, chat_session, messages }: { character: typeof characters.$inferSelect, made_by_username: string, chat_session: string | null, messages: CoreMessage[] }) {
   const [shareMessage, setShareMessage] = useState('');
@@ -39,9 +42,24 @@ export default function EllipsisButton({ character, made_by_username, chat_sessi
   const [memoryContent, setMemoryContent] = useState('');
   const [isLoadingAutoSummarize, setIsLoadingAutoSummarize] = useState(false);
   const [shareStatus, setShareStatus] = useState(false);
+  const [baseUrl, setBaseUrl] = useState('');
+  const [apiKey, setApiKey] = useState('');
+  const [modelInput, setModelInput] = useState('');
+  const [isOpenAISettingsOpen, setIsOpenAISettingsOpen] = useState(false);
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
   const router = useRouter();
   const [isTogglingShare, setIsTogglingShare] = useState(false);
   const { toast } = useToast();
+
+  useEffect(() => {
+    // Load saved settings from localStorage
+    const savedBaseUrl = localStorage.getItem('openai_base_url');
+    const savedApiKey = localStorage.getItem('openai_api_key');
+    const savedModel = localStorage.getItem('selectedModel');
+    if (savedBaseUrl) setBaseUrl(savedBaseUrl);
+    if (savedApiKey) setApiKey(savedApiKey);
+    if (savedModel) setModelInput(savedModel);
+  }, []);
 
   useEffect(() => {
     const fetchShareStatus = async () => {
@@ -253,6 +271,7 @@ export default function EllipsisButton({ character, made_by_username, chat_sessi
               <p className="text-xs text-gray-400">{character.interactionCount} chats</p>
             </div>
           </div>
+
           <div className="flex flex-col justify-between mb-4">
             <div 
               className="flex items-center cursor-pointer hover:bg-neutral-700 p-2 rounded-lg transition-colors" 
@@ -269,6 +288,123 @@ export default function EllipsisButton({ character, made_by_username, chat_sessi
               <span className="ml-2 text-gray-400">Edit</span>
             </Link>
           </div>
+
+          <Dialog open={isOpenAISettingsOpen} onOpenChange={setIsOpenAISettingsOpen}>
+            <DialogTrigger asChild>
+              <Button 
+                className="w-full mb-4 bg-neutral-700 hover:bg-neutral-600 text-gray-200 flex items-center justify-between py-2 px-4 rounded-full transition-colors"
+              >
+                <div className='flex items-center'>
+                  <Settings className="w-4 h-4 mr-2" />
+                  Proxy Settings
+                </div>
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px] bg-neutral-900 text-white">
+              <DialogHeader>
+                <DialogTitle>Proxy</DialogTitle>
+                <DialogDescription className='flex flex-col gap-2'>
+                  <p>Your OpenAI API compatible endpoints</p>
+                  <p className='text-xs text-gray-400'>We don{"'"}t store your API keys, they are stored in your browser{"'"}s localStorage.</p>
+                </DialogDescription>
+              </DialogHeader>
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                setIsSavingSettings(true);
+                try {
+                  // Store settings in localStorage
+                  localStorage.setItem('openai_base_url', baseUrl);
+                  localStorage.setItem('openai_api_key', apiKey);
+                  if (modelInput) {
+                    localStorage.setItem('selectedModel', modelInput);
+                    window.location.reload();
+                  }
+                  toast({
+                    title: "Settings saved",
+                    description: "Your proxy settings have been saved successfully.",
+                  });
+                  setIsOpenAISettingsOpen(false);
+                } catch (error) {
+                  console.error('Failed to save settings:', error);
+                  toast({
+                    title: "Error",
+                    description: "Failed to save settings. Please try again.",
+                    variant: "destructive",
+                  });
+                } finally {
+                  setIsSavingSettings(false);
+                }
+              }}>
+                <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="baseUrl" className="text-right">
+                      Completion URL
+                    </Label>
+                    <Input
+                      id="baseUrl"
+                      value={baseUrl}
+                      onChange={(e) => setBaseUrl(e.target.value)}
+                      placeholder="https://api.openai.com/v1/chat/completions"
+                      className="col-span-3 bg-neutral-800"
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="apiKey" className="text-right">
+                      API Key
+                    </Label>
+                    <Input
+                      id="apiKey"
+                      type="password"
+                      value={apiKey}
+                      onChange={(e) => setApiKey(e.target.value)}
+                      placeholder="sk-..."
+                      className="col-span-3 bg-neutral-800"
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="model" className="text-right">
+                      Model
+                    </Label>
+                    <Input
+                      id="model"
+                      value={modelInput}
+                      onChange={(e) => setModelInput(e.target.value)}
+                      placeholder="gpt-4-turbo-preview"
+                      className="col-span-3 bg-neutral-800"
+                    />
+                  </div>
+                </div>
+                <DialogFooter className="flex gap-2">
+                  <Button 
+                    variant="destructive"
+                    type="button"
+                    onClick={() => {
+                      localStorage.removeItem('openai_base_url');
+                      localStorage.removeItem('openai_api_key');
+                      localStorage.removeItem('selectedModel');
+                      setBaseUrl('');
+                      setApiKey('');
+                      setModelInput('');
+                      toast({
+                        title: "Settings cleared",
+                        description: "Your OpenAI settings have been removed.",
+                      });
+                    }}
+                  >
+                    Clear Settings
+                  </Button>
+                  <Button 
+                    type="submit" 
+                    className="bg-blue-600 hover:bg-blue-700"
+                    disabled={isSavingSettings}
+                  >
+                    {isSavingSettings ? 'Saving...' : 'Save Changes'}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
+
           <Link href={`/chat/${character.id}`} passHref>
             <Button 
               onClick={handleNewChat}
