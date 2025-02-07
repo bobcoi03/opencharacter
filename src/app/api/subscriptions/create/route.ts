@@ -56,7 +56,7 @@ export async function POST(request: Request) {
     }
 
     const checkoutSession = await stripe.checkout.sessions.create({
-        success_url: 'http://localhost:3000/subscription',
+        success_url: 'https://opencharacter.org/subscription',
         customer: stripeCustomerId,
         line_items: [
             {
