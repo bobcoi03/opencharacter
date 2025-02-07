@@ -305,7 +305,7 @@ export default function EllipsisButton({ character, made_by_username, chat_sessi
                 <DialogTitle>Proxy</DialogTitle>
                 <DialogDescription className='flex flex-col gap-2'>
                   <p>Your OpenAI API compatible endpoints</p>
-                  <p className='text-xs text-gray-400'>We don't store your API keys, they are stored in your browser's localStorage.</p>
+                  <p className='text-xs text-gray-400'>We don{"'"}t store your API keys, they are stored in your browser{"'"}s localStorage.</p>
                 </DialogDescription>
               </DialogHeader>
               <form onSubmit={async (e) => {

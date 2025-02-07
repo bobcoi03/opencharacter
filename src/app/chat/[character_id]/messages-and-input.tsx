@@ -42,7 +42,6 @@ import {
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { AdsProvider, InlineAd } from '@kontextso/sdk';
-import { PAID_USER_IDS } from "@/lib/utils";
 import { ModelSelector } from "@/components/model-selector";
 
 const MAX_TEXTAREA_HEIGHT = 450; // maximum height in pixels
@@ -306,6 +305,11 @@ const MessageContent: React.FC<MessageContentProps> = ({
   );
 };
 
+interface SubscriptionCheckResponse {
+  subscribed: boolean;
+  subscription: any | null;
+}
+
 export default function MessageAndInput({
   user,
   character,
@@ -313,7 +317,7 @@ export default function MessageAndInput({
   messages,
   chat_session,
   persona,
-  share = false, // Default value set to false
+  share = false,
 }: {
   user: User | undefined;
   character: typeof characters.$inferSelect;
@@ -321,7 +325,7 @@ export default function MessageAndInput({
   messages: CoreMessage[];
   chat_session?: string | undefined;
   persona?: typeof personas.$inferSelect | undefined;
-  share?: boolean; // Removed default value from type definition
+  share?: boolean;
 }) {
   const router = useRouter();
   const replacePlaceholders = (content: string | undefined) => {
@@ -355,6 +359,24 @@ export default function MessageAndInput({
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [isAgeVerified, setIsAgeVerified] = useState(false);
   const { toast } = useToast()
+  const [isSubscribed, setIsSubscribed] = useState(false);
+
+  useEffect(() => {
+    async function checkSubscription() {
+      if (user?.id) {
+        try {
+          const response = await fetch("/api/subscriptions/check");
+          const data = (await response.json()) as SubscriptionCheckResponse;
+          console.log(data)
+          setIsSubscribed(data.subscribed);
+        } catch (error) {
+          console.error("Error checking subscription:", error);
+          setIsSubscribed(false);
+        }
+      }
+    }
+    checkSubscription();
+  }, [user?.id]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     adjustTextareaHeight();
@@ -706,7 +728,7 @@ export default function MessageAndInput({
       messages={processedMessages}
       userId={user?.id ?? "guest"}
       conversationId={`${character.id.slice(24)}-${user?.id?.slice(24)}`}
-      isDisabled={user?.id ? PAID_USER_IDS.includes(user.id) : false}
+      isDisabled={isSubscribed}
     >
     <div className="flex flex-col h-full relative max-w-full overflow-x-hidden p-4">
       <style jsx global>{`

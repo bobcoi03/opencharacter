@@ -3,12 +3,9 @@
 import { useState, useEffect } from "react"
 import { useSession, signIn } from "next-auth/react"
 import { useRouter } from "next/navigation"
-import { Check, Loader2, Zap } from "lucide-react"
+import { Check, Loader2 } from "lucide-react"
 import { motion } from "framer-motion"
-
 import { Button } from "@/components/ui/button"
-import { Separator } from "@/components/ui/separator"
-import { Switch } from "@/components/ui/switch"
 
 interface PricingOption {
   label: string
@@ -178,13 +175,13 @@ const Plans: React.FC = () => {
       label: "Monthly",
       value: "monthly",
       price: 15,
-      priceId: "price_1QoQTYPMkm1vUm1bjCLX00Gh",
+      priceId: "price_1QpzDAAT8u0C5FCyLTyBSZQg",
     },
     {
       label: "Yearly",
       value: "yearly",
       price: 10,
-      priceId: "price_1QoQxBPMkm1vUm1b4wZso31k",
+      priceId: "price_1QpzEKAT8u0C5FCyUP29l0SV",
     },
   ]
 
