@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import { ThemeScript } from "@/lib/theme/theme-script";
 import { Toaster } from "@/components/ui/toaster"
@@ -55,20 +56,27 @@ export default async function RootLayout({
       <html lang="en" className="dark">
         <head>
           <ThemeScript/>
-        <link rel="icon" href="/opencharacter_icon.png" sizes="any" />
-        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
-      </head>
-      <body className={`${inter.className} bg-neutral-900`}>
-        <IconStyleInitializer />
-        <NewSidebar search={search} />
-        <div className="flex flex-col min-h-screen pt-12">
-          <main className="flex-1">
-            {children}
-          </main>
-        </div>
-        <Toaster />
-        <GoogleAnalytics gaId={process.env.GOOGLE_ANALYTICS_ID ?? ""} />
-      </body>
+          <link rel="icon" href="/opencharacter_icon.png" sizes="any" />
+          <Script
+            async
+            src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"
+            strategy="afterInteractive"
+            data-client="ca-pub-9079424754244668"
+            crossOrigin="anonymous"
+          />
+          <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
+        </head>
+        <body className={`${inter.className} bg-neutral-900`}>
+          <IconStyleInitializer />
+          <NewSidebar search={search} />
+          <div className="flex flex-col min-h-screen pt-12">
+            <main className="flex-1">
+              {children}
+            </main>
+          </div>
+          <Toaster />
+          <GoogleAnalytics gaId={process.env.GOOGLE_ANALYTICS_ID ?? ""} />
+        </body>
       </html>
     </AuthProvider>
   );
