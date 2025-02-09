@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import Script from "next/script";
 import "./globals.css";
 import { ThemeScript } from "@/lib/theme/theme-script";
 import { Toaster } from "@/components/ui/toaster"
@@ -9,6 +8,9 @@ import { searchCharacters } from "./actions";
 import NewSidebar from "@/components/new-sidebar";
 import IconStyleInitializer from "@/components/icon-style-onmount";
 import AuthProvider from "@/components/auth-provider";
+import { ConditionalAdsense } from "@/components/conditional-adsense";
+import { auth } from "@/server/auth";
+import { isUserPro } from "@/lib/subscription";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -45,6 +47,9 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await auth();
+  const isPro = await isUserPro(session?.user?.id);
+
   async function search(query: string) {
     'use server'
     const characters = await searchCharacters(query, 30);
@@ -57,13 +62,7 @@ export default async function RootLayout({
         <head>
           <ThemeScript/>
           <link rel="icon" href="/opencharacter_icon.png" sizes="any" />
-          <Script
-            async
-            src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"
-            strategy="afterInteractive"
-            data-client="ca-pub-9079424754244668"
-            crossOrigin="anonymous"
-          />
+          <ConditionalAdsense isPro={isPro} />
           <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
         </head>
         <body className={`${inter.className} bg-neutral-900`}>
