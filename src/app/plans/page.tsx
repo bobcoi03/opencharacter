@@ -1,9 +1,10 @@
 import Plans from "@/components/pricing-plans"
 import FeatureComparison from "@/components/feature-comparison"
 import ModelComparison from "@/components/model-comparison"
-import { CreatorDashboardShowcase } from "@/components/creator-dashboard-showcase"
 import { Showcase } from "@/components/showcase"
 import { models } from "@/lib/llm_models"
+
+export const runtime = 'edge';
 
 export default function PlansPage() {
   return (
