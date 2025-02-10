@@ -22,9 +22,7 @@ export function ConditionalAdsense({ isPro = false }: ConditionalAdsenseProps) {
   return (
     <Script
       async
-      src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"
-      strategy="afterInteractive"
-      data-client="ca-pub-9079424754244668"
+      src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9079424754244668"
       crossOrigin="anonymous"
     />
   );
