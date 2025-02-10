@@ -8,8 +8,6 @@ import { saveChat, createChatSession } from "@/app/actions/index";
 import { User } from "next-auth";
 import Image from "next/image";
 import {
-  Cpu,
-  Check,
   RotateCcw,
   Edit,
   Trash2,
@@ -29,7 +27,6 @@ import { Button } from "@/components/ui/button";
 import { characters, ChatMessage, ChatMessageArray, personas } from "@/server/db/schema";
 import ReactMarkdown from "react-markdown";
 import { Components } from "react-markdown";
-import { getModelArray } from "@/lib/llm_models";
 import SignInButton from "@/components/signin-button";
 import { Textarea } from "@/components/ui/textarea";
 import Link from "next/link";
@@ -240,15 +237,27 @@ const MessageContent: React.FC<MessageContentProps> = ({
             </div>
           ) : (
               <div className={`inline-block ${localStorage.getItem("chat-style") === "bubble" && isUser ? "w-full" : ""}`}>
-                <ReactMarkdown
-                  className={
-                    `text-md text-white text-wrap break-words ${localStorage.getItem("chat-style") === "bubble" && isUser && "bg-neutral-800 px-4 py-2 rounded-xl float-right mr-2"} 
-                    ${localStorage.getItem("chat-style") === "bubble" && !isUser && "bg-neutral-700 px-4 py-2 rounded-xl"}
-                  `}
-                  components={markdownComponents}
+                <div 
+                  style={{
+                    backgroundColor: localStorage.getItem("chat-style") === "bubble" 
+                      ? (isUser 
+                        ? localStorage.getItem("user_chat_color") || "#262626"
+                        : localStorage.getItem("ai_chat_color") || "#404040")
+                      : "transparent"
+                  }}
+                  className={`${
+                    localStorage.getItem("chat-style") === "bubble" 
+                      ? (isUser ? "float-right mr-2" : "") 
+                      : ""
+                  } px-4 py-2 rounded-xl`}
                 >
-                  {message.content as string}
-                </ReactMarkdown>
+                  <ReactMarkdown
+                    className="text-md text-white text-wrap break-words"
+                    components={markdownComponents}
+                  >
+                    {message.content as string}
+                  </ReactMarkdown>
+                </div>
               </div>
           )}
         </div>
@@ -893,7 +902,9 @@ export default function MessageAndInput({
                   <Loader2 className="w-8 h-8 animate-spin" />
                 }
               </button>
+
             </div>
+            
           </form>
 
           <Dialog

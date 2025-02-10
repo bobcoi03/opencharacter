@@ -30,6 +30,7 @@ import { readStreamableValue } from 'ai/rsc';
 import { Switch } from './ui/switch';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import CustomizeDialog from './customize-dialog';
 
 export default function EllipsisButton({ character, made_by_username, chat_session, messages }: { character: typeof characters.$inferSelect, made_by_username: string, chat_session: string | null, messages: CoreMessage[] }) {
   const [shareMessage, setShareMessage] = useState('');
@@ -480,6 +481,9 @@ export default function EllipsisButton({ character, made_by_username, chat_sessi
               </div>
             </DialogContent>
           </Dialog>
+
+          <CustomizeDialog />
+          
           <Dialog>
             <DialogTrigger asChild>
               <Button 
