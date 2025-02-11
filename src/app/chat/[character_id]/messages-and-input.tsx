@@ -948,11 +948,6 @@ export default function MessageAndInput({
               </p>
             </DialogContent>
           </Dialog>
-
-          <div>
-            Want access to better models?
-          </div>
-
         </div>
       </div>      
       }
