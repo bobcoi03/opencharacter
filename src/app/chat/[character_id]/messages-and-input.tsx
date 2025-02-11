@@ -949,6 +949,24 @@ export default function MessageAndInput({
             </DialogContent>
           </Dialog>
 
+          <div>
+            Want access to better models?
+          </div>
+
+          {/* Goonmaps Banner Ad */}
+          <a 
+            href="https://www.goonmaps.com/" 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="block w-full my-4"
+          >
+            <img 
+              src="/goonmaps.png" 
+              alt="Goonmaps - Visit goonmaps.com" 
+              className="w-full h-auto object-contain"
+            />
+          </a>
+
         </div>
       </div>      
       }
