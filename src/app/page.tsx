@@ -202,25 +202,6 @@ export default async function Page({
         />
       </Suspense>
 
-      {/* Goonmaps Banner Ad */}
-      <div className="w-full flex flex-col items-center my-8">
-        <p className="text-sm text-gray-400 mb-2">Special Limited Time Ad For Goonmaps!</p>
-        <a 
-          href="https://www.goonmaps.com/?ref=opencharacter.org" 
-          target="_blank" 
-          rel="noopener noreferrer"
-          className="hover:opacity-90 transition-opacity"
-        >
-          <img
-            src="/goonmaps.png"
-            alt="Goonmaps - Visit Now"
-            className="rounded-lg shadow-lg object-cover"
-            width={200}
-            height={10}
-          />
-        </a>
-      </div>
-
       <Footer />
     </div>
   );
