@@ -206,7 +206,7 @@ export default async function Page({
       <div className="w-full flex flex-col items-center my-8">
         <p className="text-sm text-gray-400 mb-2">Special Limited Time Ad For Goonmaps!</p>
         <a 
-          href="https://www.goonmaps.com/" 
+          href="https://www.goonmaps.com/?ref=opencharacter.org" 
           target="_blank" 
           rel="noopener noreferrer"
           className="hover:opacity-90 transition-opacity"
