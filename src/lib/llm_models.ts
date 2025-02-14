@@ -279,11 +279,6 @@ export const models: Models = {
         name: "deepseek/deepseek-r1-distill-llama-3.1-70b",
         paid: true,
     },
-    "deepseek/deepseek-r1": {
-        id: "deepseek/deepseek-r1",
-        name: "deepseek/deepseek-r1",
-        paid: true,
-    },
 };
 
 export const getModelIds = (): string[] => Object.keys(models);
