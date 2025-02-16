@@ -381,7 +381,6 @@ const AICharacterGrid: React.FC<AICharacterGridProps> = ({
           onClick={() => router.push("/leaderboard")} 
           isActive={false} 
         />
-        <a href="https://www.producthunt.com/posts/opencharacter?embed=true&utm_source=badge-featured&utm_medium=badge&utm_souce=badge-opencharacter" target="_blank" rel="noopener noreferrer" className="w-full block"><img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=592357&theme=light&t=1739568058132" alt="OpenCharacter - Uncensored&#0044;&#0032;Open&#0032;Source&#0032;alternative&#0032;to&#0032;characterAI | Product Hunt" className="w-full h-[54px]" /></a>
         {activeTags.length > 0 && (
           <Button label="Reset Tags" isActive={false} onClick={handleReset} />
         )}
