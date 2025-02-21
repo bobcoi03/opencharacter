@@ -28,6 +28,12 @@ const footerLinks: FooterSection[] = [
     ],
   },
   {
+    title: "Tools",
+    links: [
+      { href: "/tools/twitter-roast", label: "Twitter Profile Roaster" },
+    ],
+  },
+  {
     title: "Community",
     links: [
       { href: "https://www.tiktok.com/@opencharacter", label: "TikTok", external: true },

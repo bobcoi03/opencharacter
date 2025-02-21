@@ -58,6 +58,7 @@ export async function POST(request: Request) {
     const checkoutSession = await stripe.checkout.sessions.create({
         success_url: 'https://opencharacter.org/subscription',
         customer: stripeCustomerId,
+        allow_promotion_codes: true,
         line_items: [
             {
                 price: body.priceId,

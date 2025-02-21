@@ -4,9 +4,11 @@ import { continueConversation, getConversations, createChatSession, getAllConver
 import { createCharacter, searchCharacters, searchCharactersByTags } from "./character";
 import { CreatePersona, updatePersona, getAllUserPersonas, getDefaultPersona, setDefaultPersona, deletePersona } from "./persona";
 import { saveUser } from "./user";
+import { roastTweets } from "./twitter";
 
 export { 
     continueConversation,
+    roastTweets,
     createCharacter,
     getConversations,
     createChatSession,
@@ -21,5 +23,5 @@ export {
     saveUser,
     deletePersona,
     deleteChatSession,
-    searchCharactersByTags
+    searchCharactersByTags,
 };
