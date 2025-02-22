@@ -214,7 +214,7 @@ const Plans: React.FC = () => {
         <PlanCard
           title="Hobby"
           price="Free"
-          features={["Access to basic models", "Unlimited completions", "Characters", "Personas"]}
+          features={["Access to basic models", "300 messages per day", "Characters", "Personas", "ads"]}
           buttonText="GET STARTED"
           billingCycle={billingCycle}
           pricingOptions={pricingOptions}
