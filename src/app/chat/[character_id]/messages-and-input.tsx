@@ -378,6 +378,15 @@ export default function MessageAndInput({
           const data = (await response.json()) as SubscriptionCheckResponse;
           console.log(data)
           setIsSubscribed(data.subscribed);
+          if (data.subscribed) {
+            const savedModel = localStorage.getItem("selectedModel");
+            if (!savedModel) {
+              setSelectedModel("nvidia/llama-3.1-nemotron-70b-instruct");
+              localStorage.setItem("selectedModel", "nvidia/llama-3.1-nemotron-70b-instruct");
+            } else {
+              setSelectedModel(savedModel);
+            }
+          }
         } catch (error) {
           console.error("Error checking subscription:", error);
           setIsSubscribed(false);
