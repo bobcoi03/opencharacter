@@ -13,6 +13,7 @@ import { db } from "@/server/db";
 import { eq, and, desc, sql, or } from "drizzle-orm";
 import { auth } from "@/server/auth";
 import { isValidModel, isPaidModel } from "@/lib/llm_models";
+import { checkAndIncrementRequestCount } from "@/lib/request-limits";
 
 type ErrorResponse = {
   error: {
@@ -157,7 +158,7 @@ export async function continueConversation(
 
   const session = await auth();
 
-  if (!session?.user) {
+  if (!session?.user?.id) {
     console.log("Authentication failed - no user session");
     return { error: true, message: "Failed to authenticate user" };
   }
@@ -166,7 +167,7 @@ export async function continueConversation(
   if (isPaidModel(model_name)) {
     // Check if user has an active subscription
     const subscription = await db.query.subscriptions.findFirst({
-      where: eq(subscriptions.userId, session.user.id!),
+      where: eq(subscriptions.userId, session.user.id),
     });
 
     const isSubscribed = subscription?.status === "active" || subscription?.status === "trialing";
@@ -177,6 +178,20 @@ export async function continueConversation(
         model: model_name
       });
       return { error: true, message: "You must be a paid user to use this model" };
+    }
+  } else {
+    // For free tier users, check and increment request count
+    try {
+      const { remainingRequests } = await checkAndIncrementRequestCount(session.user.id);
+      console.log("Free tier request count updated:", {
+        userId: session.user.id,
+        remainingRequests
+      });
+    } catch (error) {
+      if (error instanceof Error && error.message.includes("Daily request limit exceeded")) {
+        return { error: true, message: error.message };
+      }
+      throw error;
     }
   }
 

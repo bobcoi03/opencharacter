@@ -292,3 +292,14 @@ export const stripe_customer_id = sqliteTable("stripe_customer_id", {
     .references(() => users.id, { onDelete: "cascade" }),
   stripeCustomerId: text("stripeCustomerId").notNull().unique()
 })
+
+export const user_daily_requests = sqliteTable("user_daily_requests", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  userId: text("user_id").notNull(),
+  date: text("date").notNull(), // YYYY-MM-DD format
+  requestCount: integer("request_count").notNull().default(0),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().default(sql`CURRENT_TIMESTAMP`),
+});
