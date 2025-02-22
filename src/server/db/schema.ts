@@ -293,6 +293,26 @@ export const stripe_customer_id = sqliteTable("stripe_customer_id", {
   stripeCustomerId: text("stripeCustomerId").notNull().unique()
 })
 
+export const twitter_roasts = sqliteTable("twitter_roast", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  username: text("username").notNull(),
+  roastContent: text("roastContent").notNull(),
+  userId: text("userId")
+    .references(() => users.id, { onDelete: "cascade" }),
+  likeCount: integer("likeCount").notNull().default(0),
+  createdAt: integer("createdAt", { mode: "timestamp_ms" })
+    .notNull()
+    .$defaultFn(() => sql`CURRENT_TIMESTAMP`),
+  updatedAt: integer("updatedAt", { mode: "timestamp_ms" })
+    .notNull()
+    .$defaultFn(() => sql`CURRENT_TIMESTAMP`),
+}, (table) => ({
+  usernameIdx: index('twitter_roast_username_idx').on(table.username),
+  userIdIdx: index('twitter_roast_user_id_idx').on(table.userId),
+}));
+
 export const user_daily_requests = sqliteTable("user_daily_requests", {
   id: text("id")
     .primaryKey()

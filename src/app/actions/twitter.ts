@@ -2,8 +2,10 @@
 
 import type { Tweet, TwitterResponse } from '@/types/tweet'
 import { createStreamableValue } from "ai/rsc"
-import { streamText } from "ai"
-import OpenAI from "openai"
+import { db } from "@/server/db"
+import { eq } from "drizzle-orm"
+import { twitter_roasts } from "@/server/db/schema"
+import { auth } from "@/server/auth"
 
 export async function fetchLatestTweets(username: string): Promise<Tweet[]> {
   try {
@@ -39,9 +41,14 @@ export async function fetchLatestTweets(username: string): Promise<Tweet[]> {
   }
 }
 
-export async function roastTweets(username: string) {
+export async function roastTweets(username: string, id: string) {
   try {
-    console.log(`Starting roast for username: ${username}`);
+    console.log(`Starting roast for username: ${username} with id: ${id}`);
+    
+    // Get the current user's session
+    const session = await auth();
+    const userId = session?.user?.id;
+
     // First fetch the tweets
     const tweets = await fetchLatestTweets(username);
     
@@ -75,7 +82,7 @@ export async function roastTweets(username: string) {
 
 ${tweets.map(tweet => `Tweet: "${tweet.fullText}"`).join('\n\n')}
 
- You're not just roasting, you're creating art. Make it so savage that even the victim can't help but laugh. Now go forth and destroy their ego!`;
+ You're not just roasting, you're creating art. Make it so savage that even the victim can't help but laugh. Now go forth and destroy their ego! You may use swear words and vulgar language where appropriate.`;
 
     console.log('Making API request to OpenRouter');
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
@@ -87,7 +94,7 @@ ${tweets.map(tweet => `Tweet: "${tweet.fullText}"`).join('\n\n')}
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: "mistralai/mistral-nemo",
+        model: "deepseek/deepseek-r1",
         messages: [
           {
             role: "system",
@@ -116,6 +123,7 @@ ${tweets.map(tweet => `Tweet: "${tweet.fullText}"`).join('\n\n')}
     const reader = stream.getReader();
     const decoder = new TextDecoder();
     let buffer = '';
+    let fullRoast = '';
 
     const textStream = new ReadableStream({
         async start(controller) {
@@ -135,8 +143,6 @@ ${tweets.map(tweet => `Tweet: "${tweet.fullText}"`).join('\n\n')}
   
                 try {
                   const json = JSON.parse(line.slice(6)) as {
-                    id: string;
-                    object: 'chat.completion' | 'chat.completion.chunk';
                     choices: Array<{
                       delta?: {
                         content?: string;
@@ -144,23 +150,25 @@ ${tweets.map(tweet => `Tweet: "${tweet.fullText}"`).join('\n\n')}
                       message?: {
                         content: string;
                       };
-                      index: number;
-                      finish_reason: string | null;
+                      finish_reason?: string | null;
                     }>;
                   };
   
-                  // Skip if this is the final usage message (empty choices)
-                  if (json.choices.length === 0) continue;
-  
-                  const choice = json.choices[0];
-                  const content = choice.delta?.content ?? choice.message?.content;
-  
+                  const content = json.choices[0].delta?.content ?? json.choices[0].message?.content;
                   if (content) {
                     controller.enqueue(content);
+                    fullRoast += content;
                   }
-  
-                  // If we get a finish_reason, we're done
-                  if (choice.finish_reason) {
+
+                  // If we get a finish_reason, we're done - store in DB
+                  if (json.choices[0].finish_reason) {
+                    // Store the roast in the database
+                    await db.insert(twitter_roasts).values({
+                      id,
+                      username,
+                      roastContent: fullRoast,
+                      userId: userId || null,
+                    });
                     break;
                   }
                 } catch (e) {
@@ -188,6 +196,7 @@ ${tweets.map(tweet => `Tweet: "${tweet.fullText}"`).join('\n\n')}
                   const content = json.choices[0].delta?.content ?? json.choices[0].message?.content;
                   if (content) {
                     controller.enqueue(content);
+                    fullRoast += content;
                   }
                 }
               } catch (e) {
@@ -204,10 +213,8 @@ ${tweets.map(tweet => `Tweet: "${tweet.fullText}"`).join('\n\n')}
         },
       });
 
-    // Create two branches of the stream
-    const [stream1] = textStream.tee();
-    // Create the streamable value from the first branch
-    const streamValue = createStreamableValue(stream1);
+    // Create the streamable value
+    const streamValue = createStreamableValue(textStream);
     return streamValue.value;
 
   } catch (error) {
@@ -215,3 +222,8 @@ ${tweets.map(tweet => `Tweet: "${tweet.fullText}"`).join('\n\n')}
     throw error;
   }
 } 
+
+export async function getRoast(id: string) {
+  const roast = await db.select().from(twitter_roasts).where(eq(twitter_roasts.id, id));
+  return roast;
+}

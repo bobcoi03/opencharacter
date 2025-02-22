@@ -9,6 +9,26 @@ const config: Config = {
   ],
   theme: {
   	extend: {
+  		keyframes: {
+  			'gradient-x': {
+  				'0%, 100%': { 'background-position': '200% 50%' },
+  				'50%': { 'background-position': '0% 50%' },
+  			},
+  			'fade-in': {
+  				'0%': { opacity: '0', transform: 'translateY(10px)' },
+  				'100%': { opacity: '1', transform: 'translateY(0)' },
+  			},
+  			'shake': {
+  				'0%, 100%': { transform: 'translateX(0)' },
+  				'25%': { transform: 'translateX(-5px)' },
+  				'75%': { transform: 'translateX(5px)' },
+  			},
+  		},
+  		animation: {
+  			'gradient-x': 'gradient-x 15s linear infinite',
+  			'fade-in': 'fade-in 0.5s ease-out forwards',
+  			'shake': 'shake 0.5s ease-in-out',
+  		},
   		backgroundImage: {
   			'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
   			'gradient-conic': 'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))'
