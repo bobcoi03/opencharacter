@@ -32,7 +32,7 @@ export async function checkAndIncrementRequestCount(userId: string) {
   }
 
   if (record.requestCount >= FREE_TIER_DAILY_LIMIT) {
-    throw new Error("Daily request limit exceeded. Please upgrade to continue.");
+    throw new Error("Daily request limit exceeded. Go touch grass or upgrade to continue.");
   }
 
   // Increment count
