@@ -165,14 +165,14 @@ export async function continueConversation(
   }
 
   // Check if the model is paid and if the user has access
+  // First check subscription status for the user
+  const subscription = await db.query.subscriptions.findFirst({
+    where: eq(subscriptions.userId, session.user.id),
+  });
+
+  const isSubscribed = subscription?.status === "active" || subscription?.status === "trialing";
+
   if (isPaidModel(model_name)) {
-    // Check if user has an active subscription
-    const subscription = await db.query.subscriptions.findFirst({
-      where: eq(subscriptions.userId, session.user.id),
-    });
-
-    const isSubscribed = subscription?.status === "active" || subscription?.status === "trialing";
-
     if (!isSubscribed) {
       console.log("User attempted to use paid model without active subscription:", {
         userId: session.user.id,
@@ -180,8 +180,8 @@ export async function continueConversation(
       });
       return { error: true, message: "You must be a paid user to use this model" };
     }
-  } else {
-    // For free tier users, check and increment request count
+  } else if (!isSubscribed) {
+    // Only check request limits for non-subscribed users using free models
     try {
       const { remainingRequests } = await checkAndIncrementRequestCount(session.user.id);
       console.log("Free tier request count updated:", {
