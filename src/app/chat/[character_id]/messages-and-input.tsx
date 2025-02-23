@@ -861,13 +861,13 @@ export default function MessageAndInput({
             </div>
           )}
 
-          <div className="flex flex-col items-center justify-center mb-1">
-
-            <Link href="/plans" className="text-center justify-center text-[9px] text-blue-500 underline ">
-              Upgrade to Pro
-            </Link>
-
-          </div>
+          {!isSubscribed && (
+            <div className="flex flex-col items-center justify-center mb-1">
+              <Link href="/plans" className="text-center justify-center text-[9px] text-blue-500 underline ">
+                Upgrade to Pro
+              </Link>
+            </div>
+          )}
 
           <form
             ref={formRef}
