@@ -192,7 +192,6 @@ export default async function Page({
 
   return (
     <div className="text-white w-full overflow-y-auto overflow-x-hidden md:pl-16 p-2">
-      <CTACard />
       <Suspense key={searchParams.id}>
         {!conversations.error && conversations.conversations && conversations.conversations?.length > 0 && <RecentConversation characters={conversations.conversations} />}
         <AICharacterGrid 
