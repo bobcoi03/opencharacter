@@ -8,6 +8,7 @@ import {
   chat_sessions,
   ChatMessageArray,
   subscriptions,
+  personas
 } from "@/server/db/schema";
 import { db } from "@/server/db";
 import { eq, and, desc, sql, or } from "drizzle-orm";
@@ -283,15 +284,39 @@ export async function continueConversation(
     console.error("Failed to update interaction count:", error);
   }
 
+  // Get the user's default persona
+  const defaultPersona = await db
+    .select()
+    .from(personas)
+    .where(
+      and(
+        eq(personas.userId, session.user.id!),
+        eq(personas.isDefault, true)
+      )
+    )
+    .limit(1)
+    .then((rows) => rows[0]);
+
+  let systemContent = messages[0].content;
+
+  // Add persona if available
+  if (defaultPersona) {
+    console.log("Injecting default persona for user:", session.user.id);
+    systemContent = `${systemContent}\nUser Persona: ${defaultPersona.background}`;
+  }
+
   if (chatSession && chatSession.summary) {
     console.log("Injecting chat session summary for session:", chatSession.id);
-    messages[0] = {
-      ...messages[0],
-      role: "system",
-      content: `${messages[0].content}\nChat Memory:${chatSession.summary}`,
-      id: crypto.randomUUID(),
-    };
+    systemContent = `${systemContent}\nChat Memory: ${chatSession.summary}`;
   }
+
+  // Update the system message with combined content
+  messages[0] = {
+    ...messages[0],
+    role: "system",
+    content: systemContent,
+    id: crypto.randomUUID(),
+  };
 
   try {
     let response;
