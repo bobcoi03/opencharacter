@@ -2,6 +2,7 @@ type Model = {
     id: string;
     name: string;
     paid: boolean;
+    metered?: boolean;
 };
 
 type Models = {
@@ -279,6 +280,132 @@ export const models: Models = {
         name: "deepseek/deepseek-r1-distill-llama-3.1-70b",
         paid: true,
     },
+    "anthropic/claude-3.7-sonnet": {
+        id: "anthropic/claude-3.7-sonnet",
+        name: "anthropic/claude-3.7-sonnet",
+        paid: true,
+        metered: true,
+    },
+    "anthropic/claude-3.7-sonnet:thinking": {
+        id: "anthropic/claude-3.7-sonnet:thinking",
+        name: "anthropic/claude-3.7-sonnet:thinking",
+        paid: true,
+        metered: true,
+    },
+    "deepseek/deepseek-r1": {
+        id: "deepseek/deepseek-r1",
+        name: "deepseek/deepseek-r1",
+        paid: true,
+        metered: true,
+    },
+    "openai/gpt-4o-2024-11-20": {
+        id: "openai/gpt-4o-2024-11-20",
+        name: "openai/gpt-4o-2024-11-20",
+        paid: true,
+        metered: true,
+    },
+    "openai/o3-mini-high": {
+        id: "openai/o3-mini-high",
+        name: "openai/o3-mini-high",
+        paid: true,
+        metered: true,
+    },
+    "allenai/llama-3.1-tulu-3-405b": {
+        id: "allenai/llama-3.1-tulu-3-405b",
+        name: "allenai/llama-3.1-tulu-3-405b",
+        paid: true,
+        metered: true,
+    },
+    "aion-labs/aion-1.0": {
+        id: "aion-labs/aion-1.0",
+        name: "aion-labs/aion-1.0",
+        paid: true,
+        metered: true,
+    },
+    "qwen/qwen-max": {
+        id: "qwen/qwen-max",
+        name: "qwen/qwen-max",
+        paid: true,
+        metered: true,
+    },
+    "openai/o1": {
+        id: "openai/o1",
+        name: "openai/o1",
+        paid: true,
+        metered: true,
+    },
+    "x-ai/grok-2-1212": {
+        id: "x-ai/grok-2-1212",
+        name: "x-ai/grok-2-1212",
+        paid: true,
+        metered: true,
+    },
+    "mistralai/mistral-large-2411": {
+        id: "mistralai/mistral-large-2411",
+        name: "mistralai/mistral-large-2411",
+        paid: true,
+        metered: true,
+    },
+    "neversleep/llama-3.1-lumimaid-70b": {
+        id: "neversleep/llama-3.1-lumimaid-70b",
+        name: "neversleep/llama-3.1-lumimaid-70b",
+        paid: true,
+        metered: true,
+    },
+    "x-ai/grok-beta": {
+        id: "x-ai/grok-beta",
+        name: "x-ai/grok-beta",
+        paid: true,
+        metered: true,
+    },
+    "inflection/inflection-3-pi": {
+        id: "inflection/inflection-3-pi",
+        name: "inflection/inflection-3-pi",
+        paid: true,
+        metered: true,
+    },
+    "cohere/command-r-plus-08-2024": {
+        id: "cohere/command-r-plus-08-2024",
+        name: "cohere/command-r-plus-08-2024",
+        paid: true,
+        metered: true,
+    },
+    "ai21/jamba-1-5-large": {
+        id: "ai21/jamba-1-5-large",
+        name: "ai21/jamba-1-5-large",
+        paid: true,
+        metered: true,
+    },
+    "01-ai/yi-large": {
+        id: "01-ai/yi-large",
+        name: "01-ai/yi-large",
+        paid: true,
+        metered: true,
+    },
+    "neversleep/llama-3-lumimaid-70b": {
+        id: "neversleep/llama-3-lumimaid-70b",
+        name: "neversleep/llama-3-lumimaid-70b",
+        paid: true,
+        metered: true,
+    },
+    "anthropic/claude-3-opus": {
+        id: "anthropic/claude-3-opus",
+        name: "anthropic/claude-3-opus",
+        paid: true,
+        metered: true,
+    },
+    "anthropic/claude-3-sonnet": {
+        id: "anthropic/claude-3-sonnet",
+        name: "anthropic/claude-3-sonnet",
+        paid: true,
+        metered: true,
+    },
+    "alpindale/goliath-120b": {
+        id: "alpindale/goliath-120b",
+        name: "alpindale/goliath-120b",
+        paid: true,
+        metered: true,
+    },
 };
 
 export const getModelIds = (): string[] => Object.keys(models);
@@ -319,3 +446,17 @@ export const getDAWModelIds = (): string[] =>
 // Get free DAW API models
 export const getFreeDAWModelIds = (): string[] =>
     Object.keys(models).filter(id => isDAWModel(id) && !models[id].paid);
+
+// Get all metered models
+export const getMeteredModelIds = (): string[] =>
+    Object.keys(models).filter(id => models[id].metered);
+
+// Get all metered models as array
+export const getMeteredModelArray = (): Model[] =>
+    Object.values(models).filter(model => model.metered);
+
+// Check if model is metered
+export const isMeteredModel = (modelName: string): boolean => {
+    const model = models[modelName];
+    return model ? !!model.metered : false;
+};

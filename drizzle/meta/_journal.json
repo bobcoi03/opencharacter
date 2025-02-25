@@ -127,6 +127,13 @@
       "when": 1740265018616,
       "tag": "0017_tough_mentallo",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "6",
+      "when": 1740524560722,
+      "tag": "0018_yielding_tattoo",
+      "breakpoints": true
     }
   ]
 }

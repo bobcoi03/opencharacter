@@ -10,7 +10,8 @@ export const users = sqliteTable("user", {
   email: text("email").unique(),
   emailVerified: integer("emailVerified", { mode: "timestamp_ms" }),
   image: text("image"),
-  bio: text("bio")
+  bio: text("bio"),
+  pay_as_you_go: integer("pay_as_you_go", { mode: "boolean" }).notNull().default(false),
 })
 
 export const socialSubmissions = sqliteTable("social_submission", {

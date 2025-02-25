@@ -49,3 +49,47 @@ export async function saveUser(formData: FormData) {
     return { success: false, message: "Failed to update user" };
   }
 }
+
+export async function getPayAsYouGo() {
+  try {
+    const session = await auth();
+    if (!session || !session.user) {
+      throw new Error("User not authenticated");
+    }
+
+    const userId = session.user.id;
+
+    const result = await db.select({ pay_as_you_go: users.pay_as_you_go })
+      .from(users)
+      .where(eq(users.id, userId!))
+      .get();
+
+    return { 
+      success: true, 
+      pay_as_you_go: result?.pay_as_you_go || false 
+    };
+  } catch (error) {
+    console.error("Error fetching pay-as-you-go status:", error);
+    return { success: false, pay_as_you_go: false };
+  }
+}
+
+export async function updatePayAsYouGo(payAsYouGo: boolean) {
+  try {
+    const session = await auth();
+    if (!session || !session.user) {
+      throw new Error("User not authenticated");
+    }
+
+    const userId = session.user.id;
+
+    await db.update(users)
+      .set({ pay_as_you_go: payAsYouGo })
+      .where(eq(users.id, userId!));
+
+    return { success: true, message: "Pay-as-you-go updated successfully" };
+  } catch (error) {
+    console.error("Error updating pay-as-you-go:", error);
+    return { success: false, message: "Failed to update pay-as-you-go" };
+  }
+}

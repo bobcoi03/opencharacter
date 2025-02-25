@@ -84,6 +84,11 @@ export function ModelSelector({ selectedModel, onModelSelect }: ModelSelectorPro
                     pro
                   </span>
                 )}
+                {model.metered && (
+                  <span className="text-[10px] text-green-400/80 font-medium">
+                    metered
+                  </span>
+                )}
               </span>
               {selectedModel === model.id && (
                 <Check className="w-4 h-4 text-green-500" />
