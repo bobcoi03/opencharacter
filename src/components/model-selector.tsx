@@ -102,7 +102,7 @@ export function ModelSelector({ selectedModel, onModelSelect }: ModelSelectorPro
         <div className="border-t border-neutral-700">
           <div className="flex flex-col gap-2">
             <p className="text-xs text-gray-300 ml-4 mt-4 mb-2 font-bold">
-              Selected Model: {selectedModel}
+              Selected: {selectedModel}
             </p>
             {!isSubscribed && (
               <Link

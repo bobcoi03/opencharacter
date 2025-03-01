@@ -9,6 +9,7 @@ import { ManageSubscriptionButton } from "@/components/manage-subscription-butto
 import { Separator } from "@/components/ui/separator";
 import { SubscriptionBadge } from "@/components/subscription-badge";
 import PayAsYouGoToggle from "@/components/pay-as-you-go-toggle";
+import BuyCreditsDialog from "@/components/buy-credits-dialog";
 
 export const runtime = "edge";
 
@@ -34,7 +35,7 @@ export default async function SubscriptionPage() {
           <div className="text-center w-full">
             <h1 className="text-4xl font-bold tracking-tight text-center">Subscription</h1>
             <p className="text-lg text-muted-foreground mt-2 text-center">
-              You can manage your subscriptions, and billings here.
+              You can manage your subscriptions, billings, and credits here.
             </p>
           </div>
 
@@ -110,6 +111,10 @@ export default async function SubscriptionPage() {
                       </div>
 
                     <ManageSubscriptionButton />
+                    
+                    <div className="mt-2">
+                      <BuyCreditsDialog className="mb-4" />
+                    </div>
 
                     <PayAsYouGoToggle />
 
@@ -119,6 +124,7 @@ export default async function SubscriptionPage() {
               </div>
             </Card>
           </div>
+                    
         </div>
       </div>
     </div>

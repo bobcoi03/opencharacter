@@ -134,6 +134,13 @@
       "when": 1740524560722,
       "tag": "0018_yielding_tattoo",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "6",
+      "when": 1740859551958,
+      "tag": "0019_early_chimera",
+      "breakpoints": true
     }
   ]
 }

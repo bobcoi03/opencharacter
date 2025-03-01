@@ -141,9 +141,6 @@ export default function PayAsYouGoToggle() {
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
-            <div className="text-sm font-medium">
-                $0.00
-            </div>
           </div>
           <Switch
             id="pay-as-you-go"

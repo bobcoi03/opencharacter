@@ -324,3 +324,12 @@ export const user_daily_requests = sqliteTable("user_daily_requests", {
   createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`CURRENT_TIMESTAMP`),
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().default(sql`CURRENT_TIMESTAMP`),
 });
+
+export const user_credits = sqliteTable("user_credits", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  balance: real("balance").notNull().default(0),
+  lastUpdated: integer("last_updated", { mode: "timestamp" }).notNull().default(sql`CURRENT_TIMESTAMP`),
+});
