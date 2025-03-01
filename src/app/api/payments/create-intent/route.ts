@@ -32,25 +32,18 @@ export async function POST(request: Request) {
         return new NextResponse("No payment method on file", { status: 400 });
     }
 
-    // Get customer's payment methods
-    const paymentMethods = await stripe.paymentMethods.list({
-        customer: existingCustomer.stripeCustomerId,
-        type: 'card',
-    });
-
-    if (paymentMethods.data.length === 0) {
-        return new NextResponse("No payment method on file", { status: 400 });
-    }
-
-    // Create a payment intent
+    // Create a payment intent without specifying a payment method
     try {
         const paymentIntent = await stripe.paymentIntents.create({
             amount: Math.round(body.amount * 100), // Convert to cents
             currency: 'usd',
             customer: existingCustomer.stripeCustomerId,
-            payment_method: paymentMethods.data[0].id, // Use the first payment method
-            off_session: true,
-            confirm: true, // Confirm the payment immediately
+            // Don't specify payment_method here to support Link
+            // Don't use off_session or confirm for Link compatibility
+            setup_future_usage: 'off_session', // This allows reusing the payment method later
+            automatic_payment_methods: {
+                enabled: true, // This enables all payment methods including Link
+            },
             metadata: {
                 userId: user.id,
                 userEmail: user.email || '',
@@ -59,33 +52,11 @@ export async function POST(request: Request) {
             }
         });
 
-        // If payment is successful, update user's credit balance
-        if (paymentIntent.status === 'succeeded') {
-            // Check if user has a credit record
-            const userCredit = await db.query.user_credits.findFirst({
-                where: eq(user_credits.userId, user.id),
-            });
-
-            if (userCredit) {
-                // Update existing record
-                await db.update(user_credits)
-                    .set({ 
-                        balance: userCredit.balance + body.amount,
-                        lastUpdated: new Date()
-                    })
-                    .where(eq(user_credits.userId, user.id));
-            } else {
-                // Create new record
-                await db.insert(user_credits).values({
-                    userId: user.id,
-                    balance: body.amount,
-                });
-            }
-        }
-
+        // Return the client secret so the frontend can handle the payment flow
         return NextResponse.json({ 
             success: true,
             paymentIntentId: paymentIntent.id,
+            clientSecret: paymentIntent.client_secret,
             status: paymentIntent.status
         });
     } catch (error) {
