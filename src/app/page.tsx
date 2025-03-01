@@ -189,7 +189,7 @@ export default async function Page({
   };
 
   const conversations = await getConversations()
-
+  
   return (
     <div className="text-white w-full overflow-y-auto overflow-x-hidden md:pl-16 p-2">
       

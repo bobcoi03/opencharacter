@@ -8,13 +8,15 @@ import {
   chat_sessions,
   ChatMessageArray,
   subscriptions,
-  personas
+  personas,
+  user_credits
 } from "@/server/db/schema";
 import { db } from "@/server/db";
 import { eq, and, desc, sql, or } from "drizzle-orm";
 import { auth } from "@/server/auth";
-import { isValidModel, isPaidModel } from "@/lib/llm_models";
+import { isValidModel, isPaidModel, isMeteredModel } from "@/lib/llm_models";
 import { checkAndIncrementRequestCount } from "@/lib/request-limits";
+import { getPayAsYouGo } from "./user";
 
 type ErrorResponse = {
   error: {
@@ -370,7 +372,31 @@ export async function continueConversation(
         throw error;
       }
     } else {
-      console.log("Making OpenRouter API request with model:", model_name);
+
+      if (isMeteredModel(model_name)) {
+        const payAsYouGo = await getPayAsYouGo();
+
+        if (!payAsYouGo.pay_as_you_go) {
+          return { error: true, message: "You must toggle on pay-as-you-go in subscriptions to use this model" };
+        } else {
+          // Check user's credit balance before proceeding
+          const userCredits = await db
+            .select()
+            .from(user_credits)
+            .where(eq(user_credits.userId, session.user.id!))
+            .limit(1)
+            .then(rows => rows[0]);
+
+          if (!userCredits) {
+            return { error: true, message: "No credit record found for your account" };
+          }
+
+          if (userCredits.balance <= 0) {
+            return { error: true, message: "Insufficient credits. Please add more credits to continue using this model." };
+          }
+        }
+      }
+
       response = await fetch("https://openrouter.helicone.ai/api/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -413,13 +439,20 @@ export async function continueConversation(
     const reader = stream.getReader();
     const decoder = new TextDecoder();
     let buffer = '';
+    let responseId = '';
 
     const textStream = new ReadableStream({
       async start(controller) {
         try {
           while (true) {
             const { done, value } = await reader.read();
-            if (done) break;
+            if (done) {
+              if (isSubscribed && isMeteredModel(model_name) && responseId) {
+                console.log("Recording metered model:", responseId);
+                await recordMeteredModels(responseId);
+              }
+              break;
+            }
 
             buffer += decoder.decode(value, { stream: true });
             const lines = buffer.split('\n');
@@ -456,8 +489,14 @@ export async function continueConversation(
                   controller.enqueue(content);
                 }
 
+                if (json.id) {
+                  responseId = json.id;
+                }
+
                 // If we get a finish_reason, we're done
                 if (choice.finish_reason) {
+                  responseId = json.id;
+                  console.log("Received finish_reason with responseId:", responseId);
                   break;
                 }
               } catch (e) {
@@ -1016,4 +1055,91 @@ export async function getChatSessionShareStatus(
       character_name: character.name
     }
   };
+}
+
+async function recordMeteredModels(gen_id: string) {
+  console.log("Recording metered model with ID:", gen_id);
+  
+  if (!gen_id || gen_id.trim() === '') {
+    console.error("Invalid generation ID provided:", gen_id);
+    return;
+  }
+  
+  // Get the current session and subscription status
+  const currentSession = await auth();
+  
+  if (!currentSession?.user?.id) {
+    console.log("No user session found for metering");
+    return;
+  }
+      
+  try {
+    await new Promise(resolve => setTimeout(resolve, 1000));
+  
+    const generation = await fetch(
+      `https://openrouter.ai/api/v1/generation?id=${gen_id}`,
+      { 
+        headers: {
+          "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+          "Helicone-Auth": `Bearer ${process.env.HELICONE_API_KEY}`,
+          "HTTP-Referer": "https://opencharacter.org",
+          "X-Title": "OpenCharacter",
+          "Content-Type": "application/json",
+        },
+      },
+    );
+    
+    const stats = await generation.json() as {
+      data: {
+        total_cost: number;
+      };
+    };
+    
+    console.log("Generation stats:", stats);
+    
+    if (!stats || typeof stats.data.total_cost === 'undefined') {
+      console.error("Invalid response format. Expected total_cost property:", stats);
+      return;
+    }
+
+    // Apply 100% premium to the total cost
+    const baseCost = stats.data.total_cost;
+    const premiumRate = 2; // 100% premium
+    const finalCost = baseCost * premiumRate;
+
+    console.log(`Base cost: ${baseCost}, Final cost with 100% premium: ${finalCost}`);
+
+    // Get user's current credit balance
+    const userCredits = await db
+      .select()
+      .from(user_credits)
+      .where(eq(user_credits.userId, currentSession.user.id))
+      .limit(1)
+      .then(rows => rows[0]);
+
+    if (!userCredits) {
+      console.error("No credit record found for user:", currentSession.user.id);
+      return;
+    }
+
+    // Check if user has sufficient balance
+    if (userCredits.balance < finalCost) {
+      console.error("Insufficient credits for user:", currentSession.user.id);
+      throw new Error("Insufficient credits");
+    }
+
+    // Update user's credit balance
+    await db
+      .update(user_credits)
+      .set({ 
+        balance: userCredits.balance - finalCost,
+        lastUpdated: new Date()
+      })
+      .where(eq(user_credits.userId, currentSession.user.id));
+
+    console.log(`Deducted ${finalCost} from user ${currentSession.user.id}'s balance (base cost: ${baseCost}, premium: 100%)`);
+  } catch (error) {
+    console.error("Error in recordMeteredModels:", error);
+    throw error; // Re-throw the error to be handled by the caller
+  }
 }

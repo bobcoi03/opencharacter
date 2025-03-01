@@ -84,6 +84,11 @@ export function ModelSelector({ selectedModel, onModelSelect }: ModelSelectorPro
                     pro
                   </span>
                 )}
+                {model.metered && (
+                  <span className="text-[10px] text-green-400/80 font-medium">
+                    metered
+                  </span>
+                )}
               </span>
               {selectedModel === model.id && (
                 <Check className="w-4 h-4 text-green-500" />
@@ -97,7 +102,7 @@ export function ModelSelector({ selectedModel, onModelSelect }: ModelSelectorPro
         <div className="border-t border-neutral-700">
           <div className="flex flex-col gap-2">
             <p className="text-xs text-gray-300 ml-4 mt-4 mb-2 font-bold">
-              Selected Model: {selectedModel}
+              Selected: {selectedModel}
             </p>
             {!isSubscribed && (
               <Link

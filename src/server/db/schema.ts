@@ -10,7 +10,8 @@ export const users = sqliteTable("user", {
   email: text("email").unique(),
   emailVerified: integer("emailVerified", { mode: "timestamp_ms" }),
   image: text("image"),
-  bio: text("bio")
+  bio: text("bio"),
+  pay_as_you_go: integer("pay_as_you_go", { mode: "boolean" }).notNull().default(false),
 })
 
 export const socialSubmissions = sqliteTable("social_submission", {
@@ -322,4 +323,13 @@ export const user_daily_requests = sqliteTable("user_daily_requests", {
   requestCount: integer("request_count").notNull().default(0),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`CURRENT_TIMESTAMP`),
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const user_credits = sqliteTable("user_credits", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  balance: real("balance").notNull().default(0),
+  lastUpdated: integer("last_updated", { mode: "timestamp" }).notNull().default(sql`CURRENT_TIMESTAMP`),
 });

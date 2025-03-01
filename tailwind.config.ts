@@ -23,11 +23,21 @@ const config: Config = {
   				'25%': { transform: 'translateX(-5px)' },
   				'75%': { transform: 'translateX(5px)' },
   			},
+        'collapsible-down': {
+          from: { height: '0' },
+          to: { height: 'var(--radix-collapsible-content-height)' },
+        },
+        'collapsible-up': {
+          from: { height: 'var(--radix-collapsible-content-height)' },
+          to: { height: '0' },
+        },
   		},
   		animation: {
   			'gradient-x': 'gradient-x 15s linear infinite',
   			'fade-in': 'fade-in 0.5s ease-out forwards',
   			'shake': 'shake 0.5s ease-in-out',
+        'collapsible-down': 'collapsible-down 0.2s ease-out',
+        'collapsible-up': 'collapsible-up 0.2s ease-out',
   		},
   		backgroundImage: {
   			'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',

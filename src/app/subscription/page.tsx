@@ -8,6 +8,8 @@ import { format } from "date-fns";
 import { ManageSubscriptionButton } from "@/components/manage-subscription-button";
 import { Separator } from "@/components/ui/separator";
 import { SubscriptionBadge } from "@/components/subscription-badge";
+import PayAsYouGoToggle from "@/components/pay-as-you-go-toggle";
+import BuyCreditsDialog from "@/components/buy-credits-dialog";
 
 export const runtime = "edge";
 
@@ -33,13 +35,13 @@ export default async function SubscriptionPage() {
           <div className="text-center w-full">
             <h1 className="text-4xl font-bold tracking-tight text-center">Subscription</h1>
             <p className="text-lg text-muted-foreground mt-2 text-center">
-              You can manage your subscriptions, and billings here.
+              You can manage your subscriptions, billings, and credits here.
             </p>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2 w-full">
+          <div className="flex flex-col md:flex-row gap-4 w-full">
             {/* Basic Information */}
-            <Card className="p-6 space-y-6 bg-stone-900 border-neutral-700">
+            <Card className="p-6 space-y-6 bg-stone-900 border-neutral-700 md:w-1/2 self-start">
               <div className="flex items-center gap-4">
                 <h2 className="text-xl font-semibold">Basic Information</h2>
                 <div className="h-12 w-12">
@@ -64,7 +66,7 @@ export default async function SubscriptionPage() {
             </Card>
 
             {/* Usage Card */}
-            <Card className="p-6 space-y-6 bg-stone-900 border-neutral-700">
+            <Card className="p-6 space-y-6 bg-stone-900 border-neutral-700 md:w-1/2">
                 <div className="flex items-center gap-2">
                     <h2 className="text-xl font-semibold">Plan</h2>
                     <SubscriptionBadge isPro={isPro} />
@@ -109,6 +111,12 @@ export default async function SubscriptionPage() {
                       </div>
 
                     <ManageSubscriptionButton />
+                    
+                    <div className="mt-2">
+                      <BuyCreditsDialog className="mb-4" />
+                    </div>
+
+                    <PayAsYouGoToggle />
 
                     </div>
                   )}
@@ -116,6 +124,7 @@ export default async function SubscriptionPage() {
               </div>
             </Card>
           </div>
+                    
         </div>
       </div>
     </div>

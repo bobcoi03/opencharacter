@@ -1,5 +1,6 @@
 import { Check, Minus } from "lucide-react"
 import { getFreeModelArray, getPaidModelArray } from "@/lib/llm_models"
+import Link from "next/link"
 
 const ModelComparison = () => {
   const freeModels = getFreeModelArray()
@@ -8,6 +9,17 @@ const ModelComparison = () => {
   return (
     <div className="mt-16 px-4 sm:px-6 max-w-5xl mx-auto">
       <h2 className="text-xl sm:text-2xl font-bold text-center mb-8">Available Models</h2>
+      <div className="text-center mb-6">
+        <p className="text-zinc-400 mb-4">
+          Compare available models across our subscription plans. Pro users get access to all premium models.
+        </p>
+        <Link 
+          href="/models"
+          className="inline-flex items-center justify-center rounded-full border border-zinc-700 bg-transparent px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 hover:text-white transition-colors"
+        >
+          View detailed model specifications
+        </Link>
+      </div>
       <div className="-mx-4 sm:mx-0">
         <div className="inline-block min-w-full py-2 align-middle">
           <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 rounded-lg">
