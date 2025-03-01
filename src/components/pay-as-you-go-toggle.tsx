@@ -209,8 +209,8 @@ export default function PayAsYouGoToggle() {
                     {pricing ? (
                         <div className="ml-4 mt-1 text-xs space-y-0.5">
                         <div className="flex gap-x-4">
-                            <p>Input: <span className="text-emerald-400">${pricing.pricing.prompt}</span> per token</p>
-                            <p>Output: <span className="text-emerald-400">${pricing.pricing.completion}</span> per token</p>
+                            <p>Input: <span className="text-emerald-400">${pricing.pricing.prompt * 2}</span> per token</p>
+                            <p>Output: <span className="text-emerald-400">${pricing.pricing.completion * 2}</span> per token</p>
                         </div>
                         <div className="text-neutral-400 prose prose-sm prose-neutral dark:prose-invert max-w-none text-xs">
                             <ReactMarkdown>{pricing.description}</ReactMarkdown>

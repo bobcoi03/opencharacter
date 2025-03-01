@@ -145,7 +145,7 @@ export default function BuyCreditsDialog({ className }: BuyCreditsDialogProps) {
               </div>
               <div>
                 <h3 className="text-sm font-medium">Buy Credits</h3>
-                <p className="text-xs text-muted-foreground">Purchase credits for pay-as-you-go usage</p>
+                <p className="text-xs text-muted-foreground">Purchase credits to use metered models</p>
               </div>
             </div>
             {isLoadingBalance ? (

@@ -1102,12 +1102,12 @@ async function recordMeteredModels(gen_id: string) {
       return;
     }
 
-    // Apply 80% premium to the total cost
+    // Apply 100% premium to the total cost
     const baseCost = stats.data.total_cost;
-    const premiumRate = 1.8; // 80% premium
+    const premiumRate = 2; // 100% premium
     const finalCost = baseCost * premiumRate;
 
-    console.log(`Base cost: ${baseCost}, Final cost with 40% premium: ${finalCost}`);
+    console.log(`Base cost: ${baseCost}, Final cost with 100% premium: ${finalCost}`);
 
     // Get user's current credit balance
     const userCredits = await db
@@ -1137,7 +1137,7 @@ async function recordMeteredModels(gen_id: string) {
       })
       .where(eq(user_credits.userId, currentSession.user.id));
 
-    console.log(`Deducted ${finalCost} from user ${currentSession.user.id}'s balance (base cost: ${baseCost}, premium: 40%)`);
+    console.log(`Deducted ${finalCost} from user ${currentSession.user.id}'s balance (base cost: ${baseCost}, premium: 100%)`);
   } catch (error) {
     console.error("Error in recordMeteredModels:", error);
     throw error; // Re-throw the error to be handled by the caller
