@@ -38,7 +38,7 @@ const footerLinks: FooterSection[] = [
     links: [
       { href: "https://www.tiktok.com/@opencharacter", label: "TikTok", external: true },
       { href: "https://www.reddit.com/r/OpenCharacterAI/", label: "Reddit", external: true },
-      { href: "https://www.instagram.com/opencharacter_/", label: "Instagram", external: true },
+      { href: "https://www.instagram.com/opencharacter_org/", label: "Instagram", external: true },
       { href: "https://github.com/bobcoi03/opencharacter", label: "GitHub", external: true },
     ],
   },
