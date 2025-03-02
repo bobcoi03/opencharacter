@@ -394,6 +394,17 @@ export async function continueConversation(
           if (userCredits.balance <= 0) {
             return { error: true, message: "Insufficient credits. Please add more credits to continue using this model." };
           }
+          
+          // Estimate minimum required balance based on model type
+          // Different models have different costs, so we set a minimum threshold
+          const minimumRequiredBalance = 0.01; // Set a minimum threshold (in dollars)
+          
+          if (userCredits.balance < minimumRequiredBalance) {
+            return { 
+              error: true, 
+              message: `Your credit balance (${userCredits.balance.toFixed(4)}) is too low for this model. Please add more credits to continue.` 
+            };
+          }
         }
       }
 
@@ -1132,12 +1143,19 @@ async function recordMeteredModels(gen_id: string) {
     await db
       .update(user_credits)
       .set({ 
-        balance: userCredits.balance - finalCost,
+        balance: Math.max(0, userCredits.balance - finalCost),
         lastUpdated: new Date()
       })
       .where(eq(user_credits.userId, currentSession.user.id));
 
-    console.log(`Deducted ${finalCost} from user ${currentSession.user.id}'s balance (base cost: ${baseCost}, premium: 100%)`);
+    const actualDeduction = Math.min(finalCost, userCredits.balance);
+    
+    // Log a warning if the cost exceeds the available balance
+    if (finalCost > userCredits.balance) {
+      console.warn(`Warning: Cost (${finalCost}) exceeds available balance (${userCredits.balance}). Deducting only ${actualDeduction} and setting balance to 0.`);
+    }
+    
+    console.log(`Deducted ${actualDeduction} from user ${currentSession.user.id}'s balance (base cost: ${baseCost}, premium: 100%)`);
   } catch (error) {
     console.error("Error in recordMeteredModels:", error);
     throw error; // Re-throw the error to be handled by the caller
