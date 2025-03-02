@@ -96,16 +96,15 @@ export default function ChatBackground({ children }: ChatBackgroundProps) {
 
   return (
     <div className="relative w-full h-full">
-      {/* Background layer */}
+      {/* Background layer - fixed to viewport */}
       {backgroundImage && isBackgroundEnabled && (
         <div 
-          className="absolute inset-0 z-0"
+          className="fixed inset-0 z-0"
           style={{
             backgroundImage: `url(${backgroundImage})`,
             backgroundSize: 'contain',
             backgroundPosition: 'center',
             backgroundRepeat: 'no-repeat',
-            backgroundAttachment: 'fixed',
             backgroundColor: 'rgba(0,0,0,0.03)',
             opacity: 0.7,
             pointerEvents: 'none'
@@ -113,7 +112,7 @@ export default function ChatBackground({ children }: ChatBackgroundProps) {
         />
       )}
       
-      {/* Content layer */}
+      {/* Content layer - scrollable */}
       <div className="relative z-10 w-full h-full">
         {children}
       </div>
