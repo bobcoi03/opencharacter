@@ -95,16 +95,28 @@ export default function ChatBackground({ children }: ChatBackgroundProps) {
   }, [])
 
   return (
-    <div 
-      className="relative w-full h-full"
-      style={{
-        backgroundImage: backgroundImage && isBackgroundEnabled ? `url(${backgroundImage})` : 'none',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundAttachment: 'fixed'
-      }}
-    >
-      {children}
+    <div className="relative w-full h-full">
+      {/* Background layer */}
+      {backgroundImage && isBackgroundEnabled && (
+        <div 
+          className="absolute inset-0 z-0"
+          style={{
+            backgroundImage: `url(${backgroundImage})`,
+            backgroundSize: 'contain',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat',
+            backgroundAttachment: 'fixed',
+            backgroundColor: 'rgba(0,0,0,0.03)',
+            opacity: 0.7,
+            pointerEvents: 'none'
+          }}
+        />
+      )}
+      
+      {/* Content layer */}
+      <div className="relative z-10 w-full h-full">
+        {children}
+      </div>
     </div>
   )
 } 
