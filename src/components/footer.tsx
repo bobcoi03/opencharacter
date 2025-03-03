@@ -36,10 +36,12 @@ const footerLinks: FooterSection[] = [
   {
     title: "Community",
     links: [
-      { href: "https://www.tiktok.com/@opencharacter", label: "TikTok", external: true },
+      { href: "https://www.tiktok.com/@opencharacter.org", label: "TikTok", external: true },
       { href: "https://www.reddit.com/r/OpenCharacterAI/", label: "Reddit", external: true },
       { href: "https://www.instagram.com/opencharacter_org/", label: "Instagram", external: true },
       { href: "https://github.com/bobcoi03/opencharacter", label: "GitHub", external: true },
+      { href: "https://x.com/opencharacter_", label: "Twitter", external: true },
+      { href: "mailto:info@opencharacter.org", label: "Email", external: true }
     ],
   },
   {
