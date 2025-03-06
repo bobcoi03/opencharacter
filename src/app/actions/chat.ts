@@ -182,8 +182,9 @@ export async function continueConversation(
       });
       return { error: true, message: "You must be a paid user to use this model" };
     }
-  } else if (!isSubscribed) {
+  } else if (!isSubscribed && !api_key) {
     // Only check request limits for non-subscribed users using free models
+    // If the user has an API key, they can use the model without being limited
     try {
       const { remainingRequests } = await checkAndIncrementRequestCount(session.user.id);
       console.log("Free tier request count updated:", {
