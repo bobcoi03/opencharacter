@@ -112,7 +112,7 @@ export function PricingDialog({ messagesLength, onClose }: PricingDialogProps) {
             Upgrade to Pro
           </DialogTitle>
           <DialogDescription className="text-center text-zinc-400 mt-2">
-            You've sent {messagesLength} messages! Upgrade to Pro for unlimited premium model access.
+            You{"'"}ve sent {messagesLength} messages! Upgrade to Pro for unlimited premium model access.
           </DialogDescription>
         </DialogHeader>
 
