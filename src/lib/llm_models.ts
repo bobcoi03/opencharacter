@@ -185,6 +185,12 @@ export const models: Models = {
         name: "mistralai/mixtral-8x7b-instruct",
         paid: true,
     },
+    "mistralai/mistral-small-24b-instruct-2501": {
+        id: "mistralai/mistral-small-24b-instruct-2501",
+        name: "mistralai/mistral-small-24b-instruct-2501",
+        paid: true,
+    },
+
     "gryphe/mythomist-7b": {
         id: "gryphe/mythomist-7b",
         name: "gryphe/mythomist-7b",
@@ -233,11 +239,6 @@ export const models: Models = {
     "deepseek/deepseek-r1-distill-qwen-1.5b": {
         id: "deepseek/deepseek-r1-distill-qwen-1.5b",
         name: "deepseek/deepseek-r1-distill-qwen-1.5b",
-        paid: true,
-    },
-    "mistralai/mistral-small-24b-instruct-2501": {
-        id: "mistralai/mistral-small-24b-instruct-2501",
-        name: "mistralai/mistral-small-24b-instruct-2501",
         paid: true,
     },
     "deepseek/deepseek-r1-distill-qwen-32b": {
