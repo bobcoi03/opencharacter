@@ -40,6 +40,7 @@ import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { AdsProvider, InlineAd } from '@kontextso/sdk';
 import { ModelSelector } from "@/components/model-selector";
+import { PricingDialog } from "@/components/pricing-dialog";
 
 const MAX_TEXTAREA_HEIGHT = 450; // maximum height in pixels
 
@@ -748,7 +749,16 @@ export default function MessageAndInput({
       conversationId={`${character.id.slice(24)}-${user?.id?.slice(24)}`}
       isDisabled={isSubscribed}
     >
+
     <div className="flex flex-col h-full relative max-w-full overflow-x-hidden p-4">
+
+      {!isSubscribed && (
+        <PricingDialog 
+          messagesLength={messagesState.length} 
+          onClose={() => {}} 
+        />
+      )}
+
       <style jsx global>{`
         /* Webkit browsers (Chrome, Safari) */
         ::-webkit-scrollbar {
