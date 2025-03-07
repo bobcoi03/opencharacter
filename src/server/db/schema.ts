@@ -143,7 +143,6 @@ export type ChatMessage = {
 
 export type ChatMessageArray = ChatMessage[];
 
-// Update the chat_sessions table definition
 export const chat_sessions = sqliteTable("chat_session", {
   id: text("id")
     .primaryKey()
@@ -167,6 +166,7 @@ export const chat_sessions = sqliteTable("chat_session", {
     .$defaultFn(() => sql`CURRENT_TIMESTAMP`),
   summary: text("summary"),
   share: integer("share", { mode: "boolean" }),
+  title: text("title"),
 }, (table) => ({
   userCharacterIndex: index('user_character_idx').on(table.user_id, table.character_id),
 }));

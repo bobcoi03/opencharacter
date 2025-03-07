@@ -25,7 +25,7 @@ import ChatSessionDeleteButton from './chat-session-delete-button';
 import { Textarea } from './ui/textarea';
 import { Brain } from 'lucide-react';
 import { CoreMessage } from 'ai';
-import { summarizeConversation, saveSummarization, fetchSummary, toggleChatSessionSharing, getChatSessionShareStatus } from '@/app/actions/chat';
+import { summarizeConversation, saveSummarization, fetchSummary, toggleChatSessionSharing, getChatSessionShareStatus, updateChatSessionTitle } from '@/app/actions/chat';
 import { readStreamableValue } from 'ai/rsc';
 import { Switch } from './ui/switch';
 import { Label } from '@/components/ui/label';
@@ -237,6 +237,14 @@ export default function EllipsisButton({ character, made_by_username, chat_sessi
     });
     setIsLoadingAutoSummarize(false)
   };
+
+  const handleUpdateTitle = async (conversationId: string, title: string) => {
+    const result = await updateChatSessionTitle(conversationId, title);
+    toast({
+      title: result.message,
+      className: `${result.error ? 'bg-red-300' : 'bg-green-300'}`
+    });
+  }
 
   const [characterIcon, setCharacterIcon] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -567,17 +575,31 @@ export default function EllipsisButton({ character, made_by_username, chat_sessi
                     />
                   </div>
 
+                  <input 
+                    placeholder='title'
+                    className='w-full bg-transparent text-md text-white font-bold break-words overflow-wrap-anywhere whitespace-normal'
+                    defaultValue={conversation.title ?? ""}
+                    onChange={(e) => handleUpdateTitle(conversation.id, e.target.value)}
+                    style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}
+                  />
+
                   <p className="text-sm font-medium text-white mt-1">
                     {latestMessage.role === 'assistant' ? character.name : 'You'}: {latestMessage.content && latestMessage.content.slice(0, 200)}
                     {latestMessage.content && latestMessage.content.length > 200 && "..."}
                   </p>
-                  <Button 
-                    variant="link" 
-                    className="mt-2 p-0 h-auto text-blue-400"
-                    onClick={() => handleContinueChat(conversation.id)}
-                  >
-                    Continue Chat
-                  </Button>
+
+                  <div className='flex items-center justify-between gap-2'>
+
+                    <Button 
+                      variant="link" 
+                      className="mt-2 p-0 h-auto text-blue-400"
+                      onClick={() => handleContinueChat(conversation.id)}
+                    >
+                      Continue Chat
+                    </Button>
+
+                  </div>
+
                 </div>
               );
             })}

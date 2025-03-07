@@ -1162,3 +1162,22 @@ async function recordMeteredModels(gen_id: string) {
     throw error; // Re-throw the error to be handled by the caller
   }
 }
+
+export async function updateChatSessionTitle(conversationId: string, title: string) {
+  const session = await auth();
+
+  if (!session?.user) {
+    return { error: true, message: "Failed to authenticate user" };
+  }
+
+  try {
+    await db
+      .update(chat_sessions)
+      .set({ title: title })
+      .where(eq(chat_sessions.id, conversationId));
+    return { error: false, message: "Title updated successfully" };
+  } catch (error) {
+    console.error("Error in updateChatSessionTitle:", error);
+    return { error: true, message: "Failed to update title" };
+  }
+}
