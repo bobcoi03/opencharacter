@@ -591,6 +591,7 @@ export async function getConversations() {
         interaction_count: chat_sessions.interaction_count,
         character_name: characters.name,
         character_avatar: characters.avatar_image_url,
+        title: chat_sessions.title,
       })
       .from(chat_sessions)
       .leftJoin(characters, eq(chat_sessions.character_id, characters.id))
@@ -632,6 +633,7 @@ export async function getConversations() {
         ).toISOString(),
         updated_at: new Date(session.updated_at).toISOString(),
         interaction_count: session.interaction_count,
+        title: session.title,
       })),
     };
   } catch (error) {
