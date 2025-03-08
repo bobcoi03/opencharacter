@@ -49,9 +49,10 @@ export function PricingDialog({ messagesLength, onClose }: PricingDialogProps) {
   const { data: session } = useSession()
   const router = useRouter()
 
-  // Show dialog when messagesLength is divisible by 20
+  // Show dialog when messagesLength reaches specific thresholds
   useEffect(() => {
-    if (messagesLength > 0 && messagesLength % 20 === 0) {
+    const thresholds = [10, 30, 60, 100, 150, 210, 250, 300]
+    if (messagesLength > 0 && thresholds.includes(messagesLength)) {
       setOpen(true)
     }
   }, [messagesLength])
