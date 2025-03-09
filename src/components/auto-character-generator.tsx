@@ -13,6 +13,7 @@ import { Loader2, Save, Wand2, RefreshCw, AlertTriangle, LogIn, Sparkles } from 
 import { type CharacterTag, NSFWCharacterTags } from "@/types/character-tags";
 import { Switch } from "@/components/ui/switch";
 import { useSession, signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -51,6 +52,8 @@ export default function AutoCharacterGenerator() {
   const taglineRef = useRef<HTMLInputElement>(null);
   const descriptionRef = useRef<HTMLTextAreaElement>(null);
   const greetingRef = useRef<HTMLTextAreaElement>(null);
+
+  const router = useRouter();
 
   // Handle prompt input change
   const handlePromptChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -303,15 +306,20 @@ export default function AutoCharacterGenerator() {
           setPrompt("");
           setGeneratedCharacter(null);
           setIsNsfw(false);
-          alert("Character created successfully!");
-          // In a real app, you might redirect to the character page
+          
+          // Redirect to the chat page with the new character
+          if (result.character && result.character.id) {
+            router.push(`/chat/${result.character.id}`);
+          } else {
+            alert("Character created successfully!");
+          }
         } else {
           console.error("[CLIENT] Failed to create character:", result.error);
           setError(result.error || "Failed to create character");
         }
       } catch (err) {
-        console.error("[CLIENT] Error during character saving:", err);
-        setError(err instanceof Error ? err.message : "An unexpected error occurred");
+        console.error("[CLIENT] Error in character creation:", err);
+        setError("An unexpected error occurred");
       }
     });
   };
