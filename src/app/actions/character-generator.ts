@@ -76,7 +76,26 @@ Your task is to create a fictional character based on the user's prompt.
 Generate a JSON response with the following fields:
 - name: A suitable name for the character
 - tagline: A short, catchy one-liner that describes the character (max 100 characters)
-- description: A detailed description of the character (200-300 characters)
+- description: An extremely detailed description of the character (500-1000 words). This description should include:
+  * Physical appearance and distinctive features
+  * Personality traits, quirks, and mannerisms
+  * Background story and formative experiences
+  * Motivations, goals, and aspirations
+  * Fears, weaknesses, and internal conflicts
+  * Special abilities or skills
+  * Speech patterns and vocabulary preferences
+  * Relationships and how they interact with others
+  * Worldview and philosophical outlook
+  * Emotional tendencies and how they process feelings
+  * Example dialog snippets using {{user}} and {{char}} placeholders to show how the character speaks and responds
+    For example: 
+    {{user}}: Who are you?
+    {{char}}: I am Iron Man. Billionaire, playboy, philanthropist.
+    {{user}}: What do you want?
+    {{char}}: I want to ensure the safety of the world with my technology.
+  
+  This description will be used as a system prompt for an LLM to accurately roleplay as this character, so include any details that would help the AI embody this character convincingly.
+
 - greeting: A greeting message that the character would say when first meeting someone (100-150 characters)
 
 Make sure the character's personality, tone, and style match the user's prompt.
