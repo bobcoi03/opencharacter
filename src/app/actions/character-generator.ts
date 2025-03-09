@@ -99,7 +99,19 @@ Generate a JSON response with the following fields:
 - greeting: A greeting message that the character would say when first meeting someone (100-150 characters)
 
 Make sure the character's personality, tone, and style match the user's prompt.
-The response should be in valid JSON format only, with no additional text.`;
+
+IMPORTANT: The response must be in valid JSON format only, with no additional text.
+- The JSON structure must be exactly: {"name": "...", "tagline": "...", "description": "...", "greeting": "..."}
+- Do not add any extra fields to the JSON
+- Ensure all JSON property names are in double quotes
+- Ensure all JSON property values are in double quotes
+- Escape all quotes within strings using backslash: \\"
+- Escape all newlines as \\n
+- Escape all backslashes as \\\\
+- Avoid using control characters in the JSON
+- Make sure all dialog examples are properly escaped
+- Do not use markdown formatting in the JSON content
+- Ensure the JSON is properly closed with all matching braces`;
 
     // Call the OpenAI API directly
     console.log("[SERVER] Sending request with model:", model);
@@ -110,7 +122,7 @@ The response should be in valid JSON format only, with no additional text.`;
         { role: "user", content: `Create a character based on this prompt: "${prompt}"` }
       ],
       temperature: 0.7,
-      max_tokens: 1000,
+      max_tokens: 4000,
       response_format: { type: "json_object" }
     });
     console.log("[SERVER] Received response from OpenAI API:", {
@@ -122,34 +134,107 @@ The response should be in valid JSON format only, with no additional text.`;
     // Get the response content
     const content = response.choices[0]?.message.content;
     
-    if (!content) {
-      console.error("[SERVER] No content in OpenAI response");
-      return {
-        success: false,
-        error: "Failed to generate character details"
-      };
-    }
-
+    // Parse the JSON response with better error handling
     try {
-      console.log("[SERVER] Parsing LLM response content:", content);
-      const characterData = JSON.parse(content);
-      console.log("[SERVER] Successfully parsed character data:", characterData);
+      if (!content) {
+        console.error("[SERVER] No content in response");
+        return {
+          success: false,
+          error: "No content in response from AI service"
+        };
+      }
+      
+      // Try to clean the content before parsing
+      const cleanedContent = content
+        .replace(/[\u0000-\u001F\u007F-\u009F]/g, "") // Remove control characters
+        .replace(/\\(?!["\\/bfnrt])/g, "\\\\") // Escape backslashes that aren't already part of escape sequences
+        .replace(/([^\\])"/g, '$1\\"') // Escape unescaped quotes
+        .replace(/([^\\])\\([^"\\/bfnrt])/g, '$1\\\\$2'); // Fix improperly escaped characters
+      
+      let parsedResponse;
+      try {
+        parsedResponse = JSON.parse(cleanedContent);
+      } catch (parseError) {
+        console.log("[SERVER] First cleaning attempt failed, trying more aggressive cleaning");
+        
+        // More aggressive JSON repair attempt
+        const fixedContent = cleanedContent
+          // Fix common JSON structure issues
+          .replace(/,\s*}/g, '}') // Remove trailing commas
+          .replace(/}\s*{/g, '},{') // Fix missing commas between objects
+          .replace(/"\s*}/g, '"}') // Fix missing quotes at end of properties
+          .replace(/"\s*:/g, '":') // Fix spacing in property names
+          .replace(/:\s*"/g, ':"') // Fix spacing in property values
+          .replace(/([^\\])"([^:]*)"/g, '$1\\"$2\\"'); // Escape quotes in values
+          
+        try {
+          // Try to extract just the main JSON object if there's extra text
+          const jsonMatch = fixedContent.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            parsedResponse = JSON.parse(jsonMatch[0]);
+          } else {
+            throw new Error("Could not extract JSON object");
+          }
+        } catch (secondParseError) {
+          console.error("[SERVER] Second parsing attempt failed:", secondParseError);
+          throw parseError; // Re-throw the original error
+        }
+      }
+      
+      // Validate the response structure
+      if (!parsedResponse.name || !parsedResponse.tagline || 
+          !parsedResponse.description || !parsedResponse.greeting) {
+        console.error("[SERVER] Invalid response structure:", parsedResponse);
+        return {
+          success: false,
+          error: "Invalid response structure from AI service"
+        };
+      }
       
       return {
         success: true,
         character: {
-          name: characterData.name,
-          tagline: characterData.tagline,
-          description: characterData.description,
-          greeting: characterData.greeting
+          name: parsedResponse.name,
+          tagline: parsedResponse.tagline,
+          description: parsedResponse.description,
+          greeting: parsedResponse.greeting
         }
       };
-    } catch (parseError) {
-      console.error("[SERVER] Failed to parse LLM response:", parseError);
-      console.error("[SERVER] Raw content that failed to parse:", content);
+    } catch (error: unknown) {
+      console.error("[SERVER] Failed to parse LLM response:", error);
+      console.error("[SERVER] Raw content that failed to parse:", content || "No content");
+      
+      // Attempt a more lenient parsing approach if standard parsing fails
+      try {
+        // Try to extract JSON using regex if the content might have extra text
+        if (content) {
+          const jsonMatch = content.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            const extractedJson = jsonMatch[0];
+            const parsedResponse = JSON.parse(extractedJson);
+            
+            if (parsedResponse.name && parsedResponse.tagline && 
+                parsedResponse.description && parsedResponse.greeting) {
+              console.log("[SERVER] Successfully parsed JSON after extraction");
+              return {
+                success: true,
+                character: {
+                  name: parsedResponse.name,
+                  tagline: parsedResponse.tagline,
+                  description: parsedResponse.description,
+                  greeting: parsedResponse.greeting
+                }
+              };
+            }
+          }
+        }
+      } catch (secondError) {
+        console.error("[SERVER] Failed second parsing attempt:", secondError);
+      }
+      
       return {
         success: false,
-        error: "Failed to parse character data"
+        error: `Failed to parse response from AI service: ${error instanceof Error ? error.message : String(error)}`
       };
     }
   } catch (error) {
