@@ -122,7 +122,7 @@ export default function AutoCharacterGenerator() {
           outputFormat: "webp",
           outputQuality: 80,
           promptStrength: 0.8,
-          numInferenceSteps: 28,
+          numInferenceSteps: 4,
           disableSafetyChecker: false,
         };
         

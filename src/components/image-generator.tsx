@@ -62,7 +62,7 @@ export default function ImageGenerator() {
           outputFormat: "webp",
           outputQuality: 80,
           promptStrength: 0.8,
-          numInferenceSteps: 28,
+          numInferenceSteps: 3,
           disableSafetyChecker: true,
         };
         console.log("[CLIENT] Input prepared:", input);
