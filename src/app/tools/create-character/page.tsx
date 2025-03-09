@@ -1,5 +1,6 @@
 import { Metadata } from "next";
 import AutoCharacterGenerator from "@/components/auto-character-generator";
+import AuthProvider from "@/components/auth-provider";
 
 export const metadata: Metadata = {
   title: "AI Character Creator | Create Custom AI Characters",
@@ -22,7 +23,9 @@ export const runtime = "edge";
 export default function AutoCharacterGeneratorPage() {
   return (
     <div className="w-full">
-      <AutoCharacterGenerator />
+      <AuthProvider>
+        <AutoCharacterGenerator />
+      </AuthProvider>
     </div>
   );
 } 

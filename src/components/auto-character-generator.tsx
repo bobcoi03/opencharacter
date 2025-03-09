@@ -9,9 +9,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Save, Wand2, RefreshCw, AlertTriangle } from "lucide-react";
+import { Loader2, Save, Wand2, RefreshCw, AlertTriangle, LogIn } from "lucide-react";
 import { type CharacterTag, NSFWCharacterTags } from "@/types/character-tags";
 import { Switch } from "@/components/ui/switch";
+import { useSession, signIn } from "next-auth/react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -33,6 +34,7 @@ type GeneratedCharacter = {
 };
 
 export default function AutoCharacterGenerator() {
+  const { data: session, status } = useSession();
   const [prompt, setPrompt] = useState("");
   const [imagePrompt, setImagePrompt] = useState("");
   const [isNsfw, setIsNsfw] = useState(false);
@@ -42,6 +44,7 @@ export default function AutoCharacterGenerator() {
   const [error, setError] = useState<string | null>(null);
   const [generatedCharacter, setGeneratedCharacter] = useState<GeneratedCharacter | null>(null);
   const [showConfirmationDialog, setShowConfirmationDialog] = useState(false);
+  const [showAuthDialog, setShowAuthDialog] = useState(false);
   
   // Refs for editable fields
   const nameRef = useRef<HTMLInputElement>(null);
@@ -49,9 +52,32 @@ export default function AutoCharacterGenerator() {
   const descriptionRef = useRef<HTMLTextAreaElement>(null);
   const greetingRef = useRef<HTMLTextAreaElement>(null);
 
+  // Handle prompt input change
+  const handlePromptChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newValue = e.target.value;
+    
+    // Check authentication on first keystroke
+    if (newValue.length === 1 && !prompt.length && status !== "authenticated") {
+      console.log("[CLIENT] User started typing but is not authenticated, showing auth dialog");
+      setShowAuthDialog(true);
+      // Still set the prompt value so it's preserved if they authenticate
+      setPrompt(newValue);
+      return;
+    }
+    
+    setPrompt(newValue);
+  };
+
   const handleGenerate = (e: React.FormEvent) => {
     e.preventDefault();
     console.log("[CLIENT] Generate character initiated with prompt:", prompt);
+    
+    // Check if user is authenticated
+    if (status !== "authenticated") {
+      console.log("[CLIENT] User not authenticated, showing auth dialog");
+      setShowAuthDialog(true);
+      return;
+    }
     
     if (!prompt.trim()) {
       console.log("[CLIENT] Empty prompt, showing error");
@@ -71,7 +97,13 @@ export default function AutoCharacterGenerator() {
         
         if (!characterResult.success || !characterResult.character) {
           console.error("[CLIENT] Character generation failed:", characterResult.error);
-          setError(characterResult.error || "Failed to generate character details");
+          
+          // Check if the error is related to authentication
+          if (characterResult.error?.includes("logged in") || characterResult.error?.includes("authentication")) {
+            setShowAuthDialog(true);
+          } else {
+            setError(characterResult.error || "Failed to generate character details");
+          }
           return;
         }
         
@@ -145,9 +177,9 @@ export default function AutoCharacterGenerator() {
           numOutputs: 1,
           aspectRatio: "1:1",
           outputFormat: "webp",
-          outputQuality: 80,
+          outputQuality: 65,
           promptStrength: 0.8,
-          numInferenceSteps: 28,
+          numInferenceSteps: 3,
           disableSafetyChecker: false,
         };
         
@@ -285,253 +317,274 @@ export default function AutoCharacterGenerator() {
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto p-4 space-y-6">      
-      {!generatedCharacter ? (
-        <form onSubmit={handleGenerate} className="space-y-4 max-w-2xl mx-auto mt-12">
-          <div className="space-y-2">
-            <div className="text-xl font-medium text-center">
-              Describe your character
-            </div>
-            <Textarea
-              id="prompt"
-              placeholder="e.g., anime character, fantasy wizard, sci-fi robot, historical figure..."
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              className="min-h-[120px] rounded-xl border-2 focus:border-blue-400 focus:ring-blue-400"
-              disabled={isGenerating}
-            />
-          </div>
-          
-          <Button 
-            type="submit" 
-            disabled={isGenerating} 
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-md"
-          >
-            {isGenerating ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Generating Character...
-              </>
-            ) : (
-              <>
-                <Wand2 className="mr-2 h-4 w-4" />
-                Generate Character
-              </>
-            )}
-          </Button>
-        </form>
-      ) : (
-        <div className="space-y-6 p-6 rounded-2xl">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name" className="font-medium">Name</Label>
-                <Input 
-                  id="name" 
-                  ref={nameRef}
-                  defaultValue={generatedCharacter.name} 
-                  className="rounded-xl border-2 focus:border-blue-400 focus:ring-blue-400"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="tagline" className="font-medium">Tagline</Label>
-                <Input 
-                  id="tagline" 
-                  ref={taglineRef}
-                  defaultValue={generatedCharacter.tagline} 
-                  className="rounded-xl border-2 focus:border-blue-400 focus:ring-blue-400"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="description" className="font-medium">Description</Label>
-                <Textarea 
-                  id="description" 
-                  ref={descriptionRef}
-                  defaultValue={generatedCharacter.description} 
-                  className="min-h-[120px] rounded-xl border-2 focus:border-blue-400 focus:ring-blue-400"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="greeting" className="font-medium">Greeting</Label>
-                <Textarea 
-                  id="greeting" 
-                  ref={greetingRef}
-                  defaultValue={generatedCharacter.greeting} 
-                  className="min-h-[80px] rounded-xl border-2 focus:border-blue-400 focus:ring-blue-400"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label className="font-medium">Tags</Label>
-                <div className="flex flex-wrap gap-2">
-                  {generatedCharacter.tags.map((tag) => (
-                    <span 
-                      key={tag} 
-                      className={`px-3 py-1 rounded-full text-sm font-medium ${
-                        NSFWCharacterTags.includes(tag as any)
-                          ? "bg-red-100 text-red-800"
-                          : "bg-blue-100 text-blue-800"
-                      }`}
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              </div>
-              
-              {/* NSFW Toggle - Moved here from the initial form */}
-              <div className="flex items-center space-x-2 pt-2 border-t">
-                <Switch
-                  id="nsfw-toggle"
-                  checked={isNsfw}
-                  onCheckedChange={setIsNsfw}
-                  className="data-[state=checked]:bg-blue-600"
-                />
-                <Label htmlFor="nsfw-toggle" className="flex items-center cursor-pointer">
-                  <span className="mr-2">Mark as NSFW Content</span>
-                  {isNsfw && (
-                    <span className="text-xs px-2 py-0.5 bg-red-100 text-red-800 rounded-full flex items-center">
-                      <AlertTriangle className="h-3 w-3 mr-1" />
-                      18+
-                    </span>
-                  )}
-                </Label>
-              </div>
-            </div>
-            
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <Label className="font-medium">Character Avatar</Label>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={handleRegenerateImage}
-                  disabled={isRegeneratingImage}
-                  className="border-blue-300 hover:bg-blue-50 hover:text-blue-700 rounded-xl"
-                >
-                  {isRegeneratingImage ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <>
-                      <RefreshCw className="h-4 w-4 mr-2" />
-                      Regenerate
-                    </>
-                  )}
-                </Button>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="imagePrompt" className="font-medium">Image Prompt</Label>
-                <Textarea
-                  id="imagePrompt"
-                  placeholder="Customize the image prompt and regenerate..."
-                  value={imagePrompt}
-                  onChange={(e) => setImagePrompt(e.target.value)}
-                  className="min-h-[80px] rounded-xl border-2 focus:border-blue-400 focus:ring-blue-400 text-sm"
-                  disabled={isRegeneratingImage}
-                />
-              </div>
-              
-              {generatedCharacter.imageUrl ? (
-                <Card className="overflow-hidden rounded-2xl border-2 border-blue-100 shadow-md">
-                  <CardContent className="p-0">
-                    <img
-                      src={generatedCharacter.imageUrl}
-                      alt="Generated character avatar"
-                      className="w-full h-auto object-cover rounded-xl"
-                      loading="lazy"
-                    />
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="flex items-center justify-center h-64 bg-blue-50 rounded-2xl border-2 border-blue-100">
-                  <p className="text-blue-500">No image generated</p>
-                </div>
-              )}
-            </div>
-          </div>
-          
-          <div className="flex justify-between pt-4">
-            <Button 
-              variant="outline" 
-              onClick={() => {
-                console.log("[CLIENT] User clicked 'Start Over'");
-                setGeneratedCharacter(null);
-                setIsNsfw(false);
-              }}
-              disabled={isSaving}
-              className="border-blue-300 hover:bg-blue-50 hover:text-blue-700 rounded-xl"
-            >
-              Start Over
-            </Button>
-            
-            <Button 
-              onClick={handleSaveRequest}
-              disabled={isSaving}
-              className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-md"
-            >
-              {isSaving ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving Character...
-                </>
-              ) : (
-                <>
-                  <Save className="mr-2 h-4 w-4" />
-                  Save Character
-                </>
-              )}
-            </Button>
-          </div>
-        </div>
-      )}
-      
-      {error && (
-        <div className="p-4 bg-red-50 text-red-600 rounded-xl border border-red-200 shadow-sm max-w-2xl mx-auto">
-          <p className="font-medium">Error:</p>
-          <p>{error}</p>
-        </div>
-      )}
-
-      {/* Character Creation Confirmation Dialog */}
-      <AlertDialog open={showConfirmationDialog} onOpenChange={setShowConfirmationDialog}>
-        <AlertDialogContent className="rounded-2xl">
+    <>
+      {/* Authentication Dialog */}
+      <AlertDialog open={showAuthDialog} onOpenChange={setShowAuthDialog}>
+        <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Character Creation Confirmation</AlertDialogTitle>
+            <AlertDialogTitle>Authentication Required</AlertDialogTitle>
             <AlertDialogDescription>
-              Please review your character before creating:
-              <ul className="list-disc pl-5 mt-2 space-y-1">
-                <li>Ensure all information is accurate</li>
-                <li>Verify that the content complies with our community guidelines</li>
-                {isNsfw && (
-                  <>
-                    <li className="text-red-600 font-semibold">This character contains NSFW content</li>
-                    <li className="text-red-600">You must be 18 years or older to create NSFW content</li>
-                    <li className="text-red-600">This character will be marked as NSFW</li>
-                  </>
-                )}
-              </ul>
+              You need to be signed in to generate characters. Your prompt will be preserved after signing in.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="rounded-xl">
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={() => {
-                setShowConfirmationDialog(false);
-                handleSaveCharacter();
-              }}
-              className={isNsfw ? "bg-red-600 hover:bg-red-700 rounded-xl" : "bg-blue-600 hover:bg-blue-700 rounded-xl"}
-            >
-              {isNsfw ? "I Confirm (NSFW)" : "Create Character"}
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => signIn('google', { callbackUrl: window.location.href })}>
+              <LogIn className="mr-2 h-4 w-4" />
+              Sign in with Google
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+
+      <div className="w-full max-w-4xl mx-auto p-4 space-y-6">      
+        {!generatedCharacter ? (
+          <form onSubmit={handleGenerate} className="space-y-4 max-w-2xl mx-auto mt-12">
+            <div className="space-y-2">
+              <div className="text-xl font-medium text-center">
+                Describe your character
+              </div>
+              <Textarea
+                id="prompt"
+                placeholder="e.g., anime character, fantasy wizard, sci-fi robot, historical figure..."
+                value={prompt}
+                onChange={handlePromptChange}
+                className="min-h-[120px] rounded-xl border-2 focus:border-blue-400 focus:ring-blue-400"
+                disabled={isGenerating}
+              />
+            </div>
+            
+            <Button 
+              type="submit" 
+              disabled={isGenerating} 
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-md"
+            >
+              {isGenerating ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Generating Character...
+                </>
+              ) : (
+                <>
+                  <Wand2 className="mr-2 h-4 w-4" />
+                  Generate Character
+                </>
+              )}
+            </Button>
+          </form>
+        ) : (
+          <div className="space-y-6 p-6 rounded-2xl">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name" className="font-medium">Name</Label>
+                  <Input 
+                    id="name" 
+                    ref={nameRef}
+                    defaultValue={generatedCharacter.name} 
+                    className="rounded-xl border-2 focus:border-blue-400 focus:ring-blue-400"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="tagline" className="font-medium">Tagline</Label>
+                  <Input 
+                    id="tagline" 
+                    ref={taglineRef}
+                    defaultValue={generatedCharacter.tagline} 
+                    className="rounded-xl border-2 focus:border-blue-400 focus:ring-blue-400"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="description" className="font-medium">Description</Label>
+                  <Textarea 
+                    id="description" 
+                    ref={descriptionRef}
+                    defaultValue={generatedCharacter.description} 
+                    className="min-h-[120px] rounded-xl border-2 focus:border-blue-400 focus:ring-blue-400"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="greeting" className="font-medium">Greeting</Label>
+                  <Textarea 
+                    id="greeting" 
+                    ref={greetingRef}
+                    defaultValue={generatedCharacter.greeting} 
+                    className="min-h-[80px] rounded-xl border-2 focus:border-blue-400 focus:ring-blue-400"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label className="font-medium">Tags</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {generatedCharacter.tags.map((tag) => (
+                      <span 
+                        key={tag} 
+                        className={`px-3 py-1 rounded-full text-sm font-medium ${
+                          NSFWCharacterTags.includes(tag as any)
+                            ? "bg-red-100 text-red-800"
+                            : "bg-blue-100 text-blue-800"
+                        }`}
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                
+                {/* NSFW Toggle - Moved here from the initial form */}
+                <div className="flex items-center space-x-2 pt-2 border-t">
+                  <Switch
+                    id="nsfw-toggle"
+                    checked={isNsfw}
+                    onCheckedChange={setIsNsfw}
+                    className="data-[state=checked]:bg-blue-600"
+                  />
+                  <Label htmlFor="nsfw-toggle" className="flex items-center cursor-pointer">
+                    <span className="mr-2">Mark as NSFW Content</span>
+                    {isNsfw && (
+                      <span className="text-xs px-2 py-0.5 bg-red-100 text-red-800 rounded-full flex items-center">
+                        <AlertTriangle className="h-3 w-3 mr-1" />
+                        18+
+                      </span>
+                    )}
+                  </Label>
+                </div>
+              </div>
+              
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <Label className="font-medium">Character Avatar</Label>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={handleRegenerateImage}
+                    disabled={isRegeneratingImage}
+                    className="border-blue-300 hover:bg-blue-50 hover:text-blue-700 rounded-xl"
+                  >
+                    {isRegeneratingImage ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <>
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                        Regenerate
+                      </>
+                    )}
+                  </Button>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="imagePrompt" className="font-medium">Image Prompt</Label>
+                  <Textarea
+                    id="imagePrompt"
+                    placeholder="Customize the image prompt and regenerate..."
+                    value={imagePrompt}
+                    onChange={(e) => setImagePrompt(e.target.value)}
+                    className="min-h-[80px] rounded-xl border-2 focus:border-blue-400 focus:ring-blue-400 text-sm"
+                    disabled={isRegeneratingImage}
+                  />
+                </div>
+                
+                {generatedCharacter.imageUrl ? (
+                  <Card className="overflow-hidden rounded-2xl border-2 border-blue-100 shadow-md">
+                    <CardContent className="p-0">
+                      <img
+                        src={generatedCharacter.imageUrl}
+                        alt="Generated character avatar"
+                        className="w-full h-auto object-cover rounded-xl"
+                        loading="lazy"
+                      />
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <div className="flex items-center justify-center h-64 bg-blue-50 rounded-2xl border-2 border-blue-100">
+                    <p className="text-blue-500">No image generated</p>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <div className="flex justify-between pt-4">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  console.log("[CLIENT] User clicked 'Start Over'");
+                  setGeneratedCharacter(null);
+                  setIsNsfw(false);
+                }}
+                disabled={isSaving}
+                className="border-blue-300 hover:bg-blue-50 hover:text-blue-700 rounded-xl"
+              >
+                Start Over
+              </Button>
+              
+              <Button 
+                onClick={handleSaveRequest}
+                disabled={isSaving}
+                className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-md"
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving Character...
+                  </>
+                ) : (
+                  <>
+                    <Save className="mr-2 h-4 w-4" />
+                    Save Character
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        )}
+        
+        {error && (
+          <div className="p-4 bg-red-50 text-red-600 rounded-xl border border-red-200 shadow-sm max-w-2xl mx-auto">
+            <p className="font-medium">Error:</p>
+            <p>{error}</p>
+          </div>
+        )}
+
+        {/* Character Creation Confirmation Dialog */}
+        <AlertDialog open={showConfirmationDialog} onOpenChange={setShowConfirmationDialog}>
+          <AlertDialogContent className="rounded-2xl">
+            <AlertDialogHeader>
+              <AlertDialogTitle>Character Creation Confirmation</AlertDialogTitle>
+              <AlertDialogDescription>
+                Please review your character before creating:
+                <ul className="list-disc pl-5 mt-2 space-y-1">
+                  <li>Ensure all information is accurate</li>
+                  <li>Verify that the content complies with our community guidelines</li>
+                  {isNsfw && (
+                    <>
+                      <li className="text-red-600 font-semibold">This character contains NSFW content</li>
+                      <li className="text-red-600">You must be 18 years or older to create NSFW content</li>
+                      <li className="text-red-600">This character will be marked as NSFW</li>
+                    </>
+                  )}
+                </ul>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel className="rounded-xl">
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={() => {
+                  setShowConfirmationDialog(false);
+                  handleSaveCharacter();
+                }}
+                className={isNsfw ? "bg-red-600 hover:bg-red-700 rounded-xl" : "bg-blue-600 hover:bg-blue-700 rounded-xl"}
+              >
+                {isNsfw ? "I Confirm (NSFW)" : "Create Character"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+    </>
   );
 } 

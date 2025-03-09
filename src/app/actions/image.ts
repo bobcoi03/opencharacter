@@ -14,7 +14,7 @@ const imageGenerationSchema = z.object({
   outputFormat: z.string().default("webp"),
   outputQuality: z.number().min(0).max(100).default(80),
   promptStrength: z.number().min(0).max(1).default(0.8),
-  numInferenceSteps: z.number().min(1).max(50).default(28),
+  numInferenceSteps: z.number().min(1).max(4).default(3),
   seed: z.number().optional(),
   disableSafetyChecker: z.boolean().default(false),
 });
@@ -91,7 +91,7 @@ export async function generateImages(
     // Make the API request
     console.log("[SERVER] Making API request to Replicate...");
     const response = await fetch(
-      "https://api.replicate.com/v1/models/black-forest-labs/flux-dev/predictions",
+      "https://api.replicate.com/v1/models/black-forest-labs/flux-schnell/predictions",
       {
         method: "POST",
         headers: {

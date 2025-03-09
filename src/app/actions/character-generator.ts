@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 import { OpenAI } from "openai";
+import { auth } from "@/server/auth";
 
 // Define the response type
 export type CharacterGenerationResponse = {
@@ -24,6 +25,16 @@ export async function generateCharacterDetails(
   console.log("[SERVER] generateCharacterDetails called with prompt:", prompt);
   
   try {
+    // Check if user is authenticated
+    const session = await auth();
+    if (!session || !session.user) {
+      console.error("[SERVER] Authentication required for character generation");
+      return {
+        success: false,
+        error: "You must be logged in to generate characters"
+      };
+    }
+
     // Validate the input
     if (!prompt.trim()) {
       console.log("[SERVER] Empty prompt received, returning error");
