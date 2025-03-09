@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Save, Wand2, RefreshCw, AlertTriangle, LogIn } from "lucide-react";
+import { Loader2, Save, Wand2, RefreshCw, AlertTriangle, LogIn, Sparkles } from "lucide-react";
 import { type CharacterTag, NSFWCharacterTags } from "@/types/character-tags";
 import { Switch } from "@/components/ui/switch";
 import { useSession, signIn } from "next-auth/react";
@@ -371,6 +371,38 @@ export default function AutoCharacterGenerator() {
                 </>
               )}
             </Button>
+            
+            {/* Hero section explaining the functionality */}
+            <div className="mt-12 p-6 rounded-2xl shadow-sm">
+              <h2 className="text-2xl font-bold text-center text-blue-800 mb-4">AI Character Creator</h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+                <div className="space-y-2">
+                  <div className="bg-white p-3 rounded-full w-12 h-12 mx-auto flex items-center justify-center shadow-sm">
+                    <Sparkles className="h-6 w-6 text-blue-600" />
+                  </div>
+                  <h3 className="font-semibold text-blue-700">Describe</h3>
+                  <p className="text-sm text-gray-600">Simply describe your character idea in a few sentences</p>
+                </div>
+                <div className="space-y-2">
+                  <div className="bg-white p-3 rounded-full w-12 h-12 mx-auto flex items-center justify-center shadow-sm">
+                    <Wand2 className="h-6 w-6 text-blue-600" />
+                  </div>
+                  <h3 className="font-semibold text-blue-700">Generate</h3>
+                  <p className="text-sm text-gray-600">Our AI creates a complete character profile with personality</p>
+                </div>
+                <div className="space-y-2">
+                  <div className="bg-white p-3 rounded-full w-12 h-12 mx-auto flex items-center justify-center shadow-sm">
+                    <Save className="h-6 w-6 text-blue-600" />
+                  </div>
+                  <h3 className="font-semibold text-blue-700">Save</h3>
+                  <p className="text-sm text-gray-600">Edit and save your character to use in conversations</p>
+                </div>
+              </div>
+              <div className="mt-6 text-center text-sm text-gray-500">
+                <p>Create unique AI characters with distinct personalities, backstories, and visual styles.</p>
+                <p className="mt-1">Perfect for roleplay, storytelling, or creating virtual companions.</p>
+              </div>
+            </div>
           </form>
         ) : (
           <div className="space-y-6 p-6 rounded-2xl">
