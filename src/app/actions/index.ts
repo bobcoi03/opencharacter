@@ -5,6 +5,7 @@ import { createCharacter, searchCharacters, searchCharactersByTags } from "./cha
 import { CreatePersona, updatePersona, getAllUserPersonas, getDefaultPersona, setDefaultPersona, deletePersona } from "./persona";
 import { saveUser } from "./user";
 import { roastTweets, getRoast } from "./twitter";
+import { generateImages, type ImageGenerationInput } from "./image";
 
 export { 
     continueConversation,
@@ -25,4 +26,6 @@ export {
     deletePersona,
     deleteChatSession,
     searchCharactersByTags,
+    generateImages,
+    type ImageGenerationInput,
 };

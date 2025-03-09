@@ -31,6 +31,7 @@ const footerLinks: FooterSection[] = [
     title: "Tools",
     links: [
       { href: "/tools/twitter-roast", label: "Twitter Profile Roaster" },
+      { href: "/tools/create-character", label: "Create Character" },
     ],
   },
   {

@@ -10,7 +10,8 @@ export const env = createEnv({
     AUTH_URL: z.string(),
     AUTH_SECRET: z.string(),
     AUTH_GOOGLE_ID: z.string(),
-    AUTH_GOOGLE_SECRET: z.string()
+    AUTH_GOOGLE_SECRET: z.string(),
+    REPLICATE_API_TOKEN: z.string().optional(),
   },
   /*
    * Environment variables available on the client (and server).
@@ -28,6 +29,8 @@ export const env = createEnv({
   runtimeEnv: {
     AUTH_SECRET: process.env.AUTH_SECRET,
     AUTH_GOOGLE_ID: process.env.AUTH_GOOGLE_ID,
-    AUTH_GOOGLE_SECRET: process.env.AUTH_GOOGLE_SECRET
+    AUTH_GOOGLE_SECRET: process.env.AUTH_GOOGLE_SECRET,
+    AUTH_URL: process.env.AUTH_URL,
+    REPLICATE_API_TOKEN: process.env.REPLICATE_API_TOKEN,
   },
 });
