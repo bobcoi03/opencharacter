@@ -1088,36 +1088,81 @@ async function recordMeteredModels(gen_id: string) {
   }
       
   try {
-    await new Promise(resolve => setTimeout(resolve, 1000));
-  
-    const generation = await fetch(
-      `https://openrouter.ai/api/v1/generation?id=${gen_id}`,
-      { 
-        headers: {
-          "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
-          "Helicone-Auth": `Bearer ${process.env.HELICONE_API_KEY}`,
-          "HTTP-Referer": "https://opencharacter.org",
-          "X-Title": "OpenCharacter",
-          "Content-Type": "application/json",
+    // Implement polling with exponential backoff
+    const maxRetries = 5;
+    const initialBackoff = 500; // Start with 500ms
+    
+    let attempt = 0;
+    let generationData = null;
+    
+    while (attempt < maxRetries && !generationData) {
+      attempt++;
+      const backoffTime = initialBackoff * Math.pow(2, attempt - 1); // Exponential backoff
+      
+      console.log(`Attempt ${attempt} to fetch generation data, waiting ${backoffTime}ms`);
+      await new Promise(resolve => setTimeout(resolve, backoffTime));
+      
+      const generation = await fetch(
+        `https://openrouter.ai/api/v1/generation?id=${gen_id}`,
+        { 
+          headers: {
+            "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+            "Helicone-Auth": `Bearer ${process.env.HELICONE_API_KEY}`,
+            "HTTP-Referer": "https://opencharacter.org",
+            "X-Title": "OpenCharacter",
+            "Content-Type": "application/json",
+          },
         },
-      },
-    );
+      );
+      
+      if (generation.ok) {
+        const stats = await generation.json() as {
+          data?: {
+            total_cost: number;
+            tokens_prompt?: number;
+            tokens_completion?: number;
+          };
+        };
+        
+        // Check if we have valid data
+        if (stats.data?.total_cost !== undefined) {
+          generationData = stats.data;
+          console.log("Successfully retrieved generation data:", {
+            cost: stats.data.total_cost,
+            promptTokens: stats.data.tokens_prompt,
+            completionTokens: stats.data.tokens_completion
+          });
+          break;
+        } else {
+          console.log(`Attempt ${attempt}: Generation data not yet available or incomplete`);
+        }
+      } else {
+        console.log(`Attempt ${attempt}: Failed to fetch generation data, status: ${generation.status}`);
+      }
+      
+      // If we've reached the max retries, log an error
+      if (attempt === maxRetries) {
+        console.error("Failed to retrieve generation data after maximum retries");
+      }
+    }
     
-    const stats = await generation.json() as {
-      data: {
-        total_cost: number;
+    // Continue with the rest of the function using generationData
+    if (!generationData) {
+      console.error("Failed to retrieve valid generation data");
+      // Use a fallback minimum cost to ensure we still charge something
+      // This is a safety measure in case the OpenRouter API is temporarily unavailable
+      generationData = {
+        total_cost: 0.001, // Minimal fallback cost
+        tokens_prompt: 0,
+        tokens_completion: 0
       };
-    };
-    
-    console.log("Generation stats:", stats);
-    
-    if (!stats || typeof stats.data.total_cost === 'undefined') {
-      console.error("Invalid response format. Expected total_cost property:", stats);
-      return;
+      console.log("Using fallback minimum cost due to inability to fetch actual cost");
     }
 
+    console.log("Generation stats:", generationData);
+    
     // Apply 100% premium to the total cost
-    const baseCost = stats.data.total_cost;
+    const baseCost = generationData.total_cost;
     const premiumRate = 2; // 100% premium
     const finalCost = baseCost * premiumRate;
 
