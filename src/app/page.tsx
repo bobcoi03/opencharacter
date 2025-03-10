@@ -1,6 +1,6 @@
 import { db } from "@/server/db";
 import { desc, eq, asc, sql, and, or, SQL } from "drizzle-orm";
-import { characters, users } from "@/server/db/schema";
+import { characters, users, subscriptions } from "@/server/db/schema";
 import AICharacterGrid from "@/components/ai-character-grid";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -9,6 +9,7 @@ import { getConversations } from "./actions";
 import { Card, CardContent } from "@/components/ui/card";
 import { CTACard, Footer } from "@/components/footer";
 import { Button } from "@/components/ui/button";
+import { auth } from "@/server/auth";
 
 export const runtime = "edge";
 const ITEMS_PER_PAGE = 36;
@@ -173,6 +174,22 @@ export default async function Page({
   const sortOption = searchParams.sort || "popular";
   const tags = searchParams.tags ? searchParams.tags.split(',') : [];
   
+  // Get current user session
+  const session = await auth();
+  const userId = session?.user?.id;
+  
+  // Check if user has an active subscription
+  let isSubscribed = false;
+  if (userId) {
+    const subscription = await db.query.subscriptions.findFirst({
+      where: and(
+        eq(subscriptions.userId, userId),
+        eq(subscriptions.status, "active"),
+      ),
+    });
+    isSubscribed = !!subscription;
+  }
+  
   const [
     { characters: paginatedCharacters, totalItems },
     totalPublicCharacters
@@ -194,20 +211,22 @@ export default async function Page({
   return (
     <div className="text-white w-full overflow-y-auto overflow-x-hidden md:pl-16 p-2">
 
-      <Link href="/plans" className="block w-full mb-4">
-        <div className="w-full p-3 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-lg shadow-md flex flex-col sm:flex-row items-center justify-between hover:shadow-lg transition-shadow cursor-pointer">
-          <p className="text-sm font-medium text-white mb-2 sm:mb-0">
-            We protect your privacy, keep AI uncensored, and bring you constantly exciting new features. Help us grow —subscribe to Pro
-          </p>
-          <Button 
-            variant="secondary" 
-            size="sm" 
-            className="whitespace-nowrap font-medium hover:bg-white hover:text-blue-600 transition-colors"
-          >
-            Upgrade to Pro
-          </Button>
-        </div>
-      </Link>
+      {!isSubscribed && (
+        <Link href="/plans" className="block w-full mb-4">
+          <div className="w-full p-3 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-lg shadow-md flex flex-col sm:flex-row items-center justify-between hover:shadow-lg transition-shadow cursor-pointer">
+            <p className="text-sm font-medium text-white mb-2 sm:mb-0">
+              We protect your privacy, keep AI uncensored, and bring you constantly exciting new features. Help us grow —subscribe to Pro
+            </p>
+            <Button 
+              variant="secondary" 
+              size="sm" 
+              className="whitespace-nowrap font-medium hover:bg-white hover:text-blue-600 transition-colors"
+            >
+              Upgrade to Pro
+            </Button>
+          </div>
+        </Link>
+      )}
       
       <Suspense key={searchParams.id}>
         {!conversations.error && conversations.conversations && conversations.conversations?.length > 0 && <RecentConversation characters={conversations.conversations} />}
