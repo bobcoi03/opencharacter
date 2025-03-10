@@ -51,7 +51,7 @@ export function PricingDialog({ messagesLength, onClose }: PricingDialogProps) {
 
   // Show dialog when messagesLength reaches specific thresholds
   useEffect(() => {
-    const thresholds = [10, 30, 60, 100, 150, 210, 250, 300]
+    const thresholds = [40, 80, 120, 160, 200, 240, 280, 300]
     if (messagesLength > 0 && thresholds.includes(messagesLength)) {
       setOpen(true)
     }
