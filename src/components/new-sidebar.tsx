@@ -215,13 +215,6 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
     <div
       className={`flex ${isMobile ? "flex-row justify-around w-full" : "flex-col space-y-6"} items-center py-4`}
     >
-      <Link href="/" className={buttonClass}>
-        <Button variant="ghost" size="icon" className="h-10 w-10">
-          <Home className={iconClass} />
-        </Button>
-        <span className={textClass}>Home</span>
-      </Link>
-
       <Popover>
         <PopoverTrigger asChild>
           <div className={`${buttonClass}`}>
@@ -283,6 +276,13 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
           <Users className={iconClass} />
         </Button>
         <span className={textClass}>Community</span>
+      </Link>
+
+      <Link href="/referral" className={buttonClass}>
+        <Button variant="ghost" size="icon" className="h-10 w-10">
+          <Users className={iconClass} />
+        </Button>
+        <span className={textClass}>Referral</span>
       </Link>
     </div>
   );

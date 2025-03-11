@@ -59,9 +59,9 @@ const NavbarContent: React.FC<NavbarContentProps> = ({ search }) => {
 
   return (
     <nav className="w-full flex items-center justify-between px-2 py-2 border-b h-12">
-      <Link href="/" className="text-2xl font-bold">
+      <span className="text-2xl font-bold">
         OpenCharacter
-      </Link>
+      </span>
       <div className="flex items-center space-x-4">
         <div className="relative">
           {isSearchExpanded ? (
