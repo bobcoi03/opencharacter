@@ -11,32 +11,12 @@ const REFERRER_ID_COOKIE = 'referrer_id'
 // Cookie expiration (30 days in seconds)
 const COOKIE_EXPIRATION = 60 * 60 * 24 * 30
 
-// Helper function to set cookies in a way that works in both development and production
-function setCookie(response: NextResponse, name: string, value: string) {
-  // Get the current environment and hostname
-  const isProduction = process.env.NODE_ENV === 'production'
-  
-  // Set the cookie with appropriate settings for the environment
-  response.cookies.set({
-    name,
-    value,
-    maxAge: COOKIE_EXPIRATION,
-    path: '/',
-    // Use 'none' for Cloudflare Pages in production to ensure cross-domain functionality
-    sameSite: isProduction ? 'none' : 'lax',
-    secure: true, // Always use secure in both environments for consistency
-    httpOnly: true,
-  })
-  
-  return response
-}
-
 export async function middleware(request: NextRequest) {
   console.log('Middleware executing for URL:', request.url)
   console.log('Environment:', process.env.NODE_ENV)
   console.log('Hostname:', request.headers.get('host'))
   
-  let response = NextResponse.next()
+  const response = NextResponse.next()
   
   // Only process if this is a new session (no existing referral cookies)
   const hasReferralCookie = request.cookies.has(REFERRAL_CODE_COOKIE)
@@ -59,7 +39,7 @@ export async function middleware(request: NextRequest) {
     console.log('Processing new referral with code:', refCode)
     try {
       // Look up the user with this referral link
-      const referralLink = `https://opencharacter.org?ref=${refCode}`
+      const referralLink = `https://opencharacter.org/?ref=${refCode}`
       console.log('Looking up referral link:', referralLink)
       
       const referrer = await db.query.users.findFirst({
@@ -75,9 +55,27 @@ export async function middleware(request: NextRequest) {
       if (referrer && referrer.id) {
         console.log('Valid referrer found, setting cookies for referrer ID:', referrer.id)
         // Set cookies with the referral information
-        response = setCookie(response, REFERRAL_CODE_COOKIE, refCode)
+        response.cookies.set({
+          name: REFERRAL_CODE_COOKIE,
+          value: refCode,
+          maxAge: COOKIE_EXPIRATION,
+          path: '/',
+          sameSite: 'lax',
+          secure: true,
+          httpOnly: true,
+          // Don't set domain - let the browser determine it automatically
+        })
         
-        response = setCookie(response, REFERRER_ID_COOKIE, referrer.id)
+        response.cookies.set({
+          name: REFERRER_ID_COOKIE,
+          value: referrer.id,
+          maxAge: COOKIE_EXPIRATION,
+          path: '/',
+          sameSite: 'lax',
+          secure: true,
+          httpOnly: true,
+          // Don't set domain - let the browser determine it automatically
+        })
         
         console.log(`Referral tracked: code=${refCode}, referrer_id=${referrer.id}`)
         
@@ -112,18 +110,13 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
+     * Match all request paths except:
+     * - API routes (/api/*)
+     * - Static files (/_next/*, /_vercel/*)
+     * - Public files (/public/*)
+     * - Favicon (favicon.ico)
+     * - Images (*.png, *.jpg, *.svg, etc.)
      */
-    {
-      source: '/((?!api|_next/static|_next/image|favicon.ico).*)',
-      missing: [
-        { type: 'header', key: 'next-router-prefetch' },
-        { type: 'header', key: 'purpose', value: 'prefetch' },
-      ],
-    },
+    '/((?!api|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt).*)',
   ],
 }
