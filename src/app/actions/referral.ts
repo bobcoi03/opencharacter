@@ -12,6 +12,7 @@ import { nanoid } from "nanoid"
 interface ReferralUserData {
   referralLink: string | null;
   paypalEmail: string | null;
+  referralCode: string | null;
 }
 
 /**
@@ -45,12 +46,22 @@ export async function getUserReferralData(): Promise<{
       return { success: false, message: "User not found" }
     }
 
+    // Extract referral code from the link if it exists
+    let referralCode = null
+    if (user.referral_link) {
+      const codeMatch = user.referral_link.match(/\?ref=(.+)$/);
+      if (codeMatch && codeMatch[1]) {
+        referralCode = codeMatch[1];
+      }
+    }
+
     return { 
       success: true, 
       message: "Referral data retrieved successfully", 
       data: {
         referralLink: user.referral_link || null,
-        paypalEmail: user.paypal_email || null
+        paypalEmail: user.paypal_email || null,
+        referralCode: referralCode
       }
     }
   } catch (error) {
@@ -106,7 +117,7 @@ export async function setUserReferralLink() {
       referralCode = nanoid(8)
     }
     
-    const referralLink = `https://opencharacter.org/ref=${referralCode}`
+    const referralLink = `https://opencharacter.org/?ref=${referralCode}`
 
     // Update user with the new referral link
     await db.update(users)
@@ -161,11 +172,51 @@ export async function updatePaypalEmail(paypalEmail: string) {
 }
 
 /**
+ * Updates the user's referral code
+ * @param referralCode - The custom referral code to set
+ * @returns Object with success status, message, and updated referral link
+ */
+export async function updateReferralCode(referralCode: string) {
+  try {
+    // Get the current user session
+    const session = await auth()
+    if (!session || !session.user || !session.user.id) {
+      return { success: false, message: "User not authenticated" }
+    }
+
+    const userId = session.user.id
+
+    // Validate referral code format (alphanumeric only)
+    const codeRegex = /^[a-zA-Z0-9]+$/
+    if (!codeRegex.test(referralCode)) {
+      return { success: false, message: "Referral code can only contain letters and numbers" }
+    }
+
+    // Create the new referral link
+    const referralLink = `https://opencharacter.org/?ref=${referralCode}`
+
+    // Update user with the new referral link
+    await db.update(users)
+      .set({ referral_link: referralLink })
+      .where(eq(users.id, userId))
+
+    return { 
+      success: true, 
+      message: "Referral code updated successfully",
+      referralLink
+    }
+  } catch (error) {
+    console.error("Error updating referral code:", error)
+    return { success: false, message: "Failed to update referral code" }
+  }
+}
+
+/**
  * Updates the user's referral settings (both referral link and PayPal email)
  * @param data - Object containing referral settings
  * @returns Object with success status and message
  */
-export async function updateReferralSettings(data: { paypalEmail: string }) {
+export async function updateReferralSettings(data: { paypalEmail: string, referralCode?: string }) {
   try {
     // Get the current user session
     const session = await auth()
@@ -183,9 +234,20 @@ export async function updateReferralSettings(data: { paypalEmail: string }) {
       }
     })
     
-    // Generate referral link if it doesn't exist
+    // Handle referral code/link
     let referralLink = user?.referral_link
-    if (!referralLink) {
+    
+    if (data.referralCode) {
+      // Validate referral code format (alphanumeric only)
+      const codeRegex = /^[a-zA-Z0-9]+$/
+      if (!codeRegex.test(data.referralCode)) {
+        return { success: false, message: "Referral code can only contain letters and numbers" }
+      }
+      
+      // Create new referral link with custom code
+      referralLink = `https://opencharacter.org/?ref=${data.referralCode}`
+    } else if (!referralLink) {
+      // Generate referral link if it doesn't exist
       const result = await setUserReferralLink()
       if (result.success) {
         referralLink = result.referralLink
@@ -200,7 +262,10 @@ export async function updateReferralSettings(data: { paypalEmail: string }) {
 
     // Update user with the new settings
     await db.update(users)
-      .set({ paypal_email: data.paypalEmail })
+      .set({ 
+        paypal_email: data.paypalEmail,
+        referral_link: referralLink
+      })
       .where(eq(users.id, userId))
 
     return { 

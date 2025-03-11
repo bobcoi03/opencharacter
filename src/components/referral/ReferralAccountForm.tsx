@@ -21,10 +21,12 @@ export function ReferralAccountForm() {
   // State for form inputs
   const [referralLink, setReferralLink] = useState("");
   const [referralCode, setReferralCode] = useState("");
+  const [originalReferralCode, setOriginalReferralCode] = useState("");
   const [paypalEmail, setPaypalEmail] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isReferralCodeEdited, setIsReferralCodeEdited] = useState(false);
   
   // Mock data for referrals - would be fetched from API in production
   const mockReferralStats = {
@@ -68,12 +70,11 @@ export function ReferralAccountForm() {
         if (result.success && result.data) {
           if (result.data.referralLink) {
             setReferralLink(result.data.referralLink);
-            
-            // Extract the code part from the full link
-            const codeMatch = result.data.referralLink.match(/ref=(.+)$/);
-            if (codeMatch && codeMatch[1]) {
-              setReferralCode(codeMatch[1]);
-            }
+          }
+          
+          if (result.data.referralCode) {
+            setReferralCode(result.data.referralCode);
+            setOriginalReferralCode(result.data.referralCode);
           }
           
           if (result.data.paypalEmail) {
@@ -93,6 +94,12 @@ export function ReferralAccountForm() {
     loadReferralData();
   }, []);
   
+  const handleReferralCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newCode = e.target.value.replace(/[^a-zA-Z0-9]/g, '');
+    setReferralCode(newCode);
+    setIsReferralCodeEdited(newCode !== originalReferralCode);
+  };
+  
   const handleSaveSettings = async () => {
     setIsSaving(true);
     setError(null);
@@ -110,17 +117,35 @@ export function ReferralAccountForm() {
         return;
       }
       
+      // Validate referral code if it was edited
+      if (isReferralCodeEdited) {
+        if (!referralCode || referralCode.length < 3) {
+          toast({
+            title: "Invalid referral code",
+            description: "Referral code must be at least 3 characters long.",
+            variant: "destructive",
+          });
+          setIsSaving(false);
+          return;
+        }
+      }
+      
       // Update settings via server action
-      const result = await updateReferralSettings({ paypalEmail });
+      const result = await updateReferralSettings({ 
+        paypalEmail,
+        referralCode: isReferralCodeEdited ? referralCode : undefined
+      });
       
       if (result.success) {
         if (result.referralLink) {
           setReferralLink(result.referralLink);
           
           // Extract the code part from the full link
-          const codeMatch = result.referralLink.match(/ref=(.+)$/);
+          const codeMatch = result.referralLink.match(/\?ref=(.+)$/);
           if (codeMatch && codeMatch[1]) {
             setReferralCode(codeMatch[1]);
+            setOriginalReferralCode(codeMatch[1]);
+            setIsReferralCodeEdited(false);
           }
         }
         
@@ -201,11 +226,17 @@ export function ReferralAccountForm() {
                     
                     {/* Referral Link */}
                     <div className="space-y-2">
-                      <Label htmlFor="referral-link">Your Referral Link</Label>
+                      <Label htmlFor="referral-code">Your Referral Code</Label>
                       <div className="flex space-x-2">
                         <div className="flex-1 flex items-center rounded-md border border-input bg-stone-950 px-3 py-2 text-sm ring-offset-background">
-                          <span className="text-muted-foreground">https://opencharacter.org/ref=</span>
-                          <span className="flex-1 pl-1">{referralCode}</span>
+                          <span className="text-muted-foreground">https://opencharacter.org/?ref=</span>
+                          <Input
+                            id="referral-code"
+                            value={referralCode}
+                            onChange={handleReferralCodeChange}
+                            className="flex-1 border-0 bg-transparent p-0 pl-1 focus-visible:ring-0 focus-visible:ring-offset-0"
+                            placeholder="Set your custom code"
+                          />
                         </div>
                         <Button variant="outline" size="icon" onClick={copyReferralLink}>
                           <Copy className="h-4 w-4" />
@@ -213,6 +244,11 @@ export function ReferralAccountForm() {
                       </div>
                       <p className="text-sm text-muted-foreground">
                         Share this link with friends to earn commission when they subscribe.
+                        {isReferralCodeEdited && (
+                          <span className="text-amber-400 ml-2">
+                            (Save changes to update your referral link)
+                          </span>
+                        )}
                       </p>
                     </div>
                     
