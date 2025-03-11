@@ -105,16 +105,39 @@ export async function setUserReferralLink() {
 
     // Generate a referral code based on username or email
     let referralCode = ""
+    let isUnique = false
+    let attempts = 0
     
-    if (user?.name) {
-      // Use the user's name, removing spaces and special characters
-      referralCode = user.name.toLowerCase().replace(/[^a-z0-9]/g, "")
-    } else if (user?.email) {
-      // Use the part of the email before @ symbol
-      referralCode = user.email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, "")
-    } else {
-      // Fallback to a random code if no name or email is available
-      referralCode = nanoid(8)
+    while (!isUnique && attempts < 5) {
+      if (user?.name && attempts === 0) {
+        // First attempt: Use the user's name, removing spaces and special characters
+        referralCode = user.name.toLowerCase().replace(/[^a-z0-9]/g, "")
+      } else if (user?.email && attempts === 1) {
+        // Second attempt: Use the part of the email before @ symbol
+        referralCode = user.email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, "")
+      } else {
+        // Fallback to a random code if no name or email is available or previous attempts failed
+        referralCode = nanoid(8)
+      }
+      
+      // Add a number suffix if this is a retry attempt (except for random codes)
+      if (attempts > 1 && attempts < 3) {
+        referralCode = `${referralCode}${attempts}`
+      }
+      
+      // Check if this code is already in use
+      const existingUser = await db.query.users.findFirst({
+        where: eq(users.referral_link, `https://opencharacter.org/?ref=${referralCode}`),
+        columns: {
+          id: true
+        }
+      })
+      
+      if (!existingUser) {
+        isUnique = true
+      }
+      
+      attempts++
     }
     
     const referralLink = `https://opencharacter.org/?ref=${referralCode}`
@@ -216,7 +239,7 @@ export async function updateReferralCode(referralCode: string) {
  * @param data - Object containing referral settings
  * @returns Object with success status and message
  */
-export async function updateReferralSettings(data: { paypalEmail: string, referralCode?: string }) {
+export async function updateReferralSettings(data: { paypalEmail?: string, referralCode?: string }) {
   try {
     // Get the current user session
     const session = await auth()
@@ -230,7 +253,8 @@ export async function updateReferralSettings(data: { paypalEmail: string, referr
     const user = await db.query.users.findFirst({
       where: eq(users.id, userId),
       columns: {
-        referral_link: true
+        referral_link: true,
+        paypal_email: true
       }
     })
     
@@ -238,14 +262,38 @@ export async function updateReferralSettings(data: { paypalEmail: string, referr
     let referralLink = user?.referral_link
     
     if (data.referralCode) {
+      // Convert to lowercase
+      const normalizedCode = data.referralCode.toLowerCase();
+      
       // Validate referral code format (alphanumeric only)
-      const codeRegex = /^[a-zA-Z0-9]+$/
-      if (!codeRegex.test(data.referralCode)) {
+      const codeRegex = /^[a-z0-9]+$/
+      if (!codeRegex.test(normalizedCode)) {
         return { success: false, message: "Referral code can only contain letters and numbers" }
       }
       
-      // Create new referral link with custom code
-      referralLink = `https://opencharacter.org/?ref=${data.referralCode}`
+      // Validate minimum length
+      if (normalizedCode.length < 3) {
+        return { success: false, message: "Referral code must be at least 3 characters long" }
+      }
+      
+      // Check if the referral code is already in use by another user
+      const existingUser = await db.query.users.findFirst({
+        where: (users, { eq, and, ne, like }) => and(
+          like(users.referral_link, `https://opencharacter.org/?ref=${normalizedCode}`),
+          ne(users.id, userId)
+        ),
+        columns: {
+          id: true,
+          referral_link: true
+        }
+      })
+      
+      if (existingUser) {
+        return { success: false, message: "This referral code is already in use. Please choose another one." }
+      }
+      
+      // Create new referral link with custom code (lowercase)
+      referralLink = `https://opencharacter.org/?ref=${normalizedCode}`
     } else if (!referralLink) {
       // Generate referral link if it doesn't exist
       const result = await setUserReferralLink()
@@ -254,19 +302,36 @@ export async function updateReferralSettings(data: { paypalEmail: string, referr
       }
     }
     
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(data.paypalEmail)) {
-      return { success: false, message: "Invalid email format" }
+    // Prepare update data
+    const updateData: { referral_link?: string, paypal_email?: string | null } = {}
+    
+    // Only update referral link if it changed
+    if (referralLink && referralLink !== user?.referral_link) {
+      updateData.referral_link = referralLink
     }
-
-    // Update user with the new settings
-    await db.update(users)
-      .set({ 
-        paypal_email: data.paypalEmail,
-        referral_link: referralLink
-      })
-      .where(eq(users.id, userId))
+    
+    // Handle PayPal email
+    if (data.paypalEmail !== undefined) {
+      // If email is provided, validate it
+      if (data.paypalEmail) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+        if (!emailRegex.test(data.paypalEmail)) {
+          return { success: false, message: "Invalid email format" }
+        }
+        updateData.paypal_email = data.paypalEmail
+      } else {
+        // If empty string is provided, clear the email
+        updateData.paypal_email = null
+      }
+    }
+    
+    // Only update if there are changes
+    if (Object.keys(updateData).length > 0) {
+      // Update user with the new settings
+      await db.update(users)
+        .set(updateData)
+        .where(eq(users.id, userId))
+    }
 
     return { 
       success: true, 

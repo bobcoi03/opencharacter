@@ -48,7 +48,8 @@ export function ReferralAccountForm() {
   const [referralCode, setReferralCode] = useState("");
   const [originalReferralCode, setOriginalReferralCode] = useState("");
   const [paypalEmail, setPaypalEmail] = useState("");
-  const [isSaving, setIsSaving] = useState(false);
+  const [isSavingCode, setIsSavingCode] = useState(false);
+  const [isSavingEmail, setIsSavingEmail] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isReferralCodeEdited, setIsReferralCodeEdited] = useState(false);
@@ -132,45 +133,31 @@ export function ReferralAccountForm() {
   }, []);
   
   const handleReferralCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newCode = e.target.value.replace(/[^a-zA-Z0-9]/g, '');
+    // Remove non-alphanumeric characters and convert to lowercase
+    const newCode = e.target.value.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
     setReferralCode(newCode);
     setIsReferralCodeEdited(newCode !== originalReferralCode);
   };
   
-  const handleSaveSettings = async () => {
-    setIsSaving(true);
+  const handleSaveReferralCode = async () => {
+    setIsSavingCode(true);
     setError(null);
     
     try {
-      // Validate PayPal email
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(paypalEmail)) {
+      // Validate referral code
+      if (!referralCode || referralCode.length < 3) {
         toast({
-          title: "Invalid email",
-          description: "Please enter a valid PayPal email address.",
+          title: "Invalid referral code",
+          description: "Referral code must be at least 3 characters long.",
           variant: "destructive",
         });
-        setIsSaving(false);
+        setIsSavingCode(false);
         return;
-      }
-      
-      // Validate referral code if it was edited
-      if (isReferralCodeEdited) {
-        if (!referralCode || referralCode.length < 3) {
-          toast({
-            title: "Invalid referral code",
-            description: "Referral code must be at least 3 characters long.",
-            variant: "destructive",
-          });
-          setIsSaving(false);
-          return;
-        }
       }
       
       // Update settings via server action
       const result = await updateReferralSettings({ 
-        paypalEmail,
-        referralCode: isReferralCodeEdited ? referralCode : undefined
+        referralCode: referralCode
       });
       
       if (result.success) {
@@ -187,8 +174,61 @@ export function ReferralAccountForm() {
         }
         
         toast({
-          title: "Settings saved",
-          description: "Your referral settings have been updated successfully.",
+          title: "Referral code saved",
+          description: "Your referral code has been updated successfully.",
+        });
+        
+        // Refresh the page to update any data
+        router.refresh();
+      } else {
+        setError(result.message);
+        toast({
+          title: "Error",
+          description: result.message.includes("already in use") 
+            ? "This referral code is already taken. Please choose a different one." 
+            : result.message,
+          variant: "destructive",
+        });
+      }
+    } catch (err) {
+      setError("Failed to save referral code");
+      console.error("Error saving referral code:", err);
+      toast({
+        title: "Error",
+        description: "Failed to save referral code. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSavingCode(false);
+    }
+  };
+  
+  const handleSavePaypalEmail = async () => {
+    setIsSavingEmail(true);
+    setError(null);
+    
+    try {
+      // Validate PayPal email
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (paypalEmail && !emailRegex.test(paypalEmail)) {
+        toast({
+          title: "Invalid email",
+          description: "Please enter a valid PayPal email address.",
+          variant: "destructive",
+        });
+        setIsSavingEmail(false);
+        return;
+      }
+      
+      // Update settings via server action
+      const result = await updateReferralSettings({ 
+        paypalEmail
+      });
+      
+      if (result.success) {
+        toast({
+          title: "PayPal email saved",
+          description: "Your PayPal email has been updated successfully.",
         });
         
         // Refresh the page to update any data
@@ -202,15 +242,15 @@ export function ReferralAccountForm() {
         });
       }
     } catch (err) {
-      setError("Failed to save settings");
-      console.error("Error saving settings:", err);
+      setError("Failed to save PayPal email");
+      console.error("Error saving PayPal email:", err);
       toast({
         title: "Error",
-        description: "Failed to save settings. Please try again.",
+        description: "Failed to save PayPal email. Please try again.",
         variant: "destructive",
       });
     } finally {
-      setIsSaving(false);
+      setIsSavingEmail(false);
     }
   };
   
@@ -261,9 +301,17 @@ export function ReferralAccountForm() {
                       </Alert>
                     )}
                     
+                    {/* Explanatory text */}
+                    <div className="mb-4">
+                      <p className="text-sm text-muted-foreground">
+                        Both settings below are optional. You can set up a custom referral code to make your link more memorable, 
+                        and add a PayPal email to receive commission payments.
+                      </p>
+                    </div>
+                    
                     {/* Referral Link */}
-                    <div className="space-y-2">
-                      <Label htmlFor="referral-code">Your Referral Code</Label>
+                    <div className="space-y-2 p-4 border border-neutral-800 rounded-lg">
+                      <Label htmlFor="referral-code" className="text-base font-medium">Your Referral Code</Label>
                       <div className="flex space-x-2">
                         <div className="flex-1 flex items-center rounded-md border border-input bg-stone-950 px-3 py-2 text-sm ring-offset-background">
                           <span className="text-muted-foreground">https://opencharacter.org/?ref=</span>
@@ -272,7 +320,7 @@ export function ReferralAccountForm() {
                             value={referralCode}
                             onChange={handleReferralCodeChange}
                             className="flex-1 border-0 bg-transparent p-0 pl-1 focus-visible:ring-0 focus-visible:ring-offset-0"
-                            placeholder="Set your custom code"
+                            placeholder="lowercase-only"
                           />
                         </div>
                         <Button variant="outline" size="icon" onClick={copyReferralLink}>
@@ -281,38 +329,44 @@ export function ReferralAccountForm() {
                       </div>
                       <p className="text-sm text-muted-foreground">
                         Share this link with friends to earn commission when they subscribe.
-                        {isReferralCodeEdited && (
-                          <span className="text-amber-400 ml-2">
-                            (Save changes to update your referral link)
-                          </span>
-                        )}
+                        Codes must be at least 3 characters and will be converted to lowercase.
                       </p>
+                      
+                      {/* Save Referral Code Button */}
+                      <Button 
+                        className="w-full mt-2" 
+                        onClick={handleSaveReferralCode}
+                        disabled={isSavingCode || !isReferralCodeEdited}
+                      >
+                        {isSavingCode ? "Saving..." : "Save Referral Code"}
+                      </Button>
                     </div>
                     
                     {/* PayPal Email */}
-                    <div className="space-y-2">
-                      <Label htmlFor="paypal-email">PayPal Email</Label>
+                    <div className="space-y-2 p-4 border border-neutral-800 rounded-lg">
+                      <Label htmlFor="paypal-email" className="text-base font-medium">PayPal Email</Label>
                       <Input 
                         id="paypal-email"
                         type="email"
                         value={paypalEmail}
                         onChange={(e) => setPaypalEmail(e.target.value)}
-                        placeholder="your.email@example.com"
+                        placeholder="your.email@example.com (optional)"
                         className="bg-stone-950"
                       />
                       <p className="text-sm text-muted-foreground">
                         We{"'"}ll send your commission payments to this PayPal account.
+                        This is optional but required to receive payments. Leave empty if you don't want to receive payments.
                       </p>
+                      
+                      {/* Save PayPal Email Button */}
+                      <Button 
+                        className="w-full mt-2" 
+                        onClick={handleSavePaypalEmail}
+                        disabled={isSavingEmail}
+                      >
+                        {isSavingEmail ? "Saving..." : "Save PayPal Email"}
+                      </Button>
                     </div>
-                    
-                    {/* Save Button */}
-                    <Button 
-                      className="w-full mt-4" 
-                      onClick={handleSaveSettings}
-                      disabled={isSaving}
-                    >
-                      {isSaving ? "Saving..." : "Save Settings"}
-                    </Button>
                   </>
                 )}
               </CardContent>
