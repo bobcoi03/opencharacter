@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { db } from "@/server/db";
-import { subscriptions } from "@/server/db/schema";
-import { eq } from 'drizzle-orm';
+import { subscriptions, referrals, type PaymentRecord } from "@/server/db/schema";
+import { eq, and } from 'drizzle-orm';
 
 export const runtime = 'edge';
 
@@ -70,6 +70,52 @@ export async function POST(request: Request) {
               updatedAt: new Date()
             }
           });
+
+        // Handle referral commission if this user was referred
+        try {
+          // Find if this user was referred by someone
+          const referral = await db.query.referrals.findFirst({
+            where: eq(referrals.referred_id, session.metadata.userId),
+          });
+
+          if (referral) {
+            console.log(`User ${session.metadata.userId} was referred by ${referral.referrer_id}`);
+            
+            // Calculate commission amount (e.g., 20% of the first payment)
+            const lineItems = await stripe.checkout.sessions.listLineItems(session.id);
+            const amount = lineItems.data[0]?.amount_total || 0;
+            const commissionRate = 0.20; // 20% commission
+            const commissionAmount = (amount / 100) * commissionRate; // Convert from cents and apply rate
+            
+            // Create payment record
+            const paymentRecord: PaymentRecord = {
+              amount: commissionAmount,
+              date: Date.now(),
+              status: 'pending' as const, // Mark as pending until payout is processed
+              transaction_id: session.id
+            };
+            
+            // Get current payment history
+            const currentPaymentHistory = referral.payment_history || [];
+            
+            // Update referral record with new payment and update total earnings
+            await db
+              .update(referrals)
+              .set({
+                payment_history: [...currentPaymentHistory, paymentRecord],
+                total_earnings: referral.total_earnings + commissionAmount,
+                pro_conversion_date: referral.pro_conversion_date || new Date(Date.now()), // Set conversion date if not already set
+                status: 'active', // Update status to active since the referred user is now a paying customer
+                updated_at: new Date()
+              })
+              .where(eq(referrals.id, referral.id));
+              
+            console.log(`Added commission payment of $${commissionAmount} to referrer ${referral.referrer_id}`);
+          }
+        } catch (error) {
+          console.error('Error processing referral commission:', error);
+          // Don't fail the webhook if referral processing fails
+        }
 
         break;
       }
