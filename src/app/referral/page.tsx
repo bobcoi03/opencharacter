@@ -15,7 +15,7 @@ export default function ReferralPage() {
     {
       icon: <Gift className="h-10 w-10 text-purple-500" />,
       title: "They Sign Up",
-      description: "When they create an account using your link, they're tracked as your referral."
+      description: "When they create an account using your link, they&apos;re tracked as your referral."
     },
     {
       icon: <DollarSign className="h-10 w-10 text-green-500" />,
@@ -73,7 +73,7 @@ export default function ReferralPage() {
                 <div>
                   <h3 className="font-medium">30-Day Attribution Window</h3>
                   <p className="text-sm text-muted-foreground">
-                    You'll earn commission if your referral upgrades to Pro within 30 days of signing up.
+                    You&apos;ll earn commission if your referral upgrades to Pro within 30 days of signing up.
                   </p>
                 </div>
               </div>
@@ -98,7 +98,7 @@ export default function ReferralPage() {
               <div>
                 <h3 className="font-medium">How do I track my referrals?</h3>
                 <p className="text-sm text-muted-foreground mt-1">
-                  You can view all your referrals and earnings in your "Referrals" tab when you click on your profile.
+                  You can view all your referrals and earnings in your &quot;Referrals&quot; tab when you click on your profile.
                 </p>
               </div>
               
@@ -107,7 +107,7 @@ export default function ReferralPage() {
               <div>
                 <h3 className="font-medium">When do I get paid?</h3>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Payments are processed on the 1st of each month for the previous month's earnings, provided your balance exceeds $20.
+                  Payments are processed on the 1st of each month for the previous month&apos;s earnings, provided your balance exceeds $20.
                 </p>
               </div>
               
