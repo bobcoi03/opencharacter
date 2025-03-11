@@ -354,8 +354,8 @@ export function ReferralAccountForm() {
                         className="bg-stone-950"
                       />
                       <p className="text-sm text-muted-foreground">
-                        We{"'"}ll send your commission payments to this PayPal account.
-                        This is optional but required to receive payments. Leave empty if you don't want to receive payments.
+                        Required for receiving commission payments. Leave empty if you don{"'"}t want payments.
+                        For alternative payment options, contact info@opencharacter.org.
                       </p>
                       
                       {/* Save PayPal Email Button */}
