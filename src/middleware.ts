@@ -4,8 +4,6 @@ import { db } from '@/server/db'
 import { users } from '@/server/db/schema'
 import { eq } from 'drizzle-orm'
 
-export const runtime = 'edge'
-
 // Cookie names
 const REFERRAL_CODE_COOKIE = 'referral_code'
 const REFERRER_ID_COOKIE = 'referrer_id'
