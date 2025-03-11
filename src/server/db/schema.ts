@@ -2,6 +2,25 @@ import { integer, sqliteTable, text, primaryKey, index, real  } from "drizzle-or
 import type { AdapterAccountType } from "next-auth/adapters"
 import { sql } from "drizzle-orm";
 
+export type PaymentRecord = {
+  amount: number;
+  date: number; // timestamp in ms
+  status: 'pending' | 'paid' | 'failed';
+  transaction_id?: string;
+}
+
+// This type is kept for reference
+export type ReferredUser = {
+  user_id: string;
+  signup_date: number; // timestamp in ms
+  pro_user: boolean;
+  earnings: number;
+  pro_since: number; // timestamp in ms
+  attribution_expires: number; // timestamp when 30-day window expires
+  referral_status: 'pending' | 'active' | 'expired';
+  payment_history: PaymentRecord[];
+}
+
 export const users = sqliteTable("user", {
   id: text("id")
     .primaryKey()
@@ -12,7 +31,44 @@ export const users = sqliteTable("user", {
   image: text("image"),
   bio: text("bio"),
   pay_as_you_go: integer("pay_as_you_go", { mode: "boolean" }).notNull().default(false),
+  referral_link: text("referral_link"),
+  paypal_email: text("paypal_email"),
 })
+
+// Table for tracking referrals with proper relationships
+export const referrals = sqliteTable("referral", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  referrer_id: text("referrer_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  referred_id: text("referred_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  signup_date: integer("signup_date", { mode: "timestamp_ms" })
+    .notNull()
+    .$defaultFn(() => sql`CURRENT_TIMESTAMP`),
+  attribution_expires: integer("attribution_expires", { mode: "timestamp_ms" })
+    .notNull(),
+  status: text("status").notNull().default("pending"), // 'pending', 'active', 'expired'
+  pro_conversion_date: integer("pro_conversion_date", { mode: "timestamp_ms" }),
+  total_earnings: real("total_earnings").notNull().default(0),
+  last_payment_date: integer("last_payment_date", { mode: "timestamp_ms" }),
+  last_payment_amount: real("last_payment_amount"),
+  last_payment_status: text("last_payment_status"),
+  payment_history: text("payment_history", { mode: "json" }).notNull().default("[]").$type<PaymentRecord[]>(),
+  created_at: integer("created_at", { mode: "timestamp_ms" })
+    .notNull()
+    .$defaultFn(() => sql`CURRENT_TIMESTAMP`),
+  updated_at: integer("updated_at", { mode: "timestamp_ms" })
+    .notNull()
+    .$defaultFn(() => sql`CURRENT_TIMESTAMP`),
+}, (table) => ({
+  referrerIdx: index('referral_referrer_idx').on(table.referrer_id),
+  referredIdx: index('referral_referred_idx').on(table.referred_id),
+  uniqueReferral: index('unique_referral_idx').on(table.referrer_id, table.referred_id),
+}));
 
 export const socialSubmissions = sqliteTable("social_submission", {
   id: text("id")
