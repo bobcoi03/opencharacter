@@ -1,6 +1,6 @@
 import { integer, sqliteTable, text, primaryKey, index, real  } from "drizzle-orm/sqlite-core"
 import type { AdapterAccountType } from "next-auth/adapters"
-import { sql } from "drizzle-orm";
+import { sql, relations } from "drizzle-orm";
 
 export type PaymentRecord = {
   amount: number;
@@ -68,6 +68,18 @@ export const referrals = sqliteTable("referral", {
   referrerIdx: index('referral_referrer_idx').on(table.referrer_id),
   referredIdx: index('referral_referred_idx').on(table.referred_id),
   uniqueReferral: index('unique_referral_idx').on(table.referrer_id, table.referred_id),
+}));
+
+// Add relations for the referrals table
+export const referralsRelations = relations(referrals, ({ one }) => ({
+  referrer: one(users, {
+    fields: [referrals.referrer_id],
+    references: [users.id],
+  }),
+  referred: one(users, {
+    fields: [referrals.referred_id],
+    references: [users.id],
+  }),
 }));
 
 export const socialSubmissions = sqliteTable("social_submission", {

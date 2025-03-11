@@ -3,7 +3,7 @@ export const runtime = "edge";
 import { continueConversation, getConversations, createChatSession, getAllConversationsByCharacter, saveChat, deleteChatSession } from "./chat";
 import { createCharacter, searchCharacters, searchCharactersByTags } from "./character";
 import { CreatePersona, updatePersona, getAllUserPersonas, getDefaultPersona, setDefaultPersona, deletePersona } from "./persona";
-import { saveUser } from "./user";
+import { saveUser, deleteUser } from "./user";
 import { roastTweets, getRoast } from "./twitter";
 import { generateImages, type ImageGenerationInput } from "./image";
 
@@ -23,6 +23,7 @@ export {
     getDefaultPersona,
     setDefaultPersona,
     saveUser,
+    deleteUser,
     deletePersona,
     deleteChatSession,
     searchCharactersByTags,

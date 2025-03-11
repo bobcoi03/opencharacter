@@ -1,9 +1,9 @@
 "use server"
 
 import { auth } from "@/server/auth"
-import { users } from "@/server/db/schema"
+import { users, referrals } from "@/server/db/schema"
 import { db } from "@/server/db"
-import { eq } from "drizzle-orm"
+import { eq, desc } from "drizzle-orm"
 import { nanoid } from "nanoid"
 
 /**
@@ -276,5 +276,148 @@ export async function updateReferralSettings(data: { paypalEmail: string, referr
   } catch (error) {
     console.error("Error updating referral settings:", error)
     return { success: false, message: "Failed to update referral settings" }
+  }
+}
+
+/**
+ * Gets the referral statistics and history for the current user
+ * @returns Object with success status, message, and referral statistics/history
+ */
+export async function getUserReferralStats(): Promise<{
+  success: boolean;
+  message: string;
+  stats?: {
+    totalReferred: number;
+    proSubscribers: number;
+    totalEarnings: number;
+    pendingPayment: number;
+    lastPaymentDate: string | null;
+    lastPaymentAmount: number | null;
+  };
+  referralHistory?: Array<{
+    id: string;
+    user?: string; // Now optional
+    date: string;
+    status: 'free' | 'pro';
+    earnings: number;
+  }>;
+  paymentHistory?: Array<{
+    id: string;
+    date: string;
+    amount: number;
+    status: string;
+  }>;
+}> {
+  try {
+    console.log("Starting getUserReferralStats function")
+    
+    // Get the current user session
+    const session = await auth()
+    console.log("User session:", session?.user?.id ? `User ID: ${session.user.id}` : "No user session")
+    
+    if (!session || !session.user || !session.user.id) {
+      console.log("Authentication failed: No valid user session")
+      return { success: false, message: "User not authenticated" }
+    }
+
+    const userId = session.user.id
+    console.log("Fetching referrals for user ID:", userId)
+
+    // Get referrals from the database
+    const referralsData = await db.query.referrals.findMany({
+      where: eq(referrals.referrer_id, userId),
+      orderBy: (referrals, { desc }) => [desc(referrals.signup_date)],
+      with: {
+        referred: true
+      }
+    }).catch(error => {
+      console.error("Error querying referrals with relations:", error);
+      // Fallback to query without relations if there's an error
+      return db.query.referrals.findMany({
+        where: eq(referrals.referrer_id, userId),
+        orderBy: (referrals, { desc }) => [desc(referrals.signup_date)]
+      });
+    });
+    
+    console.log(`Found ${referralsData.length} referrals for user`)
+
+    if (!referralsData || referralsData.length === 0) {
+      console.log("No referrals found for user")
+      return { 
+        success: true, 
+        message: "No referrals found",
+        stats: {
+          totalReferred: 0,
+          proSubscribers: 0,
+          totalEarnings: 0,
+          pendingPayment: 0,
+          lastPaymentDate: null,
+          lastPaymentAmount: null
+        },
+        referralHistory: [],
+        paymentHistory: []
+      }
+    }
+
+    // Calculate statistics
+    const totalReferred = referralsData.length
+    const proSubscribers = referralsData.filter(ref => ref.status === 'active').length
+    const totalEarnings = referralsData.reduce((sum, ref) => sum + (ref.total_earnings || 0), 0)
+    
+    console.log("Stats calculated:", { totalReferred, proSubscribers, totalEarnings })
+    
+    // Get payment history (most recent payments first)
+    const paymentHistory = referralsData
+      .filter(ref => ref.last_payment_date && ref.last_payment_amount && ref.last_payment_status === 'paid')
+      .map(ref => ({
+        id: ref.id,
+        date: new Date(ref.last_payment_date!).toISOString().split('T')[0],
+        amount: ref.last_payment_amount!,
+        status: ref.last_payment_status!
+      }))
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    
+    console.log(`Found ${paymentHistory.length} payment records`)
+    
+    // Calculate pending payment (earnings not yet paid)
+    const pendingPayment = totalEarnings - paymentHistory.reduce((sum, payment) => sum + payment.amount, 0)
+    
+    // Get last payment info
+    const lastPayment = paymentHistory[0] || null
+    console.log("Last payment:", lastPayment)
+    
+    // Format referral history
+    console.log("Building referral history")
+    const referralHistory = await Promise.all(referralsData.map(async (ref) => {
+      // Determine status based on the referral status
+      const status: 'free' | 'pro' = ref.status === 'active' ? 'pro' : 'free';
+      
+      return {
+        id: ref.id,
+        user: '', // No longer sending user email data
+        date: new Date(ref.signup_date).toISOString().split('T')[0],
+        status,
+        earnings: ref.total_earnings || 0
+      };
+    }));
+
+    console.log("Referral history built, returning complete stats")
+    return {
+      success: true,
+      message: "Referral statistics retrieved successfully",
+      stats: {
+        totalReferred,
+        proSubscribers,
+        totalEarnings,
+        pendingPayment,
+        lastPaymentDate: lastPayment?.date || null,
+        lastPaymentAmount: lastPayment?.amount || null
+      },
+      referralHistory,
+      paymentHistory
+    }
+  } catch (error) {
+    console.error("Error getting referral statistics:", error)
+    return { success: false, message: "Failed to get referral statistics" }
   }
 }

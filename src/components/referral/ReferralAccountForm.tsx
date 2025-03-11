@@ -12,7 +12,32 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Copy, DollarSign, ExternalLink, Info, Mail, Users } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
-import { getUserReferralData, updateReferralSettings } from "@/app/actions/referral";
+import { getUserReferralData, updateReferralSettings, getUserReferralStats } from "@/app/actions/referral";
+
+// Define types for referral data
+interface ReferralStats {
+  totalReferred: number;
+  proSubscribers: number;
+  totalEarnings: number;
+  pendingPayment: number;
+  lastPaymentDate: string | null;
+  lastPaymentAmount: number | null;
+}
+
+interface ReferralHistoryItem {
+  id: string;
+  user?: string;
+  date: string;
+  status: 'free' | 'pro';
+  earnings: number;
+}
+
+interface PaymentHistoryItem {
+  id: string;
+  date: string;
+  amount: number;
+  status: string;
+}
 
 export function ReferralAccountForm() {
   const { toast } = useToast();
@@ -28,35 +53,12 @@ export function ReferralAccountForm() {
   const [error, setError] = useState<string | null>(null);
   const [isReferralCodeEdited, setIsReferralCodeEdited] = useState(false);
   
-  // Mock data for referrals - would be fetched from API in production
-  const mockReferralStats = {
-    totalReferred: 12,
-    proSubscribers: 5,
-    totalEarnings: 89.95,
-    pendingPayment: 29.95,
-    lastPaymentDate: "2023-10-15",
-    lastPaymentAmount: 60.00,
-  };
-  
-  // Mock referral history - would be fetched from API in production
-  const mockReferralHistory = [
-    { id: "1", user: "user****@gmail.com", date: "2023-09-05", status: "pro", earnings: 19.99 },
-    { id: "2", user: "john****@outlook.com", date: "2023-09-12", status: "pro", earnings: 19.99 },
-    { id: "3", user: "sarah****@yahoo.com", date: "2023-09-18", status: "free", earnings: 0 },
-    { id: "4", user: "mike****@gmail.com", date: "2023-09-25", status: "free", earnings: 0 },
-    { id: "5", user: "alex****@hotmail.com", date: "2023-10-02", status: "pro", earnings: 9.99 },
-    { id: "6", user: "emma****@gmail.com", date: "2023-10-10", status: "free", earnings: 0 },
-    { id: "7", user: "david****@outlook.com", date: "2023-10-15", status: "free", earnings: 0 },
-    { id: "8", user: "lisa****@gmail.com", date: "2023-10-18", status: "free", earnings: 0 },
-    { id: "9", user: "tom****@outlook.com", date: "2023-10-20", status: "free", earnings: 0 },
-  ];
-  
-  // Mock payment history - would be fetched from API in production
-  const mockPaymentHistory = [
-    { id: "1", date: "2023-10-15", amount: 60.00, status: "paid" },
-    { id: "2", date: "2023-09-15", amount: 40.00, status: "paid" },
-    { id: "3", date: "2023-08-15", amount: 20.00, status: "paid" },
-  ];
+  // State for referral data
+  const [referralStats, setReferralStats] = useState<ReferralStats | null>(null);
+  const [referralHistory, setReferralHistory] = useState<ReferralHistoryItem[]>([]);
+  const [paymentHistory, setPaymentHistory] = useState<PaymentHistoryItem[]>([]);
+  const [isStatsLoading, setIsStatsLoading] = useState(true);
+  const [statsError, setStatsError] = useState<string | null>(null);
   
   // Load user referral data
   useEffect(() => {
@@ -92,6 +94,41 @@ export function ReferralAccountForm() {
     };
     
     loadReferralData();
+  }, []);
+  
+  // Load referral statistics and history
+  useEffect(() => {
+    const loadReferralStats = async () => {
+      setIsStatsLoading(true);
+      setStatsError(null);
+      
+      try {
+        const result = await getUserReferralStats();
+        
+        if (result.success) {
+          if (result.stats) {
+            setReferralStats(result.stats);
+          }
+          
+          if (result.referralHistory) {
+            setReferralHistory(result.referralHistory);
+          }
+          
+          if (result.paymentHistory) {
+            setPaymentHistory(result.paymentHistory);
+          }
+        } else {
+          setStatsError(result.message);
+        }
+      } catch (err) {
+        setStatsError("Failed to load referral statistics");
+        console.error("Error loading referral statistics:", err);
+      } finally {
+        setIsStatsLoading(false);
+      }
+    };
+    
+    loadReferralStats();
   }, []);
   
   const handleReferralCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -290,49 +327,63 @@ export function ReferralAccountForm() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center gap-2">
-                      <Users className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm">Total Referred</span>
-                    </div>
-                    <span className="font-medium">{mockReferralStats.totalReferred}</span>
+                {isStatsLoading ? (
+                  <div className="space-y-4">
+                    <div className="h-6 bg-stone-800 animate-pulse rounded-md"></div>
+                    <div className="h-6 bg-stone-800 animate-pulse rounded-md"></div>
+                    <div className="h-6 bg-stone-800 animate-pulse rounded-md"></div>
+                    <div className="h-6 bg-stone-800 animate-pulse rounded-md"></div>
                   </div>
-                  
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="bg-green-900/20 text-green-400 border-green-800">PRO</Badge>
-                      <span className="text-sm">Pro Subscribers</span>
-                    </div>
-                    <span className="font-medium">{mockReferralStats.proSubscribers}</span>
-                  </div>
-                  
-                  <Separator />
-                  
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center gap-2">
-                      <DollarSign className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm">Total Earnings</span>
-                    </div>
-                    <span className="font-medium">${mockReferralStats.totalEarnings.toFixed(2)}</span>
-                  </div>
-                  
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center gap-2">
-                      <DollarSign className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm">Pending Payment</span>
-                    </div>
-                    <span className="font-medium">${mockReferralStats.pendingPayment.toFixed(2)}</span>
-                  </div>
-                  
-                  <Alert className="bg-blue-900/20 border-blue-800">
-                    <Info className="h-4 w-4 text-blue-400" />
-                    <AlertTitle className="text-sm font-medium text-blue-400">Next payment</AlertTitle>
-                    <AlertDescription className="text-xs text-blue-300">
-                      Payments are processed on the 1st of each month for balances over $20.
-                    </AlertDescription>
+                ) : statsError ? (
+                  <Alert variant="destructive">
+                    <AlertTitle>Error</AlertTitle>
+                    <AlertDescription>{statsError}</AlertDescription>
                   </Alert>
-                </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-2">
+                        <Users className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm">Total Referred</span>
+                      </div>
+                      <span className="font-medium">{referralStats?.totalReferred || 0}</span>
+                    </div>
+                    
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="bg-green-900/20 text-green-400 border-green-800">PRO</Badge>
+                        <span className="text-sm">Pro Subscribers</span>
+                      </div>
+                      <span className="font-medium">{referralStats?.proSubscribers || 0}</span>
+                    </div>
+                    
+                    <Separator />
+                    
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-2">
+                        <DollarSign className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm">Total Earnings</span>
+                      </div>
+                      <span className="font-medium">${(referralStats?.totalEarnings || 0).toFixed(2)}</span>
+                    </div>
+                    
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-2">
+                        <DollarSign className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm">Pending Payment</span>
+                      </div>
+                      <span className="font-medium">${(referralStats?.pendingPayment || 0).toFixed(2)}</span>
+                    </div>
+                    
+                    <Alert className="bg-blue-900/20 border-blue-800">
+                      <Info className="h-4 w-4 text-blue-400" />
+                      <AlertTitle className="text-sm font-medium text-blue-400">Next payment</AlertTitle>
+                      <AlertDescription className="text-xs text-blue-300">
+                        Payments are processed on the 1st of each month for balances over $20.
+                      </AlertDescription>
+                    </Alert>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -358,34 +409,59 @@ export function ReferralAccountForm() {
                       <table className="w-full caption-bottom text-sm">
                         <thead>
                           <tr className="border-b border-neutral-800 bg-stone-950">
-                            <th className="h-12 px-4 text-left font-medium">User</th>
+                            <th className="h-12 px-4 text-left font-medium">Referral</th>
                             <th className="h-12 px-4 text-left font-medium">Date</th>
                             <th className="h-12 px-4 text-left font-medium">Status</th>
                             <th className="h-12 px-4 text-right font-medium">Earnings</th>
                           </tr>
                         </thead>
                         <tbody>
-                          {mockReferralHistory.map((referral) => (
-                            <tr key={referral.id} className="border-b border-neutral-800">
-                              <td className="p-4 align-middle">{referral.user}</td>
-                              <td className="p-4 align-middle">{referral.date}</td>
-                              <td className="p-4 align-middle">
-                                <Badge 
-                                  variant="outline" 
-                                  className={
-                                    referral.status === "pro" 
-                                      ? "bg-green-900/20 text-green-400 border-green-800" 
-                                      : "bg-blue-900/20 text-blue-400 border-blue-800"
-                                  }
-                                >
-                                  {referral.status === "pro" ? "Pro Subscriber" : "Free User"}
-                                </Badge>
-                              </td>
-                              <td className="p-4 align-middle text-right">
-                                ${referral.earnings.toFixed(2)}
+                          {isStatsLoading ? (
+                            Array(3).fill(0).map((_, index) => (
+                              <tr key={index} className="border-b border-neutral-800">
+                                <td className="p-4 align-middle">
+                                  <div className="h-4 bg-stone-800 animate-pulse rounded-md w-24"></div>
+                                </td>
+                                <td className="p-4 align-middle">
+                                  <div className="h-4 bg-stone-800 animate-pulse rounded-md w-20"></div>
+                                </td>
+                                <td className="p-4 align-middle">
+                                  <div className="h-4 bg-stone-800 animate-pulse rounded-md w-24"></div>
+                                </td>
+                                <td className="p-4 align-middle text-right">
+                                  <div className="h-4 bg-stone-800 animate-pulse rounded-md w-16 ml-auto"></div>
+                                </td>
+                              </tr>
+                            ))
+                          ) : referralHistory.length === 0 ? (
+                            <tr className="border-b border-neutral-800">
+                              <td colSpan={4} className="p-4 text-center text-muted-foreground">
+                                No referrals yet. Share your link to start earning!
                               </td>
                             </tr>
-                          ))}
+                          ) : (
+                            referralHistory.map((referral, index) => (
+                              <tr key={referral.id} className="border-b border-neutral-800">
+                                <td className="p-4 align-middle">User #{index + 1}</td>
+                                <td className="p-4 align-middle">{referral.date}</td>
+                                <td className="p-4 align-middle">
+                                  <Badge 
+                                    variant="outline" 
+                                    className={
+                                      referral.status === "pro" 
+                                        ? "bg-green-900/20 text-green-400 border-green-800" 
+                                        : "bg-blue-900/20 text-blue-400 border-blue-800"
+                                    }
+                                  >
+                                    {referral.status === "pro" ? "Pro Subscriber" : "Free User"}
+                                  </Badge>
+                                </td>
+                                <td className="p-4 align-middle text-right">
+                                  ${referral.earnings.toFixed(2)}
+                                </td>
+                              </tr>
+                            ))
+                          )}
                         </tbody>
                       </table>
                     </div>
@@ -414,22 +490,50 @@ export function ReferralAccountForm() {
                           </tr>
                         </thead>
                         <tbody>
-                          {mockPaymentHistory.map((payment) => (
-                            <tr key={payment.id} className="border-b border-neutral-800">
-                              <td className="p-4 align-middle">{payment.date}</td>
-                              <td className="p-4 align-middle">
-                                <Badge 
-                                  variant="outline" 
-                                  className="bg-green-900/20 text-green-400 border-green-800"
-                                >
-                                  Paid
-                                </Badge>
-                              </td>
-                              <td className="p-4 align-middle text-right">
-                                ${payment.amount.toFixed(2)}
+                          {isStatsLoading ? (
+                            Array(3).fill(0).map((_, index) => (
+                              <tr key={index} className="border-b border-neutral-800">
+                                <td className="p-4 align-middle">
+                                  <div className="h-4 bg-stone-800 animate-pulse rounded-md w-20"></div>
+                                </td>
+                                <td className="p-4 align-middle">
+                                  <div className="h-4 bg-stone-800 animate-pulse rounded-md w-16"></div>
+                                </td>
+                                <td className="p-4 align-middle text-right">
+                                  <div className="h-4 bg-stone-800 animate-pulse rounded-md w-16 ml-auto"></div>
+                                </td>
+                              </tr>
+                            ))
+                          ) : paymentHistory.length === 0 ? (
+                            <tr className="border-b border-neutral-800">
+                              <td colSpan={3} className="p-4 text-center text-muted-foreground">
+                                No payments yet. Payments are processed monthly for balances over $20.
                               </td>
                             </tr>
-                          ))}
+                          ) : (
+                            paymentHistory.map((payment) => (
+                              <tr key={payment.id} className="border-b border-neutral-800">
+                                <td className="p-4 align-middle">{payment.date}</td>
+                                <td className="p-4 align-middle">
+                                  <Badge 
+                                    variant="outline" 
+                                    className={
+                                      payment.status === "paid"
+                                        ? "bg-green-900/20 text-green-400 border-green-800"
+                                        : payment.status === "pending"
+                                          ? "bg-yellow-900/20 text-yellow-400 border-yellow-800"
+                                          : "bg-red-900/20 text-red-400 border-red-800"
+                                    }
+                                  >
+                                    {payment.status.charAt(0).toUpperCase() + payment.status.slice(1)}
+                                  </Badge>
+                                </td>
+                                <td className="p-4 align-middle text-right">
+                                  ${payment.amount.toFixed(2)}
+                                </td>
+                              </tr>
+                            ))
+                          )}
                         </tbody>
                       </table>
                     </div>

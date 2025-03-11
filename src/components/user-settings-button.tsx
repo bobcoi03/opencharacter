@@ -1,31 +1,36 @@
 "use client"
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Settings, User, Sliders, Circle, Square } from 'lucide-react';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Settings, User, Sliders, Circle, Square, Shield, AlertTriangle } from 'lucide-react';
+import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogFooter, DialogHeader } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Slider } from '@/components/ui/slider';
 import { users } from '@/server/db/schema';
 import Image from 'next/image';
-import { saveUser } from '@/app/actions/index';
+import { saveUser, deleteUser } from '@/app/actions/index';
 import NSFWToggle from './nsfw-toggle';
 import NSFWBlur from './nsfw-blur';
 import { ChatDialogStyling } from './chat-dialog-styling';
+import { useRouter } from 'next/navigation';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
-type User = typeof users.$inferSelect;
+type UserType = typeof users.$inferSelect;
 
 type SettingsButtonProps = {
-  user: User;
+  user: UserType;
 };
 
 const SettingsButton = ({ user }: SettingsButtonProps) => {
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('Profile');
   const [previewImage, setPreviewImage] = useState<string | null>(user.image);
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const [characterIcon, setCharacterIcon] = useState(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('character_icon_style') || 'circle';
@@ -97,6 +102,41 @@ const SettingsButton = ({ user }: SettingsButtonProps) => {
     }
   };
 
+  const handleShowDeleteConfirmation = () => {
+    setIsOpen(false);
+    setTimeout(() => {
+      setShowDeleteConfirmation(true);
+    }, 100);
+  };
+
+  const handleCancelDelete = () => {
+    setShowDeleteConfirmation(false);
+    setTimeout(() => {
+      setIsOpen(true);
+      setActiveTab('Account');
+    }, 100);
+  };
+
+  const handleDeleteAccount = async () => {
+    setIsDeleting(true);
+    setErrorMessage(null);
+
+    try {
+      const result = await deleteUser();
+      
+      if (result.success) {
+        setShowDeleteConfirmation(false);
+        router.push('/');
+      } else {
+        setErrorMessage(result.message);
+      }
+    } catch (error) {
+      setErrorMessage("An unexpected error occurred. Please try again.");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <>
       <Button
@@ -109,11 +149,11 @@ const SettingsButton = ({ user }: SettingsButtonProps) => {
       </Button>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="sm:max-w-[800px] bg-neutral-900 text-white p-0 rounded-xl overflow-hidden max-h-[90vh] flex flex-col min-h-[30vh] z-[9999]">
+        <DialogContent className="sm:max-w-[800px] bg-neutral-900 text-white p-0 rounded-xl overflow-hidden max-h-[90vh] flex flex-col min-h-[30vh] z-[100]">
           <div className="flex flex-col sm:flex-row flex-grow overflow-hidden">
             <div className="sm:w-1/4 bg-neutral-800 p-4 flex flex-row sm:flex-col justify-between sm:justify-start">
               <nav className="flex flex-row sm:flex-col gap-2 sm:gap-0">
-                {['Profile', 'Preferences'].map((tab) => (
+                {['Profile', 'Preferences', 'Account'].map((tab) => (
                   <Button
                     key={tab}
                     variant="ghost"
@@ -122,6 +162,7 @@ const SettingsButton = ({ user }: SettingsButtonProps) => {
                   >
                     {tab === 'Profile' && <User className="mr-2 h-4 w-4" />}
                     {tab === 'Preferences' && <Sliders className="mr-2 h-4 w-4" />}
+                    {tab === 'Account' && <Shield className="mr-2 h-4 w-4" />}
                     {tab}
                   </Button>
                 ))}
@@ -129,6 +170,47 @@ const SettingsButton = ({ user }: SettingsButtonProps) => {
             </div>
             <div className="flex-grow p-6 bg-neutral-900 overflow-y-auto">
               <h2 className="text-2xl font-bold mb-6">{activeTab}</h2>
+              {activeTab === 'Account' && (
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-lg font-medium mb-2">Account Information</h3>
+                    <div className="bg-neutral-800 p-4 rounded-xl space-y-3">
+                      <div>
+                        <label className="text-sm text-neutral-400">Email</label>
+                        <p className="text-white">{user.email || 'No email provided'}</p>
+                      </div>
+                      {user.emailVerified && (
+                        <div>
+                          <label className="text-sm text-neutral-400">Email Verified</label>
+                          <p className="text-white">{new Date(user.emailVerified).toLocaleDateString()}</p>
+                        </div>
+                      )}
+                      {user.pay_as_you_go !== undefined && (
+                        <div>
+                          <label className="text-sm text-neutral-400">Pay As You Go</label>
+                          <p className="text-white">{user.pay_as_you_go ? 'Enabled' : 'Disabled'}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="pt-6 border-t border-neutral-700">
+                    <h3 className="text-lg font-medium text-red-500 mb-2">Danger Zone</h3>
+                    <div className="bg-neutral-800 p-4 rounded-xl">
+                      <p className="text-sm text-neutral-400 mb-4">
+                        Permanently delete your account and all associated data. This action cannot be undone.
+                      </p>
+                      <Button 
+                        variant="destructive" 
+                        className="bg-red-600 hover:bg-red-700 text-white"
+                        onClick={handleShowDeleteConfirmation}
+                      >
+                        Delete Account
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
               {activeTab === 'Profile' && (
                 <div className="space-y-2">
                   <div className="flex justify-center mb-2">
@@ -245,7 +327,7 @@ const SettingsButton = ({ user }: SettingsButtonProps) => {
               Join Discord
             </Button>
             <div className="flex gap-2">
-            {activeTab == "Profile" && 
+            {activeTab === "Profile" && 
                 <>
                 <Button variant="ghost" onClick={() => setIsOpen(false)} disabled={isSaving}>Cancel</Button>
                 <Button 
@@ -260,6 +342,49 @@ const SettingsButton = ({ user }: SettingsButtonProps) => {
               
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showDeleteConfirmation} onOpenChange={setShowDeleteConfirmation}>
+        <DialogContent className="bg-neutral-900 text-white p-6 rounded-xl max-w-md z-[9999]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-500">
+              <AlertTriangle className="h-5 w-5" />
+              Delete Account
+            </DialogTitle>
+            <DialogDescription className="text-neutral-400">
+              This action cannot be undone. This will permanently delete your account and remove all your data from our servers.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <Alert className="bg-red-900/30 border-red-800 text-red-300 my-4">
+            <AlertDescription>
+              All your conversations, characters, and personal data will be permanently deleted.
+            </AlertDescription>
+          </Alert>
+          
+          <DialogFooter className="flex flex-col sm:flex-row gap-2 sm:justify-end mt-4">
+            <Button 
+              variant="outline" 
+              className="border-neutral-700 text-white hover:bg-neutral-800"
+              onClick={handleCancelDelete}
+              disabled={isDeleting}
+            >
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive"
+              className="bg-red-600 hover:bg-red-700 text-white"
+              onClick={handleDeleteAccount}
+              disabled={isDeleting}
+            >
+              {isDeleting ? 'Deleting...' : 'Yes, Delete My Account'}
+            </Button>
+          </DialogFooter>
+          
+          {errorMessage && (
+            <div className="text-red-500 mt-2">{errorMessage}</div>
+          )}
         </DialogContent>
       </Dialog>
     </>

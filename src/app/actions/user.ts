@@ -93,3 +93,23 @@ export async function updatePayAsYouGo(payAsYouGo: boolean) {
     return { success: false, message: "Failed to update pay-as-you-go" };
   }
 }
+
+export async function deleteUser() {
+  try {
+    const session = await auth();
+    if (!session || !session.user) {
+      throw new Error("User not authenticated");
+    }
+
+    const userId = session.user.id;
+
+    // Delete the user from the database
+    await db.delete(users)
+      .where(eq(users.id, userId!));
+
+    return { success: true, message: "User account deleted successfully" };
+  } catch (error) {
+    console.error("Error deleting user account:", error);
+    return { success: false, message: "Failed to delete user account" };
+  }
+}
