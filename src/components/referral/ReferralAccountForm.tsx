@@ -141,7 +141,7 @@ export function ReferralAccountForm() {
                     className="bg-stone-950"
                   />
                   <p className="text-sm text-muted-foreground">
-                    We'll send your commission payments to this PayPal account.
+                    We{"'"}ll send your commission payments to this PayPal account.
                   </p>
                 </div>
                 
