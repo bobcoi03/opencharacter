@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -10,17 +10,21 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Clipboard, Copy, DollarSign, ExternalLink, Info, Mail, Users } from "lucide-react";
+import { Copy, DollarSign, ExternalLink, Info, Mail, Users } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { getUserReferralData, updateReferralSettings } from "@/app/actions/referral";
 
 export function ReferralAccountForm() {
   const { toast } = useToast();
   const router = useRouter();
   
   // State for form inputs
+  const [referralLink, setReferralLink] = useState("");
   const [referralCode, setReferralCode] = useState("");
   const [paypalEmail, setPaypalEmail] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
   // Mock data for referrals - would be fetched from API in production
   const mockReferralStats = {
@@ -52,30 +56,104 @@ export function ReferralAccountForm() {
     { id: "3", date: "2023-08-15", amount: 20.00, status: "paid" },
   ];
   
-  // Simulate loading user data
+  // Load user referral data
   useEffect(() => {
-    // In a real app, fetch user data from API
-    setReferralCode("yourname");
-    setPaypalEmail("your.email@example.com");
+    const loadReferralData = async () => {
+      setIsLoading(true);
+      setError(null);
+      
+      try {
+        const result = await getUserReferralData();
+        
+        if (result.success && result.data) {
+          if (result.data.referralLink) {
+            setReferralLink(result.data.referralLink);
+            
+            // Extract the code part from the full link
+            const codeMatch = result.data.referralLink.match(/ref=(.+)$/);
+            if (codeMatch && codeMatch[1]) {
+              setReferralCode(codeMatch[1]);
+            }
+          }
+          
+          if (result.data.paypalEmail) {
+            setPaypalEmail(result.data.paypalEmail);
+          }
+        } else {
+          setError(result.message);
+        }
+      } catch (err) {
+        setError("Failed to load referral data");
+        console.error("Error loading referral data:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadReferralData();
   }, []);
   
   const handleSaveSettings = async () => {
     setIsSaving(true);
+    setError(null);
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    toast({
-      title: "Settings saved",
-      description: "Your referral settings have been updated successfully.",
-    });
-    
-    setIsSaving(false);
+    try {
+      // Validate PayPal email
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(paypalEmail)) {
+        toast({
+          title: "Invalid email",
+          description: "Please enter a valid PayPal email address.",
+          variant: "destructive",
+        });
+        setIsSaving(false);
+        return;
+      }
+      
+      // Update settings via server action
+      const result = await updateReferralSettings({ paypalEmail });
+      
+      if (result.success) {
+        if (result.referralLink) {
+          setReferralLink(result.referralLink);
+          
+          // Extract the code part from the full link
+          const codeMatch = result.referralLink.match(/ref=(.+)$/);
+          if (codeMatch && codeMatch[1]) {
+            setReferralCode(codeMatch[1]);
+          }
+        }
+        
+        toast({
+          title: "Settings saved",
+          description: "Your referral settings have been updated successfully.",
+        });
+        
+        // Refresh the page to update any data
+        router.refresh();
+      } else {
+        setError(result.message);
+        toast({
+          title: "Error",
+          description: result.message,
+          variant: "destructive",
+        });
+      }
+    } catch (err) {
+      setError("Failed to save settings");
+      console.error("Error saving settings:", err);
+      toast({
+        title: "Error",
+        description: "Failed to save settings. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
   
   const copyReferralLink = () => {
-    const fullLink = `https://opencharacter.org/ref=${referralCode}`;
-    navigator.clipboard.writeText(fullLink);
+    navigator.clipboard.writeText(referralLink);
     
     toast({
       title: "Copied to clipboard",
@@ -106,53 +184,64 @@ export function ReferralAccountForm() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* Referral Link */}
-                <div className="space-y-2">
-                  <Label htmlFor="referral-link">Your Referral Link</Label>
-                  <div className="flex space-x-2">
-                    <div className="flex-1 flex items-center rounded-md border border-input bg-stone-950 px-3 py-2 text-sm ring-offset-background">
-                      <span className="text-muted-foreground">https://opencharacter.org/ref=</span>
-                      <Input 
-                        id="referral-link"
-                        value={referralCode}
-                        onChange={(e) => setReferralCode(e.target.value)}
-                        className="flex-1 border-0 bg-transparent p-0 pl-1 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
-                        placeholder="yourlink"
-                      />
-                    </div>
-                    <Button variant="outline" size="icon" onClick={copyReferralLink}>
-                      <Copy className="h-4 w-4" />
-                    </Button>
+                {isLoading ? (
+                  <div className="space-y-4">
+                    <div className="h-10 bg-stone-800 animate-pulse rounded-md"></div>
+                    <div className="h-10 bg-stone-800 animate-pulse rounded-md"></div>
                   </div>
-                  <p className="text-sm text-muted-foreground">
-                    Share this link with friends to earn commission when they subscribe.
-                  </p>
-                </div>
-                
-                {/* PayPal Email */}
-                <div className="space-y-2">
-                  <Label htmlFor="paypal-email">PayPal Email</Label>
-                  <Input 
-                    id="paypal-email"
-                    type="email"
-                    value={paypalEmail}
-                    onChange={(e) => setPaypalEmail(e.target.value)}
-                    placeholder="your.email@example.com"
-                    className="bg-stone-950"
-                  />
-                  <p className="text-sm text-muted-foreground">
-                    We{"'"}ll send your commission payments to this PayPal account.
-                  </p>
-                </div>
-                
-                {/* Save Button */}
-                <Button 
-                  className="w-full mt-4" 
-                  onClick={handleSaveSettings}
-                  disabled={isSaving}
-                >
-                  {isSaving ? "Saving..." : "Save Settings"}
-                </Button>
+                ) : (
+                  <>
+                    {/* Error message if any */}
+                    {error && (
+                      <Alert variant="destructive">
+                        <AlertTitle>Error</AlertTitle>
+                        <AlertDescription>{error}</AlertDescription>
+                      </Alert>
+                    )}
+                    
+                    {/* Referral Link */}
+                    <div className="space-y-2">
+                      <Label htmlFor="referral-link">Your Referral Link</Label>
+                      <div className="flex space-x-2">
+                        <div className="flex-1 flex items-center rounded-md border border-input bg-stone-950 px-3 py-2 text-sm ring-offset-background">
+                          <span className="text-muted-foreground">https://opencharacter.org/ref=</span>
+                          <span className="flex-1 pl-1">{referralCode}</span>
+                        </div>
+                        <Button variant="outline" size="icon" onClick={copyReferralLink}>
+                          <Copy className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        Share this link with friends to earn commission when they subscribe.
+                      </p>
+                    </div>
+                    
+                    {/* PayPal Email */}
+                    <div className="space-y-2">
+                      <Label htmlFor="paypal-email">PayPal Email</Label>
+                      <Input 
+                        id="paypal-email"
+                        type="email"
+                        value={paypalEmail}
+                        onChange={(e) => setPaypalEmail(e.target.value)}
+                        placeholder="your.email@example.com"
+                        className="bg-stone-950"
+                      />
+                      <p className="text-sm text-muted-foreground">
+                        We{"'"}ll send your commission payments to this PayPal account.
+                      </p>
+                    </div>
+                    
+                    {/* Save Button */}
+                    <Button 
+                      className="w-full mt-4" 
+                      onClick={handleSaveSettings}
+                      disabled={isSaving}
+                    >
+                      {isSaving ? "Saving..." : "Save Settings"}
+                    </Button>
+                  </>
+                )}
               </CardContent>
             </Card>
             

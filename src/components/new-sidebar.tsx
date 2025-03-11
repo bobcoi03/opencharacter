@@ -29,7 +29,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import AuthProvider from "./auth-provider";
 import { Audiowide } from '@next/font/google';
 
 const font = Audiowide({
@@ -140,6 +139,14 @@ const NewSidebarContent: React.FC<NewSidebarProps> = ({ search }) => {
                       <span>Github </span>
                     </Link>
                   </DropdownMenuItem>
+
+                  <DropdownMenuItem className="text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">
+                    <Link href={"/referral/account"} className="flex w-full">
+                      <Users className="mr-2 h-4 w-4" />
+                      <span>Referral</span>
+                    </Link>
+                  </DropdownMenuItem>
+
                   
                   <DropdownMenuItem
                     onClick={() => signOut()}
