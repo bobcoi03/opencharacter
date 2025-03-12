@@ -312,18 +312,21 @@ export function ReferralAccountForm() {
                     {/* Referral Link */}
                     <div className="space-y-2 p-4 border border-neutral-800 rounded-lg">
                       <Label htmlFor="referral-code" className="text-base font-medium">Your Referral Code</Label>
-                      <div className="flex space-x-2">
-                        <div className="flex-1 flex items-center rounded-md border border-input bg-stone-950 px-3 py-2 text-sm ring-offset-background">
-                          <span className="text-muted-foreground">https://opencharacter.org/?ref=</span>
+                      
+                      {/* Mobile-friendly layout */}
+                      <div className="flex flex-col sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0">
+                        {/* URL prefix and input in a responsive container */}
+                        <div className="flex-1 flex flex-col sm:flex-row items-start sm:items-center rounded-md border border-input bg-stone-950 px-3 py-2 text-sm ring-offset-background">
+                          <span className="text-muted-foreground mb-2 sm:mb-0 whitespace-nowrap">https://opencharacter.org/?ref=</span>
                           <Input
                             id="referral-code"
                             value={referralCode}
                             onChange={handleReferralCodeChange}
-                            className="flex-1 border-0 bg-transparent p-0 pl-1 focus-visible:ring-0 focus-visible:ring-offset-0"
+                            className="w-full sm:w-auto sm:flex-1 border-0 bg-transparent p-0 sm:pl-1 focus-visible:ring-0 focus-visible:ring-offset-0"
                             placeholder="lowercase-only"
                           />
                         </div>
-                        <Button variant="outline" size="icon" onClick={copyReferralLink}>
+                        <Button variant="outline" size="icon" onClick={copyReferralLink} className="self-start">
                           <Copy className="h-4 w-4" />
                         </Button>
                       </div>
