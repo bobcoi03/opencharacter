@@ -382,8 +382,8 @@ export default function MessageAndInput({
           if (data.subscribed) {
             const savedModel = localStorage.getItem("selectedModel");
             if (!savedModel) {
-              setSelectedModel("nvidia/llama-3.1-nemotron-70b-instruct");
-              localStorage.setItem("selectedModel", "nvidia/llama-3.1-nemotron-70b-instruct");
+              setSelectedModel("nousresearch/hermes-3-llama-3.1-70b");
+              localStorage.setItem("selectedModel", "nousresearch/hermes-3-llama-3.1-70b");
             } else {
               setSelectedModel(savedModel);
             }
