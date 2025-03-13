@@ -846,7 +846,7 @@ export default function MessageAndInput({
         </Link>
       }
       {!share && 
-        <div className="fixed bottom-0 left-0 right-0 py-1 w-full max-w-full">
+        <div className="fixed bottom-0 left-0 right-0 py-0 w-full max-w-full">
         <div className="max-w-2xl mx-auto w-full">
           {error && (
             <div className="mb-2 p-2 bg-red-900 border border-red-800 rounded-lg text-red-200 text-sm pointer-events-auto flex justify-between items-center">
