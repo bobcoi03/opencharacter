@@ -846,7 +846,7 @@ export default function MessageAndInput({
         </Link>
       }
       {!share && 
-        <div className="fixed bottom-0 left-0 right-0 py-4 w-full max-w-full">
+        <div className="fixed bottom-0 left-0 right-0 py-1 w-full max-w-full">
         <div className="max-w-2xl mx-auto w-full">
           {error && (
             <div className="mb-2 p-2 bg-red-900 border border-red-800 rounded-lg text-red-200 text-sm pointer-events-auto flex justify-between items-center">
@@ -885,7 +885,7 @@ export default function MessageAndInput({
             className="pointer-events-auto flex items-center space-x-2 max-w-full px-2"
           >
             <div className="relative flex-grow">
-              <div className="absolute inset-0 bg-slate-600 bg-opacity-20 backdrop-blur-md rounded-3xl border-neutral-700"></div>
+              <div className="absolute inset-0 bg-slate-600 bg-opacity-20 backdrop-blur-md rounded-t-xl border-neutral-700"></div>
               <div className="absolute left-3 top-1/2 transform -translate-y-1/2 z-20">
                 <ModelSelector 
                   selectedModel={selectedModel}
@@ -900,7 +900,7 @@ export default function MessageAndInput({
                 onKeyDown={handleKeyDown}
                 onFocus={handleInputFocus}
                 placeholder={`Message ${character.name}...`}
-                className="w-full py-4 pl-14 pr-12 bg-transparent relative z-10 outline-none text-white text-xl rounded-xl resize-none overflow-hidden"
+                className="w-full py-4 pl-14 pr-12 bg-transparent relative z-10 outline-none text-white text-xl rounded-t-3xl resize-none overflow-hidden "
                 style={{
                   minHeight: "50px",
                   maxHeight: `${MAX_TEXTAREA_HEIGHT}px`,
