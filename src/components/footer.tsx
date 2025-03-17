@@ -42,7 +42,7 @@ const footerLinks: FooterSection[] = [
       { href: "https://www.instagram.com/opencharacter_org/", label: "Instagram", external: true },
       { href: "https://github.com/bobcoi03/opencharacter", label: "GitHub", external: true },
       { href: "https://x.com/opencharacter_", label: "Twitter", external: true },
-      { href: "mailto:info@opencharacter.org", label: "Email", external: true }
+      { href: "mailto:opencharacter.org@gmail.com", label: "Email", external: true }
     ],
   },
   {
