@@ -16,6 +16,7 @@ import {
   ChevronRight,
   Loader2,
   Star,
+  Copy,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -63,7 +64,6 @@ interface MessageContentProps {
   regenerations: string[];
   currentRegenerationIndex: number;
   onNewChatFromHere: (index: number) => void;
-  onRewindHere: (index: number) => void;
   onRateMessage: (index: number, rating: number) => void;
 }
 
@@ -85,7 +85,6 @@ const MessageContent: React.FC<MessageContentProps> = ({
   regenerations,
   currentRegenerationIndex,
   onNewChatFromHere,
-  onRewindHere,
   onRateMessage,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
@@ -94,6 +93,7 @@ const MessageContent: React.FC<MessageContentProps> = ({
   const [isHovered, setIsHovered] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const { toast } = useToast();
 
   const handleRating = (rating: number) => {
     onRateMessage(index, rating);
@@ -201,10 +201,6 @@ const MessageContent: React.FC<MessageContentProps> = ({
                   <Edit className="w-4 h-4 mr-2" />
                   Edit
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => { onRewindHere(index); setIsDropdownOpen(false); }}>
-                  <RotateCcw className="w-4 h-4 mr-2" />
-                  Rewind to here
-                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => { onNewChatFromHere(index); setIsDropdownOpen(false); }}>
                   <ChevronRight className="w-4 h-4 mr-2" />
                   New chat from here
@@ -264,7 +260,7 @@ const MessageContent: React.FC<MessageContentProps> = ({
         </div>
         {!isUser && showRetries && index != 1 && (
         <div className="w-full flex justify-between max-w-full flex-row">
-          <div className="items-center flex">
+          <div className="items-center flex gap-2">
             <div className="flex space-x-1">
               {Array.from({ length: 5 }, (_, i) => (
                   <Star 
@@ -277,6 +273,7 @@ const MessageContent: React.FC<MessageContentProps> = ({
                   />
               ))}
             </div>
+            
           </div>
           <div className="flex items-center space-x-2 mt-4 ml-2">
             <button 
@@ -634,14 +631,6 @@ export default function MessageAndInput({
     } 
   };
 
-  const handleOnRewindHere = async (index: number) => {
-    const m = await saveChat(messages.slice(0, index +1), character)
-    setMessagesState(m.messages)
-    setTimeout(() => {
-      window.location.reload()
-    }, 1500)
-  }
-
   const handleRateMessage = async (index: number, rating: number) => {
     const newMessages = messagesState.map((msg, i) =>
       i === index ? { ...msg, rating } : msg
@@ -700,7 +689,6 @@ export default function MessageAndInput({
         currentRegenerationIndex={currentRegenerationIndex}
         onGoBackRegenerate={handleOnGoBackRegenerate}
         onNewChatFromHere={handleNewChatFromHere}
-        onRewindHere={handleOnRewindHere}
       />
     ));
   }, [
@@ -716,8 +704,7 @@ export default function MessageAndInput({
     handleEdit,
     handleDelete,
     handleOnGoBackRegenerate,
-    handleNewChatFromHere,
-    handleOnRewindHere
+    handleNewChatFromHere
   ]);
 
   const handleFormSubmit = (e: FormEvent<HTMLFormElement>) => {
