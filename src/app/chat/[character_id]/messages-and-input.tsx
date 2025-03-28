@@ -354,7 +354,7 @@ export default function MessageAndInput({
   const [messagesState, setMessagesState] =
     useState<CoreMessage[]>(messages);
   const [input, setInput] = useState("");
-  const [selectedModel, setSelectedModel] = useState("mistralai/mistral-nemo");
+  const [selectedModel, setSelectedModel] = useState("gryphe/mythomax-l2-13b");
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<boolean>(false);
