@@ -66,7 +66,7 @@ export async function sendAbandonedCartEmail({
                 <p>To use this discount, simply click the button below to resume your subscription:</p>
                 
                 <p style="text-align: center;">
-                  <a href="${process.env.NEXT_PUBLIC_APP_URL}/pricing?coupon=${couponCode}" class="btn">Complete My Subscription</a>
+                  <a href="${process.env.NEXT_PUBLIC_APP_URL}/plans?coupon=${couponCode}" class="btn">Complete My Subscription</a>
                 </p>
                 
                 <p>This special offer expires in 48 hours, so don't miss out!</p>
