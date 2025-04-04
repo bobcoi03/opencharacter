@@ -409,14 +409,12 @@ export async function continueConversation(
         }
       }
 
-      response = await fetch("https://openrouter.helicone.ai/api/v1/chat/completions", {
+      response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
-          "Helicone-Auth": `Bearer ${process.env.HELICONE_API_KEY}`,
           "HTTP-Referer": "https://opencharacter.org",
           "X-Title": "OpenCharacter",
-          "Helicone-User-Id": session?.user?.email ?? "guest",
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
@@ -738,14 +736,12 @@ export async function summarizeConversation(
   }
 
   let llm_provider = createOpenAI({
-    baseURL: "https://openrouter.helicone.ai/api/v1",
+    baseURL: "https://openrouter.ai/api/v1",
     apiKey: process.env.OPENROUTER_API_KEY,
     headers: {
       Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-      "Helicone-Auth": `Bearer ${process.env.HELICONE_API_KEY}`,
       "HTTP-Referer": "https://opencharacter.org",
       "X-Title": "OpenCharacter",
-      "Helicone-User-Id": session?.user?.email ?? "guest",
     },
   });
 
@@ -1107,7 +1103,6 @@ async function recordMeteredModels(gen_id: string) {
         { 
           headers: {
             "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
-            "Helicone-Auth": `Bearer ${process.env.HELICONE_API_KEY}`,
             "HTTP-Referer": "https://opencharacter.org",
             "X-Title": "OpenCharacter",
             "Content-Type": "application/json",
