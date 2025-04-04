@@ -3,11 +3,11 @@ import Stripe from 'stripe';
 export async function createRecoveryCoupon(stripe: Stripe, userId: string): Promise<string> {
   // Generate a unique code with user ID and timestamp
   const uniqueId = `${userId.substring(0, 6)}-${Date.now().toString(36)}`;
-  const couponCode = `COMEBACK-${uniqueId}`.toUpperCase();
+  const id = `COMEBACK-${uniqueId}`.toUpperCase();
   
   // Create a coupon in Stripe that gives 20% off and expires in 48 hours
-  await stripe.coupons.create({
-    id: couponCode,
+  const coupon = await stripe.coupons.create({
+    id: id,
     percent_off: 20,
     duration: 'repeating',
     duration_in_months: 3,
@@ -16,8 +16,11 @@ export async function createRecoveryCoupon(stripe: Stripe, userId: string): Prom
     metadata: {
       userId,
       recoveryType: 'abandoned_checkout'
-    }
+    },
   });
-  
-  return couponCode;
+
+  const promotionCode = await stripe.promotionCodes.create({
+    coupon: coupon.id,
+  })
+  return promotionCode.code;
 } 
