@@ -398,12 +398,26 @@ export async function continueConversation(
           
           // Estimate minimum required balance based on model type
           // Different models have different costs, so we set a minimum threshold
-          const minimumRequiredBalance = 0.01; // Set a minimum threshold (in dollars)
+          const minimumRequiredBalance = 0.1; // Increase threshold to $0.10 minimum
           
-          if (userCredits.balance < minimumRequiredBalance) {
+          // Additional model-specific cost estimation
+          // These are conservative estimates for typical prompt + completion costs
+          const modelCostEstimates: Record<string, number> = {
+            "anthropic/claude-3.7-sonnet": 0.15,
+            "anthropic/claude-3.7-sonnet:thinking": 0.15,
+            "anthropic/claude-3-opus": 0.25,
+            "openai/gpt-4o-2024-11-20": 0.15,
+            "openai/o1": 0.3,
+            "x-ai/grok-2-1212": 0.15,
+          };
+          
+          // Get model-specific threshold or use the default
+          const modelSpecificThreshold = modelCostEstimates[model_name] || minimumRequiredBalance;
+          
+          if (userCredits.balance < modelSpecificThreshold) {
             return { 
               error: true, 
-              message: `Your credit balance (${userCredits.balance.toFixed(4)}) is too low for this model. Please add more credits to continue.` 
+              message: `Your credit balance ($${userCredits.balance.toFixed(2)}) is too low for ${model_name}. Please add at least $${modelSpecificThreshold.toFixed(2)} to continue.` 
             };
           }
         }
@@ -1178,8 +1192,15 @@ async function recordMeteredModels(gen_id: string) {
 
     // Check if user has sufficient balance
     if (userCredits.balance < finalCost) {
-      console.error("Insufficient credits for user:", currentSession.user.id);
-      throw new Error("Insufficient credits");
+      console.error(`Insufficient credits for user: ${currentSession.user.id}. Required: ${finalCost}, Available: ${userCredits.balance}`);
+      
+      // Only allow the transaction if the user has at least 50% of the required cost
+      // This prevents users from getting free inferences with tiny balances
+      if (userCredits.balance < finalCost * 0.5) {
+        throw new Error(`Insufficient credits. Required: $${finalCost.toFixed(4)}, Available: $${userCredits.balance.toFixed(4)}`);
+      }
+      
+      console.warn(`User has partial credits - will deduct available amount: ${userCredits.balance}`);
     }
 
     // Update user's credit balance
