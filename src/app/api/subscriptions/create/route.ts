@@ -71,7 +71,8 @@ export async function POST(request: Request) {
             stripeCustomerId: stripeCustomerId,
             userEmail: user.email || '',
             userName: user.name || ''
-        }
+        },
+        expires_at: Math.floor(Date.now() / 1000) + (60 * 30), // Configured to expire after 30 minutes
     });
     return NextResponse.json({ url: checkoutSession.url });
 }

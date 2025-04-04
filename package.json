@@ -17,6 +17,7 @@
   "dependencies": {
     "@ai-sdk/openai": "^0.0.58",
     "@auth/drizzle-adapter": "^1.4.2",
+    "@aws-sdk/client-ses": "^3.782.0",
     "@clack/prompts": "^0.7.0",
     "@iarna/toml": "^2.2.5",
     "@kontextso/sdk": "^0.1.7",

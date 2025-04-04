@@ -3,6 +3,8 @@ import Stripe from 'stripe';
 import { db } from "@/server/db";
 import { subscriptions, referrals, type PaymentRecord } from "@/server/db/schema";
 import { eq, and } from 'drizzle-orm';
+import { sendAbandonedCartEmail } from '@/lib/email';
+import { createRecoveryCoupon } from '@/lib/stripe';
 
 export const runtime = 'edge';
 
@@ -30,6 +32,33 @@ export async function POST(request: Request) {
 
     // Handle the event
     switch (event.type) {
+      case 'checkout.session.expired': {
+        const session = event.data.object as Stripe.Checkout.Session;
+        console.log(`Checkout session expired: ${session.id}`);
+        
+        // Check if we have user email and userId in the session metadata
+        if (session.customer_email && session.metadata?.userId) {
+          try {
+            // Generate a coupon code (e.g., 20% discount)
+            const couponCode = await createRecoveryCoupon(stripe, session.metadata.userId);
+            
+            // Send recovery email with the coupon code
+            await sendAbandonedCartEmail({
+              email: session.customer_email,
+              userId: session.metadata.userId,
+              couponCode,
+              sessionId: session.id
+            });
+            
+            console.log(`Recovery email sent to ${session.customer_email} with coupon ${couponCode}`);
+          } catch (error) {
+            console.error('Error sending recovery email:', error);
+            // Don't fail the webhook if email sending fails
+          }
+        }
+        
+        break;
+      }
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;
         console.log(`Checkout session completed: ${session.id}`);
