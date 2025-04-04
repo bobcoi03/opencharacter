@@ -37,7 +37,7 @@ export async function POST(request: Request) {
         console.log(`Checkout session expired: ${session.id}`);
         
         // Check if we have user email and userId in the session metadata
-        if (session.customer_email && session.metadata?.userId) {
+        if ((session.customer_email || session.metadata?.userEmail) && session.metadata?.userId) {
           try {
             // Generate a coupon code (e.g., 20% discount)
             const couponCode = await createRecoveryCoupon(stripe, session.metadata.userId);
