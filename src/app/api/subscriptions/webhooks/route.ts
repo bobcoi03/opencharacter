@@ -44,7 +44,7 @@ export async function POST(request: Request) {
             
             // Send recovery email with the coupon code
             await sendAbandonedCartEmail({
-              email: session.customer_email,
+              email: session.customer_email ? session.customer_email : session.metadata?.userEmail,
               userId: session.metadata.userId,
               couponCode,
               sessionId: session.id
