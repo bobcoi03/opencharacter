@@ -185,18 +185,18 @@ export async function continueConversation(
   } else if (!isSubscribed && !api_key) {
     // Only check request limits for non-subscribed users using free models
     // If the user has an API key, they can use the model without being limited
-    try {
-      const { remainingRequests } = await checkAndIncrementRequestCount(session.user.id);
-      console.log("Free tier request count updated:", {
-        userId: session.user.id,
-        remainingRequests
-      });
-    } catch (error) {
-      if (error instanceof Error && error.message.includes("Daily request limit exceeded")) {
-        return { error: true, message: error.message };
-      }
-      throw error;
-    }
+    // try {
+    //   const { remainingRequests } = await checkAndIncrementRequestCount(session.user.id);
+    //   console.log("Free tier request count updated:", {
+    //     userId: session.user.id,
+    //     remainingRequests
+    //   });
+    // } catch (error) {
+    //   if (error instanceof Error && error.message.includes("Daily request limit exceeded")) {
+    //     return { error: true, message: error.message };
+    //   }
+    //   throw error;
+    //    }
   }
 
   // Check if the character is public or if it's private and belongs to the user
