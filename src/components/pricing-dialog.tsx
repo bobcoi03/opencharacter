@@ -51,7 +51,7 @@ export function PricingDialog({ messagesLength, onClose }: PricingDialogProps) {
 
   // Show dialog when messagesLength reaches specific thresholds
   useEffect(() => {
-    const thresholds = [40, 80, 120, 160, 200, 240, 280, 300]
+    const thresholds = [12, 40, 120, 160, 200, 240, 280, 300]
     if (messagesLength > 0 && thresholds.includes(messagesLength)) {
       setOpen(true)
     }
@@ -112,9 +112,6 @@ export function PricingDialog({ messagesLength, onClose }: PricingDialogProps) {
           <DialogTitle className="text-2xl font-bold text-center">
             Upgrade to Pro
           </DialogTitle>
-          <DialogDescription className="text-center text-zinc-400 mt-2">
-            You{"'"}ve sent {messagesLength / 2} messages! Upgrade to Pro for unlimited premium model access.
-          </DialogDescription>
         </DialogHeader>
 
         <div className="p-6">
