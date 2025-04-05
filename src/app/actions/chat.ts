@@ -1246,6 +1246,7 @@ export async function updateChatSessionTitle(conversationId: string, title: stri
 }
 
 export async function createChatRecommendations(chatMessages: ChatMessageArray) {
+  console.log("Creating chat recommendations");
   const session = await auth();
 
   if (!session?.user) {
@@ -1253,9 +1254,9 @@ export async function createChatRecommendations(chatMessages: ChatMessageArray) 
   }
   
   try {
-    // If chat messages is longer than 5, grab just the latest 5 messages
-    const recentMessages = chatMessages.length > 5 
-      ? chatMessages.slice(-5) 
+    // If chat messages is longer than 3, grab just the latest 3 messages
+    const recentMessages = chatMessages.length > 3 
+      ? chatMessages.slice(-3) 
       : chatMessages;
     
     console.log(`Creating chat recommendations based on ${recentMessages.length} recent messages`);
@@ -1275,7 +1276,7 @@ export async function createChatRecommendations(chatMessages: ChatMessageArray) 
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "mistral/ministral-8b",
+        model: "mistralai/mistral-saba",
         messages: [
           {
             role: "user", 
@@ -1283,10 +1284,10 @@ export async function createChatRecommendations(chatMessages: ChatMessageArray) 
 
 ${conversationContent}
 
-Generate 3 distinct response options that vary in tone and content. Each should have a brief title and the actual message text.`
+Generate 3 distinct response options that vary in tone and content. Each should have a brief title and the actual message text. Try to be creative, fun and silly! Don't be afraid to be weird and creative!`
           }
         ],
-        temperature: 0.7,
+        temperature: 1.0,
         response_format: {
           type: "json_schema",
           json_schema: {
@@ -1312,8 +1313,6 @@ Generate 3 distinct response options that vary in tone and content. Each should 
                     required: ["title", "message"],
                     additionalProperties: false
                   },
-                  maxItems: 3,
-                  minItems: 3
                 }
               },
               required: ["recommendations"],
@@ -1340,8 +1339,9 @@ Generate 3 distinct response options that vary in tone and content. Each should 
         }
       }]
     };
+    console.log("Result:", result);
     const recommendations = JSON.parse(result.choices[0].message.content);
-    
+    console.log("Recommendations:", recommendations);
     console.log("Generated recommendations:", recommendations);
     
     return { 

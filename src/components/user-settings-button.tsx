@@ -15,11 +15,47 @@ import NSFWBlur from './nsfw-blur';
 import { ChatDialogStyling } from './chat-dialog-styling';
 import { useRouter } from 'next/navigation';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Switch } from '@/components/ui/switch';
 
 type UserType = typeof users.$inferSelect;
 
 type SettingsButtonProps = {
   user: UserType;
+};
+
+const RecommendationsToggle = () => {
+  const [enabled, setEnabled] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const savedValue = localStorage.getItem('message_recommendations_enabled');
+      // If no value has been set yet, default to true (enabled)
+      return savedValue === null ? true : savedValue === 'true';
+    }
+    return true;
+  });
+
+  const toggleRecommendations = () => {
+    const newValue = !enabled;
+    setEnabled(newValue);
+    localStorage.setItem('message_recommendations_enabled', newValue.toString());
+  };
+
+  return (
+    <div className="bg-neutral-800 rounded-xl p-4 space-y-2">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-sm font-medium">Message Recommendations</h3>
+          <p className="text-xs text-neutral-400">
+            Show message suggestions after AI responses
+          </p>
+        </div>
+        <Switch 
+          checked={enabled} 
+          onCheckedChange={toggleRecommendations}
+          className="data-[state=checked]:bg-white border border-neutral-700 bg-neutral-900"
+        />
+      </div>
+    </div>
+  );
 };
 
 const SettingsButton = ({ user }: SettingsButtonProps) => {
@@ -309,6 +345,7 @@ const SettingsButton = ({ user }: SettingsButtonProps) => {
                     <NSFWToggle />
                     <NSFWBlur />
                     <ChatDialogStyling />
+                    <RecommendationsToggle />
                   </div>
                 </div>
               )}
