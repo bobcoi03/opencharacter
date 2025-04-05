@@ -5,6 +5,7 @@ import React, { useState, useEffect, useRef, useMemo, FormEvent } from "react";
 import { readStreamableValue } from "ai/rsc";
 import { continueConversation } from "@/app/actions/chat";
 import { saveChat, createChatSession } from "@/app/actions/index";
+import { createChatRecommendations } from "@/app/actions/chat";
 import { User } from "next-auth";
 import Image from "next/image";
 import {
@@ -356,6 +357,7 @@ export default function MessageAndInput({
   const [input, setInput] = useState("");
   const [selectedModel, setSelectedModel] = useState("gryphe/mythomax-l2-13b");
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingRecommendations, setIsLoadingRecommendations] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<boolean>(false);
   const [isSignInDialogOpen, setIsSignInDialogOpen] = useState(false);
@@ -367,6 +369,7 @@ export default function MessageAndInput({
   const [isAgeVerified, setIsAgeVerified] = useState(false);
   const { toast } = useToast()
   const [isSubscribed, setIsSubscribed] = useState(false);
+  const [messageRecommendations, setMessageRecommendations] = useState<{ title: string; message: string }[]>([]);
 
   useEffect(() => {
     async function checkSubscription() {
@@ -395,6 +398,7 @@ export default function MessageAndInput({
   }, [user?.id]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setInput(e.target.value);
     adjustTextareaHeight();
   };
 
@@ -497,6 +501,23 @@ export default function MessageAndInput({
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messagesState]);
 
+  // Clean up recommendations loading state if the component unmounts
+  useEffect(() => {
+    return () => {
+      setIsLoadingRecommendations(false);
+    };
+  }, []);
+
+  // Check if recommendations are enabled in user settings
+  const areRecommendationsEnabled = () => {
+    if (typeof window !== 'undefined') {
+      const savedValue = localStorage.getItem('message_recommendations_enabled');
+      // If no value has been set yet, default to true (enabled)
+      return savedValue === null ? true : savedValue === 'true';
+    }
+    return true;
+  };
+
   const handleInputFocus = () => {
     if (!user) {
       setIsSignInDialogOpen(true);
@@ -512,6 +533,9 @@ export default function MessageAndInput({
       setIsSignInDialogOpen(true);
       return;
     }
+
+    // Clear message recommendations when sending a new message
+    setMessageRecommendations([]);
 
     let newMessages: CoreMessage[];
 
@@ -584,13 +608,38 @@ export default function MessageAndInput({
       ];
 
       await saveChat(finalMessages, character, chat_session);
+      
+      // Set loading to false immediately after AI response is complete
+      setIsLoading(false);
+      
+      // Get message recommendations after AI response is complete
+      if (finalMessages.length > 2) {
+        try {
+          // Only fetch recommendations if enabled in settings
+          if (areRecommendationsEnabled()) {
+            setIsLoadingRecommendations(true);
+            const recommendationsResult = await createChatRecommendations(finalMessages as ChatMessageArray);
+            console.log("Recommendations result:", recommendationsResult);
+            if (!recommendationsResult.error && recommendationsResult.recommendations) {
+              setMessageRecommendations(recommendationsResult.recommendations);
+            }
+            setIsLoadingRecommendations(false);
+          }
+        } catch (recError) {
+          console.error("Failed to get message recommendations:", recError);
+          setIsLoadingRecommendations(false);
+        }
+      } else {
+        setIsLoadingRecommendations(false);
+      }
 
     } catch (err) {
       console.log(err)
       setError(true);
       setErrorMessage((err as any).message)
-    } finally {
       setIsLoading(false);
+      setIsLoadingRecommendations(false);
+    } finally {
       if (regenerate) {
         setCurrentRegenerationIndex(prev => prev + 1)
       }
@@ -648,6 +697,15 @@ export default function MessageAndInput({
         variant: "destructive",
         className: "text-xs"
       });
+    }
+  };
+
+  const handleRecommendationClick = (recommendedMessage: string) => {
+    if (textareaRef.current) {
+      setInput(recommendedMessage);
+      textareaRef.current.value = recommendedMessage;
+      textareaRef.current.focus();
+      adjustTextareaHeight();
     }
   };
 
@@ -784,6 +842,38 @@ export default function MessageAndInput({
             scrollbar-color: rgba(255, 255, 255, 0.2) rgba(255, 255, 255, 0.1);
           }
         }
+        
+        /* Animation for recommendation chips */
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        
+        .animate-fade-in {
+          animation: fadeIn 0.3s ease-out forwards;
+        }
+        
+        /* Skeleton loading animation */
+        @keyframes shimmer {
+          0% {
+            background-position: -200px 0;
+          }
+          100% {
+            background-position: 200px 0;
+          }
+        }
+        
+        .animate-skeleton {
+          background: linear-gradient(90deg, rgba(30, 41, 59, 0.2) 25%, rgba(71, 85, 105, 0.3) 50%, rgba(30, 41, 59, 0.2) 75%);
+          background-size: 200px 100%;
+          animation: shimmer 1.5s infinite linear;
+        }
       `}</style>
       <div className="flex-grow w-full flex justify-center overflow-y-auto mx-auto">
         <div id="messages-container" className="w-full mx-auto max-w-2xl">
@@ -871,6 +961,31 @@ export default function MessageAndInput({
             onSubmit={handleFormSubmit}
             className="pointer-events-auto flex items-center space-x-2 max-w-full px-2"
           >
+            {(messageRecommendations.length > 0 || isLoadingRecommendations) && !isLoading && areRecommendationsEnabled() && (
+              <div className="absolute bottom-full left-2 right-2 mb-2 z-20 flex flex-wrap gap-2 justify-center animate-fade-in">
+                {isLoadingRecommendations ? (
+                  // Single recommendation loading skeleton with text
+                  <div 
+                    className="bg-slate-800/70 text-xs px-3 py-1 rounded-md border border-slate-700 shadow-md animate-skeleton h-6 flex items-center"
+                  >
+                    <span className="text-slate-400 text-[10px]">Cooking some messages...</span>
+                  </div>
+                ) : (
+                  // Actual recommendations
+                  messageRecommendations.map((rec, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => handleRecommendationClick(rec.message)}
+                      className="bg-slate-800/80 backdrop-blur-sm text-white text-[10px] px-3 py-1 rounded-md hover:bg-slate-700 transition-colors border border-slate-700 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-transform"
+                      title={rec.message}
+                    >
+                      {rec.title}
+                    </button>
+                  ))
+                )}
+              </div>
+            )}
             <div className="relative flex-grow">
               <div className="absolute inset-0 bg-slate-600 bg-opacity-20 backdrop-blur-md rounded-t-xl border-neutral-700"></div>
               <div className="absolute left-3 top-1/2 transform -translate-y-1/2 z-20">
@@ -883,6 +998,7 @@ export default function MessageAndInput({
                 autoFocus
                 ref={textareaRef}
                 name="message"
+                value={input}
                 onChange={handleInputChange}
                 onKeyDown={handleKeyDown}
                 onFocus={handleInputFocus}
