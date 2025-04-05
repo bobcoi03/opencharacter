@@ -613,7 +613,7 @@ export default function MessageAndInput({
       setIsLoading(false);
       
       // Get message recommendations after AI response is complete
-      if (finalMessages.length > 2) {
+      if (finalMessages.length > 2 && finalMessages.length % 4 === 0) {
         try {
           // Only fetch recommendations if enabled in settings
           if (areRecommendationsEnabled()) {

@@ -47,7 +47,6 @@ export function PricingDialog({ messagesLength, onClose }: PricingDialogProps) {
   const [billingCycle, setBillingCycle] = useState<string>("monthly")
   const [isLoading, setIsLoading] = useState(false)
   const { data: session } = useSession()
-  const router = useRouter()
 
   // Show dialog when messagesLength reaches specific thresholds
   useEffect(() => {
