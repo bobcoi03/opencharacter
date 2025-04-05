@@ -1284,7 +1284,7 @@ export async function createChatRecommendations(chatMessages: ChatMessageArray) 
 
 ${conversationContent}
 
-Generate 3 distinct response options that vary in tone and content. Each should have a brief title and the actual message text. Try to be creative, fun and silly! Don't be afraid to be weird and creative!`
+Generate 3 distinct response options that vary in tone and content. Each should have a brief title and the actual message text. Try to be creative, fun and silly! Don't be afraid to be weird and creative! You are recommending for the USER and the BOT IS THE ASSISTANT`
           }
         ],
         temperature: 1.0,
