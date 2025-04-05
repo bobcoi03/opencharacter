@@ -1244,3 +1244,113 @@ export async function updateChatSessionTitle(conversationId: string, title: stri
     return { error: true, message: "Failed to update title" };
   }
 }
+
+export async function createChatRecommendations(chatMessages: ChatMessageArray) {
+  const session = await auth();
+
+  if (!session?.user) {
+    return { error: true, message: "Failed to authenticate user" };
+  }
+  
+  try {
+    // If chat messages is longer than 5, grab just the latest 5 messages
+    const recentMessages = chatMessages.length > 5 
+      ? chatMessages.slice(-5) 
+      : chatMessages;
+    
+    console.log(`Creating chat recommendations based on ${recentMessages.length} recent messages`);
+    
+    // Format the conversation for the model
+    const conversationContent = recentMessages
+      .map((msg) => `${msg.role}: ${msg.content}`)
+      .join('\n');
+    
+    // Using mistral/ministral-8b model with structured output
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        "HTTP-Referer": "https://opencharacter.org",
+        "X-Title": "OpenCharacter",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "mistral/ministral-8b",
+        messages: [
+          {
+            role: "user", 
+            content: `Given this conversation, provide 3 different appropriate response options that the user might want to use:
+
+${conversationContent}
+
+Generate 3 distinct response options that vary in tone and content. Each should have a brief title and the actual message text.`
+          }
+        ],
+        temperature: 0.7,
+        response_format: {
+          type: "json_schema",
+          json_schema: {
+            name: "message_recommendations",
+            strict: true,
+            schema: {
+              type: "object",
+              properties: {
+                recommendations: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    properties: {
+                      title: {
+                        type: "string",
+                        description: "A short title (1-4 words) describing the message, e.g., 'Flirt back', 'Tell a joke', 'Reject politely'"
+                      },
+                      message: {
+                        type: "string",
+                        description: "The actual message text to send (1-3 short sentences)"
+                      }
+                    },
+                    required: ["title", "message"],
+                    additionalProperties: false
+                  },
+                  maxItems: 3,
+                  minItems: 3
+                }
+              },
+              required: ["recommendations"],
+              additionalProperties: false
+            }
+          }
+        }
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error("Failed to generate recommendations:", {
+        status: response.status,
+        data: errorData
+      });
+      throw new Error(`Failed to generate recommendations: ${errorData}`);
+    }
+
+    const result = await response.json() as {
+      choices: [{
+        message: {
+          content: string;
+        }
+      }]
+    };
+    const recommendations = JSON.parse(result.choices[0].message.content);
+    
+    console.log("Generated recommendations:", recommendations);
+    
+    return { 
+      error: false, 
+      recommendations: recommendations.recommendations,
+      message: "Successfully generated chat recommendations" 
+    };
+  } catch (error) {
+    console.error("Error in createChatRecommendations:", error);
+    return { error: true, message: "Failed to create chat recommendations" };
+  }
+}
