@@ -17,7 +17,6 @@ import {
   ChevronRight,
   Loader2,
   Star,
-  Copy,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -613,7 +612,7 @@ export default function MessageAndInput({
       setIsLoading(false);
       
       // Get message recommendations after AI response is complete
-      if (finalMessages.length > 2 && finalMessages.length % 4 === 0) {
+      if (finalMessages.length > 2 && finalMessages.length % 12 === 0) {
         try {
           // Only fetch recommendations if enabled in settings
           if (areRecommendationsEnabled()) {

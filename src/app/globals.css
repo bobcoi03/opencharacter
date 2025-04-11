@@ -75,3 +75,21 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Custom Inline Ad Styling */
+.mb-inline-ad {
+  @apply bg-slate-800 border border-slate-700 p-4 rounded-lg my-4 shadow-lg;
+}
+
+.mb-inline-ad a {
+  @apply text-blue-400 hover:text-blue-300 underline font-medium transition-colors;
+}
+
+.mb-ad-badge {
+  @apply bg-amber-600 text-white px-2 py-0.5 rounded text-xs inline-block mb-2;
+}
+
+.mb-ad-badge-text {
+  @apply font-semibold;
+}
+
