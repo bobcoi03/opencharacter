@@ -795,14 +795,7 @@ export default function MessageAndInput({
     >
 
     <div className="flex flex-col h-full relative max-w-full overflow-x-hidden p-4">
-
-      {!isSubscribed && (
-        <PricingDialog 
-          messagesLength={messagesState.length} 
-          onClose={() => {}} 
-        />
-      )}
-
+      
       <style jsx global>{`
         /* Webkit browsers (Chrome, Safari) */
         ::-webkit-scrollbar {
