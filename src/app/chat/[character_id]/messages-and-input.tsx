@@ -41,7 +41,6 @@ import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { AdsProvider, InlineAd } from '@kontextso/sdk';
 import { ModelSelector } from "@/components/model-selector";
-import { PricingDialog } from "@/components/pricing-dialog";
 
 const MAX_TEXTAREA_HEIGHT = 450; // maximum height in pixels
 
@@ -93,7 +92,6 @@ const MessageContent: React.FC<MessageContentProps> = ({
   const [isHovered, setIsHovered] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const { toast } = useToast();
 
   const handleRating = (rating: number) => {
     onRateMessage(index, rating);

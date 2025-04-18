@@ -62,7 +62,6 @@ export default async function RootLayout({
         <head>
           <ThemeScript/>
           <link rel="icon" href="/opencharacter_icon.png" sizes="any" />
-          <ConditionalAdsense isPro={isPro} />
           <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
         </head>
         <body className={`${inter.className} bg-neutral-900`}>
@@ -74,6 +73,7 @@ export default async function RootLayout({
             </main>
           </div>
           <Toaster />
+          <GoogleAnalytics gaId={process.env.GOOGLE_ANALYTICS_ID ?? ""} />
         </body>
       </html>
     </AuthProvider>
