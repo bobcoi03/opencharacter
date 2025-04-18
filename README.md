@@ -110,3 +110,12 @@ If you prefer manual setup:
 - Cost-effective scaling (e.g., $5/month for multiple high-traffic projects)
 
 Just change your Cloudflare account ID in the project settings, and you're good to go!
+
+## License
+
+OpenCharacter is free for personal and non-commercial use.
+
+**Commercial use requires a paid license.**  
+Contact [your email] for licensing inquiries.
+
+See [LICENSE](./LICENSE) for full terms.
