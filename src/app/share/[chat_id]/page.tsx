@@ -4,7 +4,7 @@ import { eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import MessageAndInput from "@/app/chat/[character_id]/messages-and-input";
 import { auth } from "@/server/auth";
-
+import { CoreMessage } from "ai";
 export const runtime = "edge";
 
 export default async function PublicChat({ params }: { params: { chat_id: string } }) {
@@ -51,7 +51,7 @@ export default async function PublicChat({ params }: { params: { chat_id: string
     <div className="md:ml-16 text-white">
       <MessageAndInput 
         user={undefined}
-        messages={chatSession.messages}
+        messages={chatSession.messages as CoreMessage[]}
         character={character}
         made_by_name={creatorName || "Unknown"}
         chat_session={chat_id}

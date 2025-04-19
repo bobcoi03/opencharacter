@@ -7,6 +7,7 @@ import { z } from "zod";
 import FileStorage, { uploadToR2 } from "@/lib/r2_storage";
 import { eq, like, or, desc, sql, and } from "drizzle-orm";
 import { CharacterTag, CharacterTags } from "@/types/character-tags";
+import { sendCharacterReportEmail } from "@/lib/email";
 
 const CreateCharacterSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -376,3 +377,76 @@ export async function deleteCharacter(characterId: string) {
     };
   }
 }
+
+const ReportCharacterSchema = z.object({
+  characterId: z.string().min(1, "Character ID is required"),
+  reason: z.string().min(10, "Reason must be at least 10 characters long").max(1000, "Reason cannot exceed 1000 characters"),
+});
+
+export async function reportCharacter(characterId: string, reason: string) {
+  const session = await auth();
+  if (!session || !session.user || !session.user.email || !session.user.id) {
+    return {
+      success: false,
+      error: "Authentication required to report a character."
+    };
+  }
+
+  const validationResult = ReportCharacterSchema.safeParse({ characterId, reason });
+
+  if (!validationResult.success) {
+    return {
+      success: false,
+      error: "Invalid report data",
+      details: validationResult.error.flatten().fieldErrors,
+    };
+  }
+
+  const validatedData = validationResult.data;
+
+  try {
+    // Fetch character details (mainly name for the email subject)
+    const character = await db
+      .select({ name: characters.name })
+      .from(characters)
+      .where(eq(characters.id, validatedData.characterId))
+      .limit(1);
+
+    if (!character || character.length === 0) {
+      return { success: false, error: "Character not found." };
+    }
+
+    const characterName = character[0].name;
+
+    // Send the report email
+    const emailResult = await sendCharacterReportEmail({
+      reporterEmail: session.user.email,
+      reporterId: session.user.id,
+      characterId: validatedData.characterId,
+      characterName: characterName,
+      reason: validatedData.reason,
+    });
+
+    if (!emailResult.success) {
+      // Log the error but maybe still return success to the user?
+      // Or inform the user the report couldn't be sent.
+      console.error("Failed to send report email internally:", emailResult.error);
+      return { success: false, error: "Could not send report email at this time. Please try again later." };
+    }
+
+    // Return success message to the user
+    return { 
+      success: true, 
+      message: "Thank you for your report. We will review it shortly." 
+    };
+
+  } catch (error) {
+    console.error("Error processing character report:", error);
+    return {
+      success: false,
+      error: "An unexpected error occurred while processing your report.",
+      details: error instanceof Error ? error.message : String(error),
+    };
+  }
+}
+

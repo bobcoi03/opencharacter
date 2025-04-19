@@ -200,13 +200,20 @@ export const characters = sqliteTable("character", {
 
 // Define the structure of the messages array
 export type ChatMessage = {
-  // Define the structure of a single chat message
-  // For example:
   id: string;
-  content: string;
+  content: string | MultimodalContent[];
   role: 'user' | 'assistant' | 'system';
-  time?: number; 
+  time?: number;
   rating?: number;
+  model?: string;
+};
+
+export type MultimodalContent = {
+  type: 'text' | 'image_url';
+  text?: string;
+  image_url?: {
+    url: string;
+  };
 };
 
 export type ChatMessageArray = ChatMessage[];

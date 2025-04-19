@@ -7,10 +7,8 @@ import { auth } from "@/server/auth";
 export const runtime = "edge";
 
 export async function GET() {
-  console.log("Starting subscription check");
   try {
     const session = await auth()
-    console.log("Auth session:", session);
 
     if (!session?.user?.id) {
       console.log("No authenticated user found");
@@ -19,19 +17,12 @@ export async function GET() {
         { status: 401 }
       );
     }
-
-    console.log("Checking subscription for user:", session.user.id);
     // Check if user has an active subscription
     const subscription = await db.query.subscriptions.findFirst({
       where: eq(subscriptions.userId, session.user.id),
     });
-    console.log("Found subscription:", subscription);
 
     const isSubscribed = subscription?.status === "active" || subscription?.status === "trialing";
-    console.log("Subscription status:", {
-      isSubscribed,
-      status: subscription?.status
-    });
 
     return NextResponse.json(
       { 
