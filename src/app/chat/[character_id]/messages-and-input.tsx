@@ -406,17 +406,14 @@ const MessageContent: React.FC<MessageContentProps> = React.memo(({
             <button 
               className="p-1 rounded-full"
               onClick={() => {
-                  if (currentRegenerationIndex - 1 <= 0) {
-                    currentRegenerationIndex = 1;
-                  }
                   onGoBackRegenerate && onGoBackRegenerate(currentRegenerationIndex - 1);
               }}
-              disabled={currentRegenerationIndex == 0}
+              disabled={currentRegenerationIndex <= 0}
             >
               <ChevronLeft className={`w-4 h-4 ${currentRegenerationIndex <= 0 ? "text-slate-700" : ""}`} />
             </button>
             <span className="text-sm text-gray-400">
-              {currentRegenerationIndex} / {30}
+              {currentRegenerationIndex + 1} / {regenerations.length}
             </span>
             <button 
               className="p-1 rounded-full"
@@ -424,12 +421,14 @@ const MessageContent: React.FC<MessageContentProps> = React.memo(({
                 if (currentRegenerationIndex < regenerations.length - 1) {
                   onGoBackRegenerate && onGoBackRegenerate(currentRegenerationIndex + 1);
                 } else {
-                  onRetry && onRetry();
+                  if (regenerations.length < 30) {
+                    onRetry && onRetry();
+                  }
                 }
               }}
-              disabled={regenerations.length >= 30}
+              disabled={(currentRegenerationIndex >= regenerations.length - 1 && regenerations.length >= 30) || regenerations.length === 0}
             >
-              <ChevronRight className={`w-4 h-4 ${regenerations.length >= 30 ? "text-slate-700" : ""}`} />
+              <ChevronRight className={`w-4 h-4 ${(currentRegenerationIndex >= regenerations.length - 1 && regenerations.length >= 30) || regenerations.length === 0 ? "text-slate-700" : ""}`} />
             </button>
           </div>
         </div>
@@ -950,62 +949,56 @@ export default function MessageAndInput({
         setMessagesState(prevMessages => prevMessages.map(msg =>
             msg.id === assistantMessageId ? { ...msg, content: processedContent } : msg
         ));
-
-        // Update regenerations array during stream
-        // Ensure this handles the case where the initial regeneration state was empty
-        setRegenerations(prevRegens => {
-            const updatedRegens = [...prevRegens];
-            const lastRegenIndex = updatedRegens.length - 1;
-            if (lastRegenIndex >= 0 && currentRegenerationIndex === lastRegenIndex) {
-                // Update the content of the current regeneration being streamed
-                updatedRegens[lastRegenIndex] = processedContent;
-            } else if (currentRegenerationIndex >= updatedRegens.length) {
-                 // If it's a new generation beyond the current array, add it
-                 updatedRegens.push(processedContent);
-            }
-            // If currentRegenerationIndex points to an older message being overwritten,
-            // we might need different logic depending on desired behavior.
-            // For now, only update/append based on the latest stream.
-            return updatedRegens;
-        });
-
-        // Reset regeneration index only if it's a new message (not a regeneration/retry)
-        if (!regenerate && !error) {
-          setCurrentRegenerationIndex(0); // Point to the first item
-          setRegenerations([processedContent]); // Reset array with only the new content
-        }
       }
+
+      // --- Regeneration State Update Logic (Moved After Stream) ---
+      if (regenerate) {
+          // Append the newly generated final content to the existing regenerations
+          setRegenerations(prevRegens => {
+              // Ensure we don't exceed the max limit (e.g., 30)
+              const newRegens = [...prevRegens, finalContent].slice(-30); 
+              // Update the index to point to the newly added regeneration
+              setCurrentRegenerationIndex(newRegens.length - 1);
+              return newRegens;
+          });
+      } else if (!error) {
+          // If it's a new message (not retry/regenerate), reset regenerations
+          setRegenerations([finalContent]);
+          setCurrentRegenerationIndex(0);
+      }
+      // --- End Regeneration State Update ---
 
       // Final state update with complete assistant message (already done in stream)
       // Ensure finalMessages reflects the true state for saving
-      const finalMessagesWithIds = messagesState.map(msg =>
-           msg.id === assistantMessageId ? { ...msg, content: finalContent } : msg
-       );
-       // If streaming somehow failed, ensure last message has final content
-       if (finalMessagesWithIds.length > 0 && finalMessagesWithIds[finalMessagesWithIds.length -1].id === assistantMessageId) {
-           finalMessagesWithIds[finalMessagesWithIds.length -1].content = finalContent;
-       } else {
-            // Fallback if placeholder wasn't added correctly (shouldn't happen)
-            finalMessagesWithIds.push({ role: "assistant", content: finalContent, id: assistantMessageId });
-       }
+       const finalMessagesWithIds = messagesState.map(msg => // Use current messagesState which includes the streamed update
+            msg.id === assistantMessageId ? { ...msg, content: finalContent } : msg
+        );
+       // If streaming somehow failed, ensure last message has final content (redundant check)
+       if (finalMessagesWithIds.length > 0 && finalMessagesWithIds[finalMessagesWithIds.length - 1].id === assistantMessageId) {
+            finalMessagesWithIds[finalMessagesWithIds.length - 1].content = finalContent;
+        } else if (!finalMessagesWithIds.some(msg => msg.id === assistantMessageId)) {
+             // Fallback if placeholder wasn't added correctly (shouldn't happen)
+             finalMessagesWithIds.push({ role: "assistant", content: finalContent, id: assistantMessageId });
+        }
 
       // ---- REVISED LOGIC FOR FINAL SAVE ----
-      // Construct the final array explicitly to ensure correctness
-      // Start with the state *before* adding the assistant placeholder
-      const messagesBeforeAssistantResponse = newMessages; 
-      // Create the final assistant message object
-      const finalAssistantMessage: CustomChatMessage = { 
-          role: "assistant", 
+      // Explicitly construct the final state for saving
+      // Start with `newMessages` (which includes the latest user message)
+      // Add the final assistant message object.
+      const finalAssistantMessageObject: CustomChatMessage = {
+          role: "assistant",
           content: finalContent, // Use the fully streamed content
-          id: assistantMessageId 
+          id: assistantMessageId
       };
+      // Ensure the correct list is saved, including the user message from `newMessages`
+      const finalMessagesToSaveState = regenerate 
+          ? [...newMessages, finalAssistantMessageObject] // newMessages excludes last AI msg if regenerating
+          : [...newMessages, finalAssistantMessageObject]; // newMessages includes user msg if not regenerating
 
-      // Combine them to get the array that should be saved
-      const finalMessagesToSaveState = [...messagesBeforeAssistantResponse, finalAssistantMessage];
-      console.log(`[handleSubmit] Preparing to save ${finalMessagesToSaveState.length} messages.`);
+      console.log(`[handleSubmit] Preparing to save ${finalMessagesToSaveState.length} messages. Final state for saving:`, JSON.stringify(finalMessagesToSaveState, null, 2));
       // ---- End Revised Logic ----
 
-      // --- Map to ChatMessageArray before saving --- 
+      // --- Map to ChatMessageArray before saving ---
       const messagesToSaveDb = mapToDbMessageArray(finalMessagesToSaveState); // Use the explicitly constructed array
 
       await saveChat(messagesToSaveDb, character, chat_session);
@@ -1041,12 +1034,6 @@ export default function MessageAndInput({
       setIsLoadingRecommendations(false);
        // Revert message state on general catch error?
        // setMessagesState(messagesState.slice(0, -1)); // If not regenerating
-    } finally {
-      // Update regeneration index if it was a regeneration action
-      if (regenerate) {
-        // Ensure index doesn't go out of bounds of the potentially updated regenerations array
-        setCurrentRegenerationIndex(prev => Math.min(prev + 1, regenerations.length > 0 ? regenerations.length -1 : 0));
-      }
     }
   };
 
