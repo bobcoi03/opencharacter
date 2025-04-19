@@ -122,4 +122,89 @@ export async function sendAbandonedCartEmail({
     console.error("Error sending email:", error);
     throw error;
   }
+}
+
+interface CharacterReportEmailProps {
+  reporterEmail: string;
+  reporterId: string;
+  characterId: string;
+  characterName: string;
+  reason: string;
+}
+
+export async function sendCharacterReportEmail({
+  reporterEmail,
+  reporterId,
+  characterId,
+  characterName,
+  reason,
+}: CharacterReportEmailProps) {
+  const characterUrl = `${process.env.NEXT_PUBLIC_APP_URL}/character/${characterId}`;
+  const recipientEmail = process.env.REPORT_RECIPIENT_EMAIL || "minh@everythingcompany.co"; // Use env variable or default
+
+  const params = {
+    Source: process.env.SES_SENDER_EMAIL || "minh@everythingcompany.co", // Use a noreply or specific sender
+    Destination: {
+      ToAddresses: [recipientEmail],
+    },
+    Message: {
+      Subject: {
+        Data: `Character Report: ${characterName} (ID: ${characterId})`,
+        Charset: "UTF-8",
+      },
+      Body: {
+        Html: {
+          Data: `
+            <html>
+              <head>
+                <style>
+                  body { font-family: sans-serif; line-height: 1.5; }
+                  p { margin-bottom: 10px; }
+                  strong { font-weight: bold; }
+                  pre { background-color: #f4f4f4; padding: 10px; border-radius: 4px; white-space: pre-wrap; word-wrap: break-word; }
+                  a { color: #007bff; text-decoration: none; }
+                  a:hover { text-decoration: underline; }
+                </style>
+              </head>
+              <body>
+                <h2>Character Report Received</h2>
+                <p><strong>Character Name:</strong> ${characterName}</p>
+                <p><strong>Character ID:</strong> ${characterId}</p>
+                <p><strong>Character URL:</strong> <a href="${characterUrl}">${characterUrl}</a></p>
+                <p><strong>Reported By (Email):</strong> ${reporterEmail}</p>
+                <p><strong>Reported By (ID):</strong> ${reporterId}</p>
+                <p><strong>Reason:</strong></p>
+                <pre>${reason}</pre>
+              </body>
+            </html>
+          `,
+          Charset: "UTF-8",
+        },
+        Text: {
+          Data: `
+            Character Report Received
+            -------------------------
+            Character Name: ${characterName}
+            Character ID: ${characterId}
+            Character URL: ${characterUrl}
+            Reported By (Email): ${reporterEmail}
+            Reported By (ID): ${reporterId}
+            Reason:
+            ${reason}
+          `,
+          Charset: "UTF-8",
+        },
+      },
+    },
+  };
+
+  try {
+    const command = new SendEmailCommand(params);
+    const response = await sesClient.send(command);
+    console.log("Character report email sent successfully:", response.MessageId);
+    return { success: true, messageId: response.MessageId };
+  } catch (error) {
+    console.error("Error sending character report email:", error);
+    return { success: false, error: "Failed to send report email" };
+  }
 } 
