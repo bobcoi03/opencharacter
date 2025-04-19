@@ -9,14 +9,18 @@ import {
   ChatMessageArray,
   subscriptions,
   personas,
-  user_credits
+  user_credits,
+  ChatMessage,
+  MultimodalContent
 } from "@/server/db/schema";
 import { db } from "@/server/db";
 import { eq, and, desc, sql, or } from "drizzle-orm";
 import { auth } from "@/server/auth";
 import { isValidModel, isPaidModel, isMeteredModel } from "@/lib/llm_models";
-import { checkAndIncrementRequestCount } from "@/lib/request-limits";
 import { getPayAsYouGo } from "./user";
+import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { v4 as uuidv4 } from 'uuid';
 
 type ErrorResponse = {
   error: {
@@ -26,87 +30,244 @@ type ErrorResponse = {
   };
 };
 
+// Instantiate the S3 client configured for R2
+const s3Client = new S3Client({
+  region: "auto", // R2 doesn't use regions like AWS S3
+  endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+  credentials: {
+    accessKeyId: process.env.R2_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY!,
+  },
+});
+const R2_BUCKET_NAME = "chat-images"; // The name of your R2 bucket
+
 export async function saveChat(
-  messages: CoreMessage[],
+  incomingMessages: ChatMessageArray, // Rename to avoid confusion
   character: typeof characters.$inferSelect,
   chat_session_id?: string,
 ) {
   const session = await auth();
-  if (!session || !session.user || !session.user.id) {
+  const userId = session?.user?.id; // Get user ID
+  if (!userId) {
+    console.error("[saveChat] Authentication failed - no valid user ID found");
     throw new Error("User not authenticated");
   }
 
+  console.log(`[saveChat] Received ${incomingMessages.length} messages to process.`); // Log initial count
+
+  // --- Process incoming messages for potential Data URIs before saving ---
+  let messagesToSave: ChatMessageArray;
+  try {
+     messagesToSave = await Promise.all(incomingMessages.map(async (msg, index) => { // Add index for logging
+      if (msg.role === 'user' && typeof msg.content === 'string') {
+        try {
+          // Check if it looks like a JSON array first
+          if (!msg.content.trim().startsWith('[')) {
+             console.log(`[saveChat Process Msg ${index}] User message content is string but not JSON array, skipping processing.`);
+             return msg;
+          }
+
+          const parsedContent: MultimodalContent[] = JSON.parse(msg.content);
+          if (Array.isArray(parsedContent)) {
+            let needsUpdate = false;
+            const updatedParts = await Promise.all(parsedContent.map(async (part) => {
+              if (part.type === 'image_url' && part.image_url?.url?.startsWith('data:')) {
+                console.log(`[saveChat Process Msg ${index}] Found data URI in user message part, processing...`);
+                needsUpdate = true;
+                try {
+                  // Use a more flexible regex to capture mime type
+                  const match = part.image_url.url.match(/^data:image\/([^;]+);base64,(.*)$/);
+                  if (!match) {
+                    console.warn(`[saveChat Process Msg ${index}] Could not parse image data URI (flexible regex), keeping original part. URL start:`, part.image_url.url.substring(0, 60));
+                    return part;
+                  }
+                  // Mime type is now image/ + match[1]
+                  const mimeType = `image/${match[1]}`;
+                  const base64Data = match[2];
+                  const imageBuffer = Buffer.from(base64Data, 'base64');
+                  // Use match[1] (subtype like 'jpeg') for file extension if possible
+                  const fileExtension = match[1].split('+')[0] || 'png'; // Handle things like svg+xml, default png
+                  const imageKey = `${userId}/${uuidv4()}.${fileExtension}`;
+
+                  console.log(`[saveChat Process Msg ${index}] Uploading image to R2: ${imageKey}`);
+                  await s3Client.send(new PutObjectCommand({
+                    Bucket: R2_BUCKET_NAME,
+                    Key: imageKey,
+                    Body: imageBuffer,
+                    ContentType: mimeType,
+                  }));
+                  console.log(`[saveChat Process Msg ${index}] Successfully uploaded image. Replacing URL with key: ${imageKey}`);
+                  return { ...part, image_url: { url: imageKey } };
+                } catch (uploadError) {
+                  console.error(`[saveChat Process Msg ${index}] Error uploading image to R2:`, uploadError);
+                  console.warn(`[saveChat Process Msg ${index}] Keeping original image part due to upload error.`);
+                  return part; // Return original part if upload fails
+                }
+              }
+              return part; // Return non-image or already processed parts
+            }));
+
+            if (needsUpdate) {
+              const updatedContentString = JSON.stringify(updatedParts);
+              console.log(`[saveChat Process Msg ${index}] Message content updated with R2 keys.`);
+              return { ...msg, content: updatedContentString };
+            } else {
+               console.log(`[saveChat Process Msg ${index}] User message content parsed, but no data URIs found.`);
+               return msg; // Return original if no update needed
+            }
+          } else {
+             console.log(`[saveChat Process Msg ${index}] User message content parsed, but was not an array.`);
+             return msg; // Return original if parse results in non-array
+          }
+        } catch (e) {
+          console.warn(`[saveChat Process Msg ${index}] Failed to parse user message content as JSON: ${e instanceof Error ? e.message : String(e)}. Keeping original.`);
+          // Keep original message if JSON parsing fails (might be plain text)
+          return msg;
+        }
+      }
+      // Return original message if not user or content not string
+      return msg;
+    }));
+
+    console.log(`[saveChat] Finished processing. Resulting messages count: ${messagesToSave.length}`); // Log count after processing
+
+    // Sanity check: Compare counts
+    if (messagesToSave.length !== incomingMessages.length) {
+       console.warn(`[saveChat] Mismatch in message count after processing! Before: ${incomingMessages.length}, After: ${messagesToSave.length}. This might indicate a dropped message.`);
+       // Potentially throw an error or handle this case depending on requirements
+    }
+
+  } catch (processingError) {
+     console.error("[saveChat] Critical error during message processing (Promise.all):", processingError);
+     // Decide how to handle: rethrow, use original messages, return error?
+     // For now, let's rethrow to indicate failure
+     throw new Error("Failed to process messages before saving.");
+  }
+  // --- End message processing ---
+
+  // Log size before saving
+  try {
+    const messagesString = JSON.stringify(messagesToSave);
+    console.log(`[saveChat] Size of messages JSON string before saving: ${messagesString.length} characters.`);
+    // Add a check for potentially problematic size
+    const MAX_SIZE_BYTES = 1 * 1024 * 1024; // Example: 1MB limit for D1 text field? Check D1 limits.
+    if (messagesString.length > MAX_SIZE_BYTES) {
+       console.warn(`[saveChat] Processed messages string size (${messagesString.length}) exceeds threshold (${MAX_SIZE_BYTES}). Potential D1 limit issue.`);
+       // Optionally truncate or throw error here
+    }
+  } catch (stringifyError) {
+     console.error("[saveChat] Failed to stringify messages for size check:", stringifyError);
+  }
+
+
+  console.debug("[saveChat] Starting database operation", { // Renamed log
+    userId: userId,
+    characterId: character.id,
+    chat_session_id,
+    messageCount: messagesToSave.length
+  });
+
   let chatSession;
 
+  // --- Find existing or latest session ---
   if (chat_session_id) {
-    // If chat_session_id is provided, fetch the existing session
+    console.debug("[saveChat] Fetching existing chat session", { chat_session_id });
     chatSession = await db
       .select()
       .from(chat_sessions)
       .where(
         and(
           eq(chat_sessions.id, chat_session_id),
-          eq(chat_sessions.user_id, session.user.id),
+          eq(chat_sessions.user_id, userId),
           eq(chat_sessions.character_id, character.id),
         ),
       )
-      .then((rows) => rows[0]);
+      .then((rows) => rows[0]); // Simplified
 
     if (!chatSession) {
+      console.error("[saveChat] Chat session not found for provided ID, cannot save.", { chat_session_id, userId, characterId: character.id });
       throw new Error("Chat session not found");
     }
   } else {
-    // If no chat_session_id, find the most recent session
+    console.debug("[saveChat] Searching for most recent session", { userId, characterId: character.id });
     chatSession = await db
       .select()
       .from(chat_sessions)
       .where(
         and(
-          eq(chat_sessions.user_id, session.user.id),
+          eq(chat_sessions.user_id, userId),
           eq(chat_sessions.character_id, character.id),
         ),
       )
       .orderBy(desc(chat_sessions.updated_at))
       .limit(1)
-      .then((rows) => rows[0]);
+      .then((rows) => rows[0]); // Simplified
   }
+  // --- End session finding ---
 
   const now = new Date();
+  console.debug("[saveChat] Prepared update timestamp", { now: now.toISOString() });
 
   if (chatSession) {
-    // Update existing chat session
-    await db
-      .update(chat_sessions)
-      .set({
-        messages: messages as ChatMessageArray,
-        interaction_count: sql`${chat_sessions.interaction_count} + 1`,
-        last_message_timestamp: now,
-        updated_at: now,
-      })
-      .where(eq(chat_sessions.id, chatSession.id));
+    // --- Update Existing Session ---
+    console.debug("[saveChat] Updating existing chat session", { sessionId: chatSession.id });
+    try {
+      await db
+        .update(chat_sessions)
+        .set({
+          messages: messagesToSave as ChatMessageArray, // Save the processed messages
+          interaction_count: sql`${chat_sessions.interaction_count} + 1`,
+          last_message_timestamp: now,
+          updated_at: now,
+        })
+        .where(eq(chat_sessions.id, chatSession.id));
+      console.info("[saveChat] Successfully updated chat session", { sessionId: chatSession.id });
+    } catch (dbError) {
+       console.error("[saveChat] FAILED to update chat session in DB:", dbError);
+       console.error("[saveChat] Failed session details:", { sessionId: chatSession.id });
+       // Rethrow or handle error appropriately
+       throw new Error(`Failed to update chat session: ${dbError instanceof Error ? dbError.message : String(dbError)}`);
+    }
+    // --- End Update ---
   } else {
-    // Create new chat session
-    chatSession = await db
-      .insert(chat_sessions)
-      .values({
-        user_id: session.user.id,
-        character_id: character.id,
-        messages: messages as ChatMessageArray,
-        interaction_count: 1,
-        last_message_timestamp: now,
-        created_at: now,
-        updated_at: now,
-      })
-      .returning()
-      .then((rows) => rows[0]);
+    // --- Create New Session ---
+    console.debug("[saveChat] Creating new chat session", { userId, characterId: character.id });
+    try {
+      const inserted = await db
+        .insert(chat_sessions)
+        .values({
+          user_id: userId,
+          character_id: character.id,
+          messages: messagesToSave as ChatMessageArray, // Save the processed messages
+          interaction_count: 1,
+          last_message_timestamp: now,
+          created_at: now,
+          updated_at: now,
+        })
+        .returning() // Get the inserted row back
+        .then((rows) => rows[0]); // Should only be one row
+
+      if (!inserted) {
+         console.error("[saveChat] FAILED to insert new chat session or retrieve inserted row.");
+         throw new Error("Failed to create new chat session: Insert operation returned no result.");
+      }
+      chatSession = inserted; // Assign the newly created session
+      console.info("[saveChat] New chat session created successfully", { newSessionId: chatSession.id });
+    } catch (dbError) {
+       console.error("[saveChat] FAILED to insert new chat session into DB:", dbError);
+       // Rethrow or handle error appropriately
+       throw new Error(`Failed to insert new chat session: ${dbError instanceof Error ? dbError.message : String(dbError)}`);
+    }
+    // --- End Create ---
   }
 
-  return chatSession;
+  console.debug("[saveChat] Save operation completed successfully for session", { sessionId: chatSession.id });
+  return chatSession; // Return the final session (either found or created)
 }
 
 export async function createChatSession(
   character: typeof characters.$inferInsert,
-  messages?: CoreMessage[],
+  messages?: ChatMessageArray,
 ) {
   const session = await auth();
 
@@ -152,71 +313,240 @@ export async function continueConversation(
   base_url?: string,
   api_key?: string,
 ) {
-  console.log("Starting continueConversation with:", {
-    modelName: model_name,
-    characterId: character.id,
-    chatSessionId: chat_session_id,
-    messagesCount: messages.length
-  });
+  // --- Add check to prevent direct selection of the multimodal model ---
+  if (model_name === "mistralai/mistral-small-3.1-24b-instruct") {
+    console.warn("User attempted to directly select the internal multimodal model:", model_name);
+    return { error: true, message: "This model cannot be selected directly." };
+  }
+  // --- End direct selection check ---
+
+  console.log("Original Model:", model_name);
+  console.log("Incoming Messages Structure (Last message content sample):", JSON.stringify(messages.slice(-1).map(msg => ({
+    ...msg,
+    content: typeof msg.content === 'string' && msg.content.length > 100
+      ? msg.content.slice(0, 100) + '...'
+      : msg.content
+  })), null, 2));
 
   const session = await auth();
+  const userId = session?.user?.id; // Get user ID early
 
-  if (!session?.user?.id) {
-    console.log("Authentication failed - no user session");
+  if (!userId) { // Ensure userId is available before proceeding
     return { error: true, message: "Failed to authenticate user" };
   }
 
-  // Check if the model is paid and if the user has access
-  // First check subscription status for the user
-  const subscription = await db.query.subscriptions.findFirst({
-    where: eq(subscriptions.userId, session.user.id),
-  });
+  // --- Determine effective model name based on last message content ---
+  let effectiveModelName = model_name;
+  const lastMessage = messages[messages.length - 1];
+  let isMultimodal = false;
 
-  const isSubscribed = subscription?.status === "active" || subscription?.status === "trialing";
+  if (lastMessage && typeof lastMessage.content === 'string') {
+      try {
+          const parsedContent: MultimodalContent[] = JSON.parse(lastMessage.content);
 
-  if (isPaidModel(model_name)) {
-    if (!isSubscribed) {
-      console.log("User attempted to use paid model without active subscription:", {
-        userId: session.user.id,
-        model: model_name
-      });
-      return { error: true, message: "You must be a paid user to use this model" };
-    }
-  } else if (!isSubscribed && !api_key) {
-    // Only check request limits for non-subscribed users using free models
-    // If the user has an API key, they can use the model without being limited
-    // try {
-    //   const { remainingRequests } = await checkAndIncrementRequestCount(session.user.id);
-    //   console.log("Free tier request count updated:", {
-    //     userId: session.user.id,
-    //     remainingRequests
-    //   });
-    // } catch (error) {
-    //   if (error instanceof Error && error.message.includes("Daily request limit exceeded")) {
-    //     return { error: true, message: error.message };
-    //   }
-    //   throw error;
-    //    }
+          if (Array.isArray(parsedContent)) {
+              const imageParts = parsedContent.filter(
+                  part => part.type === 'image_url' && part.image_url?.url?.startsWith('data:')
+              );
+
+              if (imageParts.length > 0) {
+                  isMultimodal = true;
+                  console.log(`Found ${imageParts.length} image(s) in the last message.`);
+
+                  // Create copies of the content to modify for LLM and DB
+                  const llmMessageContent: MultimodalContent[] = JSON.parse(JSON.stringify(parsedContent)); // Deep copy for LLM
+                  const dbMessageContent: MultimodalContent[] = JSON.parse(JSON.stringify(parsedContent)); // Deep copy for DB storage
+
+                  // Process each image
+                  for (let i = 0; i < imageParts.length; i++) {
+                      const part = imageParts[i]; // Original part to get data URI
+                      const llmPart = llmMessageContent.find(p => p.type === 'image_url' && p.image_url?.url === part.image_url?.url);
+                      const dbPart = dbMessageContent.find(p => p.type === 'image_url' && p.image_url?.url === part.image_url?.url);
+
+                      if (part.image_url && part.image_url.url && llmPart?.image_url && dbPart?.image_url) {
+                          try {
+                              // Use a more flexible regex to capture mime type
+                              const match = part.image_url.url.match(/^data:image\/([^;]+);base64,(.*)$/);
+                              if (!match) {
+                                  console.warn("[continueConversation] Could not parse image data URI (flexible regex):", part.image_url.url.substring(0, 60) + "...");
+                                  continue;
+                              }
+                              // Mime type is now image/ + match[1]
+                              const mimeType = `image/${match[1]}`;
+                              const base64Data = match[2];
+                              const imageBuffer = Buffer.from(base64Data, 'base64');
+                              // Use match[1] (subtype like 'jpeg') for file extension if possible
+                              const fileExtension = match[1].split('+')[0] || 'png'; // Handle things like svg+xml, default png
+                              const imageKey = `${userId}/${uuidv4()}.${fileExtension}`;
+
+                              console.log(`Uploading image to R2: ${imageKey}`);
+                              await s3Client.send(new PutObjectCommand({
+                                  Bucket: R2_BUCKET_NAME,
+                                  Key: imageKey,
+                                  Body: imageBuffer,
+                                  ContentType: mimeType,
+                              }));
+
+                              console.log(`Generating presigned URL for: ${imageKey}`);
+                              const presignedUrl = await getSignedUrl(
+                                  s3Client,
+                                  new GetObjectCommand({ Bucket: R2_BUCKET_NAME, Key: imageKey }),
+                                  { expiresIn: 3600 } // URL expires in 1 hour
+                              );
+                              console.log(`Successfully generated presigned URL.`);
+
+                              // Update the LLM version with the presigned URL
+                              llmPart.image_url.url = presignedUrl;
+
+                              // Update the DB version with the R2 Key
+                              dbPart.image_url.url = imageKey;
+
+                          } catch (uploadError) {
+                              console.error("Error processing image:", uploadError);
+                              // Skip updating this image if upload/signing fails
+                          }
+                      }
+                  }
+                  // IMPORTANT: Update the *original* lastMessage content for DB saving
+                  lastMessage.content = JSON.stringify(dbMessageContent);
+                  console.log("Updated original last message content with R2 keys for DB.");
+
+                  // Prepare messages for the LLM API call using the llmMessageContent
+                  // This logic needs to be adjusted where messages are prepared for fetch
+
+              } else {
+                   console.log("Parsed string content is array but no image data URI.");
+              }
+          } else {
+               console.log("Parsed string content is not an array.");
+          }
+      } catch (e) {
+          // JSON parsing failed, means it's just a plain string
+          console.log("Content is a plain string (JSON parse failed), no image processing needed.");
+      }
+  } else if (lastMessage) {
+       console.log("Last message content is not a string or message is missing.");
   }
 
+  // --- Variable to hold the content specifically for the LLM call ---
+  let llmApiMessages = messages; // Default to original messages
+
+  // If multimodal processing happened, create a modified messages array for the LLM
+  if (isMultimodal && lastMessage && typeof lastMessage.content === 'string') {
+    try {
+        // We already processed images and stored the DB version in lastMessage.content.
+        // Now, retrieve the LLM version (which we built as llmMessageContent earlier).
+        // Need to reconstruct llmMessageContent if not accessible here.
+        // Re-parsing and rebuilding llmMessageContent based on dbMessageContent and generating URLs again is inefficient.
+        // Let's store llmMessageContent temporarily if isMultimodal is true.
+
+        // REVISED APPROACH: Modify the logic above to store llmMessageContent if needed later.
+        // Let's rethink - the code above *already* modified lastMessage.content to the DB version.
+        // We need the LLM version *before* preparing the API call.
+
+        // --- Re-Revised Logic within the image processing block ---
+        // Inside the `if (imageParts.length > 0)` block, after the loop:
+        // 1. Keep `lastMessage.content = JSON.stringify(dbMessageContent);`
+        // 2. Create `llmApiMessages` as a deep copy of `messages`.
+        // 3. Update the last message content *in `llmApiMessages`* using `JSON.stringify(llmMessageContent)`.
+        //    (Need llmMessageContent accessible here). --> Let's pass it.
+
+        // Let's simplify: We only need to modify the *content* for the last message for the API call.
+
+        const dbParsedContentForLLM = JSON.parse(lastMessage.content) as MultimodalContent[];
+        const llmMessageContentForLLM: MultimodalContent[] = [];
+        const presignedUrlMap = new Map<string, string>(); // Map R2 Key -> Presigned URL
+
+        // Regenerate presigned URLs based on the keys stored in the DB message content
+        for (const part of dbParsedContentForLLM) {
+            if (part.type === 'image_url' && part.image_url?.url && !part.image_url.url.startsWith('http')) {
+                const imageKey = part.image_url.url; // This is the R2 key
+                try {
+                    const presignedUrl = await getSignedUrl(
+                        s3Client,
+                        new GetObjectCommand({ Bucket: R2_BUCKET_NAME, Key: imageKey }),
+                        { expiresIn: 3600 }
+                    );
+                    presignedUrlMap.set(imageKey, presignedUrl);
+                    llmMessageContentForLLM.push({ ...part, image_url: { url: presignedUrl } });
+                } catch (urlError) {
+                    console.error(`Failed to generate presigned URL for key ${imageKey}:`, urlError);
+                    llmMessageContentForLLM.push(part); // Keep the key if URL generation fails
+                }
+            } else {
+                llmMessageContentForLLM.push(part);
+            }
+        }
+
+        // Create a deep copy of messages for the API call
+        llmApiMessages = messages.map((msg, index) => {
+            if (index === messages.length - 1) {
+                // Replace the last message's content with the one containing presigned URLs
+                return { ...msg, content: JSON.stringify(llmMessageContentForLLM) };
+            }
+            return msg; // Keep other messages as they are
+        });
+        console.log("Prepared separate message list for LLM API with presigned URLs.");
+
+    } catch (e) {
+        console.error("Error preparing messages for LLM API:", e);
+        // Fallback to original messages if error occurs
+        llmApiMessages = messages;
+    }
+  }
+
+  // --- End Multimodal LLM Preparation ---
+
+  if (isMultimodal) {
+      console.log("Forcing model to mistralai/mistral-small-3.1-24b-instruct and bypassing cost checks due to multimodal content.");
+      effectiveModelName = "mistralai/mistral-small-3.1-24b-instruct";
+  } else {
+      console.log("Using originally selected model:", model_name);
+      effectiveModelName = model_name;
+  }
+  console.log("Effective Model Name:", effectiveModelName);
+  // --- End model name determination ---
+
+  // Check subscription status
+  const subscription = userId ? await db.query.subscriptions.findFirst({
+    where: eq(subscriptions.userId, userId),
+  }) : null;
+  const isSubscribed = subscription?.status === "active" || subscription?.status === "trialing";
+
+  // --- Apply top-level paid check ONLY if NOT multimodal ---
+  if (!isMultimodal) {
+    if (isPaidModel(effectiveModelName)) {
+      if (!isSubscribed) {
+        return { error: true, message: `You must be a Pro user to use the ${effectiveModelName} model` };
+      }
+    }
+    // Apply standard free tier checks (if any active)
+    else if (!isSubscribed && !api_key) {
+      // ... (free tier limits, currently commented out) ...
+    }
+  } else {
+      console.log("Skipping top-level paid/subscription check because request is multimodal.");
+  }
+  // --- End conditional paid check ---
+
   // Check if the character is public or if it's private and belongs to the user
-  const characterCheck = await db.query.characters.findFirst({
+  const characterCheck = userId ? await db.query.characters.findFirst({
     where: and(
       eq(characters.id, character.id),
       or(
         eq(characters.visibility, "public"),
         and(
           eq(characters.visibility, "private"),
-          eq(characters.userId, session.user.id!),
+          eq(characters.userId, userId),
         ),
       ),
     ),
-  });
+  }) : null;
 
   if (!characterCheck) {
     console.log("Character access check failed:", {
       characterId: character.id,
-      userId: session.user.id
+      userId: userId
     });
     return {
       error: true,
@@ -235,7 +565,7 @@ export async function continueConversation(
       .where(
         and(
           eq(chat_sessions.id, chat_session_id),
-          eq(chat_sessions.user_id, session.user.id!),
+          eq(chat_sessions.user_id, userId),
           eq(chat_sessions.character_id, character.id),
         ),
       )
@@ -249,7 +579,7 @@ export async function continueConversation(
       .from(chat_sessions)
       .where(
         and(
-          eq(chat_sessions.user_id, session.user.id!),
+          eq(chat_sessions.user_id, userId),
           eq(chat_sessions.character_id, character.id),
         ),
       )
@@ -288,23 +618,41 @@ export async function continueConversation(
   }
 
   // Get the user's default persona
-  const defaultPersona = await db
+  const defaultPersona = userId ? await db
     .select()
     .from(personas)
     .where(
       and(
-        eq(personas.userId, session.user.id!),
+        eq(personas.userId, userId),
         eq(personas.isDefault, true)
       )
     )
     .limit(1)
-    .then((rows) => rows[0]);
+    .then((rows) => rows[0]) : null;
 
-  let systemContent = messages[0].content;
+  // Find the index of the first system message or assume it's the first message
+  let systemMessageIndex = messages.findIndex(msg => msg.role === 'system');
+  if (systemMessageIndex === -1) {
+      console.warn("No system message found, prepending a default one.");
+      messages.unshift({ role: "system", content: character.description, id: crypto.randomUUID() });
+      systemMessageIndex = 0;
+  }
+
+
+  let systemContent = messages[systemMessageIndex].content;
+  // Ensure systemContent is treated as a string for modification
+  if (Array.isArray(systemContent)) {
+      console.warn("System message content is an array, attempting to extract text.");
+      systemContent = (systemContent as MultimodalContent[])
+          .filter(part => part.type === 'text')
+          .map(part => part.text)
+          .join('\n') || character.description; // Fallback to character description
+  }
+
 
   // Add persona if available
   if (defaultPersona) {
-    console.log("Injecting default persona for user:", session.user.id);
+    console.log("Injecting default persona for user:", userId);
     systemContent = `${systemContent}\nUser Persona: ${defaultPersona.background}`;
   }
 
@@ -314,275 +662,228 @@ export async function continueConversation(
   }
 
   // Update the system message with combined content
-  messages[0] = {
-    ...messages[0],
-    role: "system",
-    content: systemContent,
-    id: crypto.randomUUID(),
+  messages[systemMessageIndex] = {
+    ...messages[systemMessageIndex],
+    role: "system", // Ensure role is system
+    content: systemContent as string, // System message content should be string
   };
 
   try {
-    let response;
-    if (!isValidModel(model_name) && !base_url) {
-      console.log("INVALID MODEL NAME:", model_name);
-      throw new Error("Invalid model: " + model_name);
-    }
+    let response: Response | undefined;
+    if (!isValidModel(effectiveModelName) && !base_url && !isMultimodal) {
+        console.log("INVALID EFFECTIVE MODEL NAME:", effectiveModelName);
+        return { error: true, message: "Invalid model: " + effectiveModelName };
+     }
 
     if (base_url) {
-      console.log("Using custom base URL:", base_url);
-      console.log("Using custom API key:", api_key);
-      console.log("Using custom model:", model_name);
+      console.log("Using custom base URL with effective model:", effectiveModelName);
+      // --- Prepare messages for Custom API (using llmApiMessages) ---
+      const cleanMessages = llmApiMessages.map(msg => {
+         let finalContent: string | MultimodalContent[] = msg.content;
+         if (typeof msg.content === 'string') {
+             try {
+                 const parsed = JSON.parse(msg.content);
+                 if (Array.isArray(parsed)) { finalContent = parsed; }
+             } catch (e) { /* Keep string content */ }
+         }
+         return { role: msg.role, content: finalContent };
+      });
+      // --- End message preparation ---
 
-      // Clean messages by removing id field
-      const cleanMessages = messages.map(({ id, ...rest }) => rest);
-
-      // Prepare headers with required fields but allow for API-specific headers
       const headers: Record<string, string> = {
-        "Authorization": `Bearer ${api_key}`,
-        "Content-Type": "application/json",
+         "Authorization": `Bearer ${api_key}`,
+         "Content-Type": "application/json",
       };
-
-      // Prepare the request body with all possible parameters
       const requestBody = {
-        model: model_name,
-        messages: cleanMessages,
-        stream: true,
-        temperature: character.temperature ?? 1.0,
-        top_p: character.top_p ?? 1.0,
-        max_tokens: character.max_tokens ?? 1000,
+         model: effectiveModelName,
+         messages: cleanMessages,
+         stream: true,
+         temperature: character.temperature ?? 1.0,
+         top_p: character.top_p ?? 1.0,
+         top_k: character.top_k ?? 0,
       };
+      try {
+         response = await fetch(base_url, {
+             method: "POST",
+             headers,
+             body: JSON.stringify(requestBody),
+         });
+      } catch (error) {
+         console.error("Failed to make custom API request:", error);
+         return { error: true, message: `Failed to make custom API request: ${error instanceof Error ? error.message : String(error)}` };
+      }
+
+    } else {
+      // --- OpenRouter Path (using llmApiMessages) ---
+      console.log("Using OpenRouter with effective model:", effectiveModelName);
+
+      // --- Apply standard metered check ONLY if NOT multimodal ---
+      if (!isMultimodal) {
+         if (isMeteredModel(effectiveModelName)) {
+           const payAsYouGo = await getPayAsYouGo();
+           if (!payAsYouGo.pay_as_you_go) {
+              return { error: true, message: `You must toggle on pay-as-you-go in subscriptions to use the metered ${effectiveModelName} model` };
+           } else {
+              const userCredits = userId ? await db.select().from(user_credits).where(eq(user_credits.userId, userId)).limit(1).then(rows => rows[0]) : null;
+              if (!userCredits) return { error: true, message: "No credit record found." };
+              if (userCredits.balance <= 0) return { error: true, message: "Insufficient credits." };
+              const minimumRequiredBalance = 0.10;
+              const modelCostEstimates: Record<string, number> = {
+                  "anthropic/claude-3.7-sonnet": 0.15,
+                  "anthropic/claude-3.7-sonnet:thinking": 0.15,
+                  "anthropic/claude-3-opus": 0.25,
+                  "openai/gpt-4o-2024-11-20": 0.15,
+                  "openai/o1": 0.3,
+                  "x-ai/grok-2-1212": 0.15,
+                  "mistralai/mistral-small-3.1-24b-instruct": 0.05 // Keep estimate for potential future use
+              };
+              const modelSpecificThreshold = modelCostEstimates[effectiveModelName] || minimumRequiredBalance;
+              if (userCredits.balance < modelSpecificThreshold) {
+                  return { error: true, message: `Credit balance ($${userCredits.balance.toFixed(2)}) too low for ${effectiveModelName}. Need $${modelSpecificThreshold.toFixed(2)}.` };
+              }
+           }
+         }
+      } else {
+          console.log("Skipping metered credit check because request is multimodal.");
+      }
+      // --- End standard metered check ---
+
+      // --- Prepare messages for OpenRouter (using llmApiMessages) --- 
+      const openRouterMessages = llmApiMessages.map(msg => {
+          let finalContent: string | MultimodalContent[] = msg.content; // Assume string initially
+          if (typeof msg.content === 'string') {
+              try {
+                  const parsed = JSON.parse(msg.content);
+                  // If parsing succeeds AND it's an array, use the parsed array
+                  if (Array.isArray(parsed)) {
+                      finalContent = parsed;
+                  }
+                  // Otherwise, keep the original string content
+              } catch (e) {
+                  // Keep original string if JSON parse fails
+                  finalContent = msg.content;
+              }
+          }
+          // If msg.content wasn't a string originally (e.g., system message?), handle appropriately
+          // This assumes content is either string or needs parsing from stringified array
+          return {
+              role: msg.role,
+              content: finalContent
+          };
+      });
+      // --- End message preparation ---
 
       try {
-        response = await fetch(base_url, {
-          method: "POST",
-          headers,
-          body: JSON.stringify(requestBody),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.text();
-          console.error("API Error Response:", {
-            status: response.status,
-            statusText: response.statusText,
-            data: errorData,
+          response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+              method: "POST",
+              headers: {
+                  "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+                  "HTTP-Referer": "https://opencharacter.org",
+                  "X-Title": "OpenCharacter",
+                  "Content-Type": "application/json",
+               },
+              body: JSON.stringify({
+                  model: effectiveModelName,
+                  messages: openRouterMessages, // Send the potentially parsed messages
+                  temperature: character.temperature ?? 1.0,
+                  top_p: character.top_p ?? 1.0,
+                  top_k: character.top_k ?? 0,
+                  frequency_penalty: character.frequency_penalty ?? 0.0,
+                  presence_penalty: character.presence_penalty ?? 0.0,
+                  max_tokens: character.max_tokens ?? 1000,
+                  provider: { allow_fallbacks: false },
+                  stream: true,
+              })
           });
-          throw new Error(`API request failed: ${errorData}`);
-        }
-      } catch (error) {
-        console.error("Failed to make API request:", error);
-        throw error;
+      } catch (error) { 
+           console.error("Failed to make OpenRouter API request:", error);
+           return { error: true, message: `Failed to make OpenRouter API request: ${error instanceof Error ? error.message : String(error)}` };
       }
-    } else {
-
-      if (isMeteredModel(model_name)) {
-        const payAsYouGo = await getPayAsYouGo();
-
-        if (!payAsYouGo.pay_as_you_go) {
-          return { error: true, message: "You must toggle on pay-as-you-go in subscriptions to use this model" };
-        } else {
-          // Check user's credit balance before proceeding
-          const userCredits = await db
-            .select()
-            .from(user_credits)
-            .where(eq(user_credits.userId, session.user.id!))
-            .limit(1)
-            .then(rows => rows[0]);
-
-          if (!userCredits) {
-            return { error: true, message: "No credit record found for your account" };
-          }
-
-          if (userCredits.balance <= 0) {
-            return { error: true, message: "Insufficient credits. Please add more credits to continue using this model." };
-          }
-          
-          // Estimate minimum required balance based on model type
-          // Different models have different costs, so we set a minimum threshold
-          const minimumRequiredBalance = 0.1; // Increase threshold to $0.10 minimum
-          
-          // Additional model-specific cost estimation
-          // These are conservative estimates for typical prompt + completion costs
-          const modelCostEstimates: Record<string, number> = {
-            "anthropic/claude-3.7-sonnet": 0.15,
-            "anthropic/claude-3.7-sonnet:thinking": 0.15,
-            "anthropic/claude-3-opus": 0.25,
-            "openai/gpt-4o-2024-11-20": 0.15,
-            "openai/o1": 0.3,
-            "x-ai/grok-2-1212": 0.15,
-          };
-          
-          // Get model-specific threshold or use the default
-          const modelSpecificThreshold = modelCostEstimates[model_name] || minimumRequiredBalance;
-          
-          if (userCredits.balance < modelSpecificThreshold) {
-            return { 
-              error: true, 
-              message: `Your credit balance ($${userCredits.balance.toFixed(2)}) is too low for ${model_name}. Please add at least $${modelSpecificThreshold.toFixed(2)} to continue.` 
-            };
-          }
-        }
-      }
-
-      response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
-          "HTTP-Referer": "https://opencharacter.org",
-          "X-Title": "OpenCharacter",
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: model_name,
-          messages: messages,
-          temperature: character.temperature ?? 1.0,
-          top_p: character.top_p ?? 1.0,
-          top_k: character.top_k ?? 0,
-          frequency_penalty: character.frequency_penalty ?? 0.0,
-          presence_penalty: character.presence_penalty ?? 0.0,
-          max_tokens: character.max_tokens ?? 1000,
-          provider: {
-            allow_fallbacks: false
-          },
-          stream: true,
-        })
-      });
     }
 
+    if (!response) {
+        console.error("API response object is undefined after fetch attempts.");
+        return { error: true, message: "Failed to get a valid API response object." };
+    }
+
+    // --- Stream processing ---
     if (!response.ok) {
-      console.error("API request failed:", response.status);
-      throw new Error(`API request failed with status ${response.status}`);
-    }
-
+      const errorText = await response.text();
+      console.error(`API request failed using ${effectiveModelName}:`, response.status, errorText);
+      // Throw or return error object
+      return { error: true, message: `API request failed with status ${response.status}: ${errorText}` };
+     }
     const stream = response.body;
     if (!stream) {
-      console.error("No response stream available");
-      throw new Error("No response stream available");
+        console.error("No response stream available");
+        return { error: true, message: "No response stream available" };
     }
 
-    console.log("Starting stream processing");
+    console.log("Starting stream processing for model:", effectiveModelName);
     const reader = stream.getReader();
     const decoder = new TextDecoder();
     let buffer = '';
     let responseId = '';
+    let accumulatedText = '';
 
     const textStream = new ReadableStream({
       async start(controller) {
-        try {
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) {
-              if (isSubscribed && isMeteredModel(model_name) && responseId) {
-                console.log("Recording metered model:", responseId);
-                await recordMeteredModels(responseId);
+          try {
+              while (true) {
+                  const { done, value } = await reader.read();
+                  if (done) {
+                       console.log("Stream finished. Full response text:", accumulatedText);
+                       // --- Metering Check on Finish - Skip if multimodal ---
+                      if (!isMultimodal && isSubscribed && isMeteredModel(effectiveModelName) && responseId) {
+                          console.log("Recording metered model usage (stream end):", responseId, "Model:", effectiveModelName);
+                          recordMeteredModels(responseId, effectiveModelName).catch(err => console.error("Error recording metered model:", err));
+                      } else if (isMultimodal) {
+                          console.log("Skipping metering record (stream end) because request is multimodal.");
+                      }
+                      break;
+                  }
+                   buffer += decoder.decode(value, { stream: true });
+                   const lines = buffer.split('\n');
+                   buffer = lines.pop() || '';
+
+                   for (const line of lines) {
+                       if (line.trim() === '' || line.trim() === 'data: [DONE]') continue;
+                       if (!line.startsWith('data: ')) continue;
+                       try {
+                           const json = JSON.parse(line.slice(6));
+                           if (json.id && !responseId) responseId = json.id;
+                           if (!json.choices || json.choices.length === 0) continue;
+                           const choice = json.choices[0];
+                           const content = choice.delta?.content ?? choice.message?.content;
+                           if (content) {
+                               controller.enqueue(content);
+                               accumulatedText += content;
+                           }
+                           if (choice.finish_reason) {
+                               console.log("Received finish_reason:", choice.finish_reason, "with responseId:", responseId || json.id);
+                               // --- Metering Check on Finish Reason - Skip if multimodal ---
+                               if (!isMultimodal && responseId && isSubscribed && isMeteredModel(effectiveModelName)) {
+                                   console.log("Recording metered model usage (finish_reason):", responseId, "Model:", effectiveModelName);
+                                   recordMeteredModels(responseId, effectiveModelName).catch(err => console.error("Error recording metered model:", err));
+                               } else if (isMultimodal) {
+                                    console.log("Skipping metering record (finish_reason) because request is multimodal.");
+                               }
+                           }
+                       } catch (e) { console.error('Error parsing SSE JSON:', e); console.log('Problematic line:', line); }
+                   }
               }
-              break;
-            }
-
-            buffer += decoder.decode(value, { stream: true });
-            const lines = buffer.split('\n');
-            buffer = lines.pop() || '';
-
-            for (const line of lines) {
-              if (line.trim() === '') continue;
-              if (line.trim() === 'data: [DONE]') continue;
-              if (!line.startsWith('data: ')) continue;
-
-              try {
-                const json = JSON.parse(line.slice(6)) as {
-                  id: string;
-                  object: 'chat.completion' | 'chat.completion.chunk';
-                  choices: Array<{
-                    delta?: {
-                      content?: string;
-                    };
-                    message?: {
-                      content: string;
-                    };
-                    index: number;
-                    finish_reason: string | null;
-                  }>;
-                };
-
-                // Skip if this is the final usage message (empty choices)
-                if (json.choices.length === 0) continue;
-
-                const choice = json.choices[0];
-                const content = choice.delta?.content ?? choice.message?.content;
-
-                if (content) {
-                  controller.enqueue(content);
-                }
-
-                if (json.id) {
-                  responseId = json.id;
-                }
-
-                // If we get a finish_reason, we're done
-                if (choice.finish_reason) {
-                  responseId = json.id;
-                  console.log("Received finish_reason with responseId:", responseId);
-                  break;
-                }
-              } catch (e) {
-                console.error('Error parsing SSE JSON:', e);
-                console.log('Problematic line:', line);
-              }
-            }
-          }
-
-          // Final buffer processing
-          if (buffer) {
-            try {
-              if (buffer.startsWith('data: ')) {
-                const json = JSON.parse(buffer.slice(6)) as {
-                  choices: Array<{
-                    delta?: {
-                      content?: string;
-                    };
-                    message?: {
-                      content: string;
-                    };
-                  }>;
-                };
-
-                const content = json.choices[0].delta?.content ?? json.choices[0].message?.content;
-                if (content) {
-                  controller.enqueue(content);
-                }
-              }
-            } catch (e) {
-              console.error('Error parsing final buffer:', e);
-              console.log('Final buffer:', buffer);
-            }
-          }
-
-          controller.close();
-        } catch (error) {
-          console.error("Stream processing error:", error);
-          controller.error(error);
-        }
+               controller.close();
+          } catch (error) { console.error("Stream processing error:", error); controller.error(error); }
       },
-    });
+   });
 
-    console.log("Creating stream branches");
-    // Create a TransformStream to fork the stream
-    const transformStream = new TransformStream({
-      transform(chunk, controller) {
-        controller.enqueue(chunk);
-      },
-    });
-
-    // Create two branches of the stream
     const [stream1, stream2] = textStream.tee();
-
-    // Create the streamable value from the first branch
     const streamValue = createStreamableValue(stream1);
-
-    // Use the second branch for accumulating the full completion
     return streamValue.value;
+
   } catch (error) {
-    console.error("Failed to generate response:", error);
-    throw new Error(error as string);
+    console.error(`Overall error in continueConversation with ${effectiveModelName}:`, error);
+    return { error: true, message: `Failed to generate response: ${error instanceof Error ? error.message : String(error)}` };
   }
 }
 
@@ -1081,149 +1382,76 @@ export async function getChatSessionShareStatus(
   };
 }
 
-async function recordMeteredModels(gen_id: string) {
-  console.log("Recording metered model with ID:", gen_id);
-  
-  if (!gen_id || gen_id.trim() === '') {
-    console.error("Invalid generation ID provided:", gen_id);
-    return;
-  }
-  
-  // Get the current session and subscription status
+async function recordMeteredModels(gen_id: string, effectiveModelName: string) {
+  console.log("Recording metered model with ID:", gen_id, "Effective Model:", effectiveModelName);
+  if (!gen_id) { console.error("Invalid generation ID"); return; }
   const currentSession = await auth();
-  
-  if (!currentSession?.user?.id) {
-    console.log("No user session found for metering");
+  if (!currentSession?.user?.id) { console.log("No user session for metering"); return; }
+
+  // This check remains important inside recordMeteredModels itself as a safeguard
+  if (!isMeteredModel(effectiveModelName)) {
+    console.log(`Model ${effectiveModelName} is not metered. Skipping recording.`);
     return;
   }
-      
+
   try {
-    // Implement polling with exponential backoff
-    const maxRetries = 5;
-    const initialBackoff = 500; // Start with 500ms
-    
-    let attempt = 0;
-    let generationData = null;
-    
-    while (attempt < maxRetries && !generationData) {
-      attempt++;
-      const backoffTime = initialBackoff * Math.pow(2, attempt - 1); // Exponential backoff
-      
-      console.log(`Attempt ${attempt} to fetch generation data, waiting ${backoffTime}ms`);
-      await new Promise(resolve => setTimeout(resolve, backoffTime));
-      
-      const generation = await fetch(
-        `https://openrouter.ai/api/v1/generation?id=${gen_id}`,
-        { 
-          headers: {
-            "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
-            "HTTP-Referer": "https://opencharacter.org",
-            "X-Title": "OpenCharacter",
-            "Content-Type": "application/json",
-          },
-        },
-      );
-      
-      if (generation.ok) {
-        const stats = await generation.json() as {
-          data?: {
-            total_cost: number;
-            tokens_prompt?: number;
-            tokens_completion?: number;
-          };
-        };
-        
-        // Check if we have valid data
-        if (stats.data?.total_cost !== undefined) {
-          generationData = stats.data;
-          console.log("Successfully retrieved generation data:", {
-            cost: stats.data.total_cost,
-            promptTokens: stats.data.tokens_prompt,
-            completionTokens: stats.data.tokens_completion
-          });
-          break;
-        } else {
-          console.log(`Attempt ${attempt}: Generation data not yet available or incomplete`);
-        }
-      } else {
-        console.log(`Attempt ${attempt}: Failed to fetch generation data, status: ${generation.status}`);
-      }
-      
-      // If we've reached the max retries, log an error
-      if (attempt === maxRetries) {
-        console.error("Failed to retrieve generation data after maximum retries");
-      }
-    }
-    
-    // Continue with the rest of the function using generationData
-    if (!generationData) {
-      console.error("Failed to retrieve valid generation data");
-      // Use a fallback minimum cost to ensure we still charge something
-      // This is a safety measure in case the OpenRouter API is temporarily unavailable
-      generationData = {
-        total_cost: 0.001, // Minimal fallback cost
-        tokens_prompt: 0,
-        tokens_completion: 0
-      };
-      console.log("Using fallback minimum cost due to inability to fetch actual cost");
-    }
+    // Fetch generation data...
+     let generationData = await pollForGenerationData(gen_id); // Abstracted polling logic
+     if (!generationData) {
+         console.error("Failed to retrieve valid generation data for ID:", gen_id);
+         generationData = { total_cost: 0.001, tokens_prompt: 0, tokens_completion: 0 }; // Fallback
+         console.log("Using fallback minimum cost.");
+     }
+     const baseCost = generationData.total_cost;
+     const premiumRate = 2; // 100% premium
+     const finalCost = baseCost * premiumRate;
+     // Get user credits...
+     const userCredits = await db.select().from(user_credits).where(eq(user_credits.userId, currentSession.user.id)).limit(1).then(rows => rows[0]);
+     if (!userCredits) { console.error("No credit record found for user:", currentSession.user.id); return; }
+     // Update balance...
+     const newBalance = Math.max(0, userCredits.balance - finalCost);
+     const actualDeduction = userCredits.balance - newBalance;
+     if (finalCost > userCredits.balance) { console.warn(`Warning: Cost (${finalCost.toFixed(6)}) exceeds balance (${userCredits.balance.toFixed(6)}). Deducting ${actualDeduction.toFixed(6)}.`); }
+     await db.update(user_credits).set({ balance: newBalance, lastUpdated: new Date() }).where(eq(user_credits.userId, currentSession.user.id));
+     console.log(`Deducted ${actualDeduction.toFixed(6)} from user ${currentSession.user.id}. New balance: ${newBalance.toFixed(6)}`);
 
-    console.log("Generation stats:", generationData);
-    
-    // Apply 100% premium to the total cost
-    const baseCost = generationData.total_cost;
-    const premiumRate = 2; // 100% premium
-    const finalCost = baseCost * premiumRate;
-
-    console.log(`Base cost: ${baseCost}, Final cost with 100% premium: ${finalCost}`);
-
-    // Get user's current credit balance
-    const userCredits = await db
-      .select()
-      .from(user_credits)
-      .where(eq(user_credits.userId, currentSession.user.id))
-      .limit(1)
-      .then(rows => rows[0]);
-
-    if (!userCredits) {
-      console.error("No credit record found for user:", currentSession.user.id);
-      return;
-    }
-
-    // Check if user has sufficient balance
-    if (userCredits.balance < finalCost) {
-      console.error(`Insufficient credits for user: ${currentSession.user.id}. Required: ${finalCost}, Available: ${userCredits.balance}`);
-      
-      // Only allow the transaction if the user has at least 50% of the required cost
-      // This prevents users from getting free inferences with tiny balances
-      if (userCredits.balance < finalCost * 0.5) {
-        throw new Error(`Insufficient credits. Required: $${finalCost.toFixed(4)}, Available: $${userCredits.balance.toFixed(4)}`);
-      }
-      
-      console.warn(`User has partial credits - will deduct available amount: ${userCredits.balance}`);
-    }
-
-    // Update user's credit balance
-    await db
-      .update(user_credits)
-      .set({ 
-        balance: Math.max(0, userCredits.balance - finalCost),
-        lastUpdated: new Date()
-      })
-      .where(eq(user_credits.userId, currentSession.user.id));
-
-    const actualDeduction = Math.min(finalCost, userCredits.balance);
-    
-    // Log a warning if the cost exceeds the available balance
-    if (finalCost > userCredits.balance) {
-      console.warn(`Warning: Cost (${finalCost}) exceeds available balance (${userCredits.balance}). Deducting only ${actualDeduction} and setting balance to 0.`);
-    }
-    
-    console.log(`Deducted ${actualDeduction} from user ${currentSession.user.id}'s balance (base cost: ${baseCost}, premium: 100%)`);
   } catch (error) {
     console.error("Error in recordMeteredModels:", error);
-    throw error; // Re-throw the error to be handled by the caller
   }
+}
+
+// Helper function for polling (example structure)
+async function pollForGenerationData(gen_id: string): Promise<{ total_cost: number; tokens_prompt?: number; tokens_completion?: number; } | null> {
+    const maxRetries = 5;
+    const initialBackoff = 500;
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+        const backoffTime = initialBackoff * Math.pow(2, attempt);
+        console.log(`Polling attempt ${attempt + 1} for gen ID ${gen_id}, waiting ${backoffTime}ms`);
+        await new Promise(resolve => setTimeout(resolve, backoffTime));
+        try {
+            const response = await fetch(`https://openrouter.ai/api/v1/generation?id=${gen_id}`, {
+                 headers: {
+                   "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+                   "HTTP-Referer": "https://opencharacter.org", // Add required headers if needed
+                   "X-Title": "OpenCharacter",
+                 }
+             });
+            if (response.ok) {
+                // Add type assertion for the expected response structure
+                const stats = await response.json() as { data?: { total_cost: number; tokens_prompt?: number; tokens_completion?: number; } };
+                // Ensure cost is defined and positive before returning
+                if (stats.data?.total_cost !== undefined && stats.data.total_cost > 0) {
+                    console.log(`Polling success for ${gen_id} on attempt ${attempt + 1}`);
+                    return stats.data;
+                }
+                console.log(`Polling attempt ${attempt + 1} for ${gen_id}: Data not ready or cost is zero. Response data:`, stats?.data); // Access safely
+            } else {
+                 console.log(`Polling attempt ${attempt + 1} for ${gen_id} failed with status: ${response.status}`);
+            }
+        } catch (e) { console.error(`Polling attempt ${attempt + 1} for ${gen_id} threw error:`, e); }
+    }
+    console.error(`Polling failed for gen ID ${gen_id} after ${maxRetries} attempts.`);
+    return null;
 }
 
 export async function updateChatSessionTitle(conversationId: string, title: string) {
@@ -1354,3 +1582,43 @@ Generate 3 distinct response options that vary in tone and content. Each should 
     return { error: true, message: "Failed to create chat recommendations" };
   }
 }
+
+// --- New Server Action to Get Presigned URL ---
+export async function getPresignedUrlForImageKey(imageKey: string): Promise<{ url?: string; error?: string }> {
+  // Basic validation: Check if the key looks plausible (e.g., contains a slash)
+  // You might want more robust validation depending on your key structure.
+  if (!imageKey || !imageKey.includes('/')) {
+    console.error("Invalid image key format provided:", imageKey);
+    return { error: "Invalid image key format." };
+  }
+
+  // Optional: Add authentication here if you want to restrict URL generation
+  // const session = await auth();
+  // if (!session?.user?.id) {
+  //   return { error: "User not authenticated." };
+  // }
+  // // Optional: Check if the key prefix matches the authenticated user ID
+  // if (!imageKey.startsWith(`${session.user.id}/`)) {
+  //    console.warn(`User ${session.user.id} attempted to access key ${imageKey}`);
+  //    return { error: "Permission denied." };
+  // }
+
+  try {
+    console.log(`Generating presigned URL for key: ${imageKey}`);
+    const presignedUrl = await getSignedUrl(
+      s3Client, // Reuse the existing S3 client configured for R2
+      new GetObjectCommand({ Bucket: R2_BUCKET_NAME, Key: imageKey }),
+      { expiresIn: 3600 } // URL expires in 1 hour
+    );
+    console.log(`Successfully generated presigned URL for key: ${imageKey}`);
+    return { url: presignedUrl };
+  } catch (error) {
+    console.error(`Failed to generate presigned URL for key ${imageKey}:`, error);
+    // Check for specific S3 errors like NoSuchKey if needed
+    if (error instanceof Error && (error.name === 'NoSuchKey' || (error as any).$metadata?.httpStatusCode === 404)) {
+         return { error: "Image not found." };
+    }
+    return { error: "Failed to retrieve image URL." };
+  }
+}
+// --- End New Server Action ---

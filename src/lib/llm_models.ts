@@ -125,6 +125,11 @@ export const models: Models = {
         name: "amazon/nova-lite-v1",
         paid: false,
     },
+    "mistralai/pixtral-12b": {
+        id: "mistralai/pixtral-12b",
+        name: "mistralai/pixtral-12b",
+        paid: false,
+    },
     "thedrummer/unslopnemo-12b": {
         id: "thedrummer/unslopnemo-12b",
         name: "thedrummer/unslopnemo-12b",

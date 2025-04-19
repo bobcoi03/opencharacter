@@ -54,7 +54,7 @@ export function ModelSelector({ selectedModel, onModelSelect }: ModelSelectorPro
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          className="bg-neutral-600 rounded-full p-2 transition-opacity opacity-70 hover:opacity-100 focus:opacity-100 hover:cursor-pointer"
+          className="bg-neutral-600 rounded-full p-1 transition-opacity opacity-70 hover:opacity-100 focus:opacity-100 hover:cursor-pointer"
         >
           <Cpu className="w-3 h-3 text-gray-300" />
         </button>

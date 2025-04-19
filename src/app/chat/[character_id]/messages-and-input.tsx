@@ -1,11 +1,11 @@
 "use client";
 
 import { type CoreMessage } from "ai";
-import React, { useState, useEffect, useRef, useMemo, FormEvent } from "react";
+import React, { useState, useEffect, useRef, useMemo, FormEvent, useCallback } from "react";
 import { readStreamableValue } from "ai/rsc";
 import { continueConversation } from "@/app/actions/chat";
 import { saveChat, createChatSession } from "@/app/actions/index";
-import { createChatRecommendations } from "@/app/actions/chat";
+import { createChatRecommendations, getPresignedUrlForImageKey } from "@/app/actions/chat";
 import { User } from "next-auth";
 import Image from "next/image";
 import {
@@ -17,6 +17,8 @@ import {
   ChevronRight,
   Loader2,
   Star,
+  Image as ImageIcon,
+  X,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -44,11 +46,99 @@ import { ModelSelector } from "@/components/model-selector";
 
 const MAX_TEXTAREA_HEIGHT = 450; // maximum height in pixels
 
+interface R2ImageProps {
+  imageKeyOrUrl: string;
+  messageIndex: number;
+  partIndex: number;
+}
+
+const R2Image: React.FC<R2ImageProps> = ({ imageKeyOrUrl, messageIndex, partIndex }) => {
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const hasFetched = useRef(false); // Prevent refetching on re-renders
+
+  console.log(`[R2Image M:${messageIndex} P:${partIndex}] Received prop imageKeyOrUrl:`, imageKeyOrUrl);
+
+  useEffect(() => {
+    console.log(`[R2Image M:${messageIndex} P:${partIndex}] useEffect running. Current imageKeyOrUrl:`, imageKeyOrUrl, `HasFetched: ${hasFetched.current}`);
+
+    // Check if it's a key (not data URI or http/https) and hasn't been fetched yet
+    const isKey = !imageKeyOrUrl.startsWith('data:') && !imageKeyOrUrl.startsWith('http');
+    console.log(`[R2Image M:${messageIndex} P:${partIndex}] Is R2 Key check:`, isKey);
+
+    if (isKey && !hasFetched.current) {
+      hasFetched.current = true; // Mark as fetched
+      setIsLoading(true);
+      setError(null);
+      setImageUrl(null); // Reset previous URL if key changes
+      console.log(`[R2Image M:${messageIndex} P:${partIndex}] Detected key. Initiating fetch for presigned URL...`);
+
+      getPresignedUrlForImageKey(imageKeyOrUrl)
+        .then(result => {
+          console.log(`[R2Image M:${messageIndex} P:${partIndex}] Fetched presigned URL result:`, result);
+          if (result.url) {
+            setImageUrl(result.url);
+          } else {
+            setError(result.error || "Failed to load image URL.");
+          }
+        })
+        .catch(err => {
+          console.error(`[R2Image M:${messageIndex} P:${partIndex}] Error fetching presigned URL:`, err);
+          setError("Failed to load image.");
+        })
+        .finally(() => {
+          console.log(`[R2Image M:${messageIndex} P:${partIndex}] Fetch finished. Setting isLoading to false.`);
+          setIsLoading(false);
+        });
+    } else if (!isKey) {
+      console.log(`[R2Image M:${messageIndex} P:${partIndex}] Prop is not an R2 key (likely data URI or existing URL). Using directly.`);
+      // If it's already a valid URL (data or http), use it directly
+      setImageUrl(imageKeyOrUrl);
+      setIsLoading(false);
+      setError(null);
+      hasFetched.current = true; // Mark as "fetched" since we have the URL
+    } else if (isKey && hasFetched.current) {
+       console.log(`[R2Image M:${messageIndex} P:${partIndex}] Is key, but already fetched or fetch in progress.`);
+    }
+  }, [imageKeyOrUrl, messageIndex, partIndex]); // Re-run effect if the key/URL changes
+
+  console.log(`[R2Image M:${messageIndex} P:${partIndex}] Rendering state: isLoading=${isLoading}, error=${error}, imageUrl=${imageUrl?.substring(0,60)}...`);
+
+  if (isLoading) {
+    return (
+      <div className="max-w-xs max-h-64 h-auto rounded-lg my-2 bg-gray-700 animate-pulse flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-gray-500 animate-spin" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="max-w-xs max-h-64 h-auto rounded-lg my-2 bg-red-900 border border-red-700 flex items-center justify-center p-2 text-center">
+        <span className="text-red-300 text-xs">Error: {error}</span>
+      </div>
+    );
+  }
+
+  if (imageUrl) {
+    return (
+      <img
+        src={imageUrl}
+        alt="Chat content"
+        className="max-w-xs max-h-64 h-auto rounded-lg my-2 object-contain"
+      />
+    );
+  }
+
+  return null; // Should not happen if logic is correct
+};
+
 interface MessageContentProps {
   characterId?: string
   showRetries: boolean;
   userImage?: string | undefined | null;
-  message: ChatMessage;
+  message: CustomChatMessage;
   index: number;
   isUser: boolean;
   userName?: string;
@@ -66,7 +156,7 @@ interface MessageContentProps {
   onRateMessage: (index: number, rating: number) => void;
 }
 
-const MessageContent: React.FC<MessageContentProps> = ({
+const MessageContent: React.FC<MessageContentProps> = React.memo(({
   characterId,
   showRetries,
   userImage,
@@ -101,12 +191,12 @@ const MessageContent: React.FC<MessageContentProps> = ({
     p: ({ children }) => <p className="mb-2 last:mb-0 text-wrap break-words">{children}</p>,
     em: ({ children }) => <em className="text-neutral-300 text-wrap break-words">{children}</em>,
     code: ({ children }) => (
-      <code className="bg-neutral-800 px-1 py-0.5 rounded text-sm text-neutral-200">
+      <code className="px-1 py-0.5 rounded text-sm text-neutral-200">
         {children}
       </code>
     ),
     pre: ({ children }) => (
-      <pre className="bg-neutral-800 p-2 rounded text-sm text-neutral-200 whitespace-pre-wrap break-words overflow-x-auto">
+      <pre className="p-2 rounded text-sm text-neutral-200 whitespace-pre-wrap break-words overflow-x-auto">
         {children}
       </pre>
     ),
@@ -148,6 +238,50 @@ const MessageContent: React.FC<MessageContentProps> = ({
 
   const handleDropdownOpenChange = (open: boolean) => {
     setIsDropdownOpen(open);
+  };
+
+  const renderContent = () => {
+    console.log(`[MessageContent Render M:${index}] Rendering content:`, message.content);
+
+    if (Array.isArray(message.content)) {
+      // Handle multimodal content
+      return (message.content as MultimodalContent).map((part, partIndex) => {
+        console.log(`[MessageContent Render M:${index} P:${partIndex}] Rendering part:`, part);
+        if (part.type === 'text' && part.text) {
+          return (
+            <ReactMarkdown
+              key={`part-${partIndex}-text`}
+              className="text-md text-white text-wrap break-words"
+              components={markdownComponents}
+            >
+              {part.text}
+            </ReactMarkdown>
+          );
+        } else if (part.type === 'image_url' && part.image_url?.url) {
+          return (
+            <R2Image
+              key={`part-${partIndex}-image`}
+              imageKeyOrUrl={part.image_url.url}
+              messageIndex={index}
+              partIndex={partIndex}
+            />
+          );
+        }
+        return null;
+      });
+    } else if (typeof message.content === 'string') {
+      // Handle string content
+      return (
+        <ReactMarkdown
+          className="text-md text-white text-wrap break-words"
+          components={markdownComponents}
+        >
+          {message.content}
+        </ReactMarkdown>
+      );
+    }
+    console.warn(`[MessageContent Render M:${index}] Content is neither string nor array. Type: ${typeof message.content}`);
+    return null;
   };
 
   if (isDeleting) {
@@ -246,12 +380,7 @@ const MessageContent: React.FC<MessageContentProps> = ({
                       : ""
                   } px-4 py-2 rounded-xl`}
                 >
-                  <ReactMarkdown
-                    className="text-md text-white text-wrap break-words"
-                    components={markdownComponents}
-                  >
-                    {message.content as string}
-                  </ReactMarkdown>
+                  {renderContent()}
                 </div>
               </div>
           )}
@@ -308,12 +437,65 @@ const MessageContent: React.FC<MessageContentProps> = ({
       </div>
     </div>
   );
-};
+});
+
+MessageContent.displayName = 'MessageContent';
 
 interface SubscriptionCheckResponse {
   subscribed: boolean;
   subscription: any | null;
 }
+
+// Define the structure for multimodal content parts
+interface TextPart {
+  type: 'text';
+  text: string;
+}
+
+interface ImagePart {
+  type: 'image_url';
+  image_url: {
+    url: string; // Expecting base64 data URL
+  };
+}
+
+// Define MultimodalContent DIRECTLY as the array type
+type MultimodalContent = (TextPart | ImagePart)[];
+
+// Define the main message type - Adjust roles to match schema
+interface CustomChatMessage {
+  role: 'user' | 'assistant' | 'system'; // Match roles defined in schema.ts ChatMessage
+  content: string | MultimodalContent;
+  id?: string; // Keep optional for state management flexibility
+  rating?: number;
+  // Remove other roles/fields not present in schema.ts ChatMessage if they cause issues
+}
+
+// --- Helper function to map CustomChatMessage to DB schema expected type ---
+// Assumes DB stores multimodal content as JSON string
+const mapToDbMessage = (msg: CustomChatMessage): ChatMessage => {
+  // Ensure the role conforms to the allowed types in ChatMessage
+  if (msg.role !== 'user' && msg.role !== 'assistant' && msg.role !== 'system') {
+     // Handle unexpected roles, e.g., default to 'user' or throw an error
+     console.warn(`Invalid role found: ${msg.role}. Defaulting to 'user'.`);
+     // Or throw new Error(`Invalid role: ${msg.role}`);
+  }
+
+  return {
+    role: msg.role === 'user' || msg.role === 'assistant' || msg.role === 'system' ? msg.role : 'user', // Ensure valid role
+    id: msg.id ?? crypto.randomUUID(), // Ensure ID exists and is string
+    content: typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content),
+    // Add other required fields from ChatMessage schema if necessary, with defaults
+    rating: msg.rating ?? undefined, // Pass rating if exists
+    // time: msg.time ?? Date.now(), // Add if time is required in ChatMessage
+    // model: msg.model ?? undefined, // Add if model is required in ChatMessage
+ };
+};
+
+const mapToDbMessageArray = (messages: CustomChatMessage[]): ChatMessageArray => {
+  return messages.map(mapToDbMessage);
+};
+// ---
 
 export default function MessageAndInput({
   user,
@@ -333,24 +515,149 @@ export default function MessageAndInput({
   share?: boolean;
 }) {
   const router = useRouter();
-  const replacePlaceholders = (content: string | undefined) => {
+  const replacePlaceholders = (content: string | (TextPart | ImagePart)[] | undefined): string | (TextPart | ImagePart)[] | undefined => {
+    const userPlaceholder = persona?.displayName || user?.name || "Guest";
+    const charPlaceholder = character.name || "";
+
     if (content === undefined) {
-      return content;
+      return undefined;
     }
-    return content
-      .replace(/{{user}}/g, persona?.displayName || user?.name || "Guest")  
-      .replace(/{{char}}/g, character.name || "");
+
+    if (typeof content === 'string') {
+      // Handle string content
+      return content
+        .replace(/{{user}}/g, userPlaceholder)
+        .replace(/{{char}}/g, charPlaceholder);
+    }
+
+    // --- Corrected Array Handling ---
+    if (Array.isArray(content)) {
+      // Explicitly cast to the array type we expect for mapping
+      const contentArray = content as (TextPart | ImagePart)[];
+
+      // Now 'content' correctly matches the MultimodalContent type (the array)
+      const processedArray = contentArray.map((part) => { // 'part' is correctly inferred as TextPart | ImagePart
+        if (part.type === 'text' && part.text) {
+          return {
+            ...part,
+            text: part.text
+              .replace(/{{user}}/g, userPlaceholder)
+              .replace(/{{char}}/g, charPlaceholder)
+          };
+        }
+        return part; // Return non-text parts unchanged
+      });
+      return processedArray; // Return the modified array
+    }
+    // --- End Corrected Array Handling ---
+
+    // Fallback
+    console.warn("replacePlaceholders received unexpected content type:", typeof content, content);
+    return content;
   };
 
-  // @ts-ignore
-  // make sure first message has runs replaceplaceholders
-  messages = messages.map(message => ({
-    ...message,
-    content: replacePlaceholders(message.content as string)
-  }));
+  // Map initial messages from props, PARSING stringified JSON content first
+  const parsedAndMappedInitialMessages = useMemo(() => {
+    console.log("[Initial Load] Processing messages from props:", messages.length);
+    return messages.map((msg, index) => {
+      console.log(`[Initial Load - Msg ${index}] Processing message:`, { role: msg.role, contentPreview: typeof msg.content === 'string' ? msg.content.substring(0, 100) + '...' : '(Non-string content)' });
 
-  const [messagesState, setMessagesState] =
-    useState<CoreMessage[]>(messages);
+      let processedContent: string | MultimodalContent | undefined = undefined;
+      let parseError: Error | null = null;
+      let validationPassed: boolean | null = null;
+      let attemptedParse = false;
+
+      if (typeof msg.content === 'string' && msg.content.trim().startsWith('[')) {
+        // Only attempt parse if it's a string that starts with '['
+        attemptedParse = true;
+        try {
+          console.log(`[Initial Load - Msg ${index}] String starts with '[', attempting JSON.parse...`);
+          const parsed = JSON.parse(msg.content);
+          console.log(`[Initial Load - Msg ${index}] JSON.parse successful. Type: ${typeof parsed}, IsArray: ${Array.isArray(parsed)}`);
+
+          if (Array.isArray(parsed)) {
+            validationPassed = parsed.every(p =>
+              p != null && typeof p === 'object' && typeof p.type === 'string' &&
+              ((p.type === 'text' && typeof p.text === 'string') ||
+               (p.type === 'image_url' && p.image_url && typeof p.image_url.url === 'string'))
+            );
+            console.log(`[Initial Load - Msg ${index}] Parsed to array. Validation passed: ${validationPassed}`);
+
+            if (validationPassed) {
+              processedContent = parsed as MultimodalContent;
+              console.log(`[Initial Load - Msg ${index}] Assigned parsed array to processedContent.`);
+            } else {
+              console.warn(`[Initial Load - Msg ${index}] Parsed array FAILED validation. Falling back to original string.`);
+              processedContent = msg.content; // Fallback
+            }
+          } else {
+            console.log(`[Initial Load - Msg ${index}] Parsed content is not an array. Treating as original string.`);
+            processedContent = msg.content; // Fallback
+            validationPassed = false;
+          }
+        } catch (e) {
+          parseError = e as Error;
+          console.warn(`[Initial Load - Msg ${index}] JSON.parse FAILED even though string started with '['. Treating as plain string. Error:`, parseError.message);
+          processedContent = msg.content; // Fallback
+        }
+      } else if (typeof msg.content === 'string'){
+        // It's a string, but doesn't start with '[', treat as plain text
+        console.log(`[Initial Load - Msg ${index}] Content is a string but doesn't start with '['. Treating as plain text.`);
+        processedContent = msg.content;
+      } else {
+        // Content is not a string initially
+        console.log(`[Initial Load - Msg ${index}] Initial content type is not string: ${typeof msg.content}. Assigning directly.`);
+        if (msg.content === null || msg.content === undefined) {
+          console.warn(`[Initial Load - Msg ${index}] Content is null/undefined.`);
+          processedContent = "";
+        } else {
+          // Assume it's already in the correct format (e.g., MultimodalContent array)
+          // Add validation here if necessary based on expected non-string types
+          processedContent = msg.content as string | MultimodalContent;
+        }
+      }
+
+      const finalContent = replacePlaceholders(processedContent);
+      console.log(`[Initial Load - Msg ${index}] Final content type after placeholders: ${typeof finalContent}, AttemptedParse: ${attemptedParse}, ValidationPassed: ${validationPassed ?? 'N/A'}`);
+
+      const finalMappedMessage = {
+        role: msg.role as 'user' | 'assistant' | 'system',
+        id: (msg as any).id ?? crypto.randomUUID(),
+        rating: (msg as any).rating,
+        content: finalContent,
+      } as CustomChatMessage;
+      console.log(`[Initial Load - Msg ${index}] FINAL mapped message object being added to state:`, JSON.stringify(finalMappedMessage));
+
+      return finalMappedMessage;
+    });
+  }, [messages, character.name, persona?.displayName, user?.name]);
+
+  // Use the correctly parsed and mapped messages for initial state
+  const [messagesState, setMessagesState] = useState<CustomChatMessage[]>(parsedAndMappedInitialMessages);
+
+  // Update initial state for regenerations based on the *parsed* initial messages
+   const [regenerations, setRegenerations] = useState<string[]>(() => {
+       // Use the result of the robust parsing logic
+       const lastMessage = parsedAndMappedInitialMessages[parsedAndMappedInitialMessages.length - 1];
+       let lastContentText = "";
+       if (lastMessage) {
+           if (typeof lastMessage.content === 'string') {
+               // If content is already a string, use it directly
+               lastContentText = lastMessage.content;
+           } else if (Array.isArray(lastMessage.content)) {
+               // If content is an array (MultimodalContent), extract text parts
+               // Type assertion is safe here because we know it's an array
+               lastContentText = (lastMessage.content as (TextPart | ImagePart)[])
+                   .filter((part): part is TextPart => part.type === 'text') // Type guard
+                   .map(part => part.text || "") // Map to text, default empty if text is missing
+                   .join("\n"); // Join multiple text parts with newline
+           }
+           // Handle other potential content types if necessary
+       }
+       // Ensure regenerations always starts with at least one string element
+       return [lastContentText || ""]; // Initialize with extracted text or empty string
+   });
+
   const [input, setInput] = useState("");
   const [selectedModel, setSelectedModel] = useState("mistralai/mistral-nemo");
   const [isLoading, setIsLoading] = useState(false);
@@ -359,7 +666,6 @@ export default function MessageAndInput({
   const [error, setError] = useState<boolean>(false);
   const [isSignInDialogOpen, setIsSignInDialogOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const [regenerations, setRegenerations] = useState<string[]>([messagesState[messagesState.length -1].content as string]);
   const [currentRegenerationIndex, setCurrentRegenerationIndex] = useState(0);
   const formRef = useRef<HTMLFormElement>(null);
   const [errorMessage, setErrorMessage] = useState<string>("");
@@ -367,6 +673,10 @@ export default function MessageAndInput({
   const { toast } = useToast()
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [messageRecommendations, setMessageRecommendations] = useState<{ title: string; message: string }[]>([]);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  console.log("messages", messages)
 
   useEffect(() => {
     async function checkSubscription() {
@@ -435,52 +745,74 @@ export default function MessageAndInput({
     }
   };
 
-  const handleEdit = async (index: number, editedContent: string) => {
+  const handleEdit = useCallback(async (index: number, editedContent: string) => {
     const newMessages = messagesState.map((msg, i) =>
-      i === index ? ({ ...msg, content: editedContent } as CoreMessage) : msg,
+      i === index ? ({ ...msg, content: editedContent } as CustomChatMessage) : msg,
     );
-
     setMessagesState(newMessages);
 
     try {
-      await saveChat(newMessages, character, chat_session);
+      // Map before saving
+      await saveChat(mapToDbMessageArray(newMessages), character, chat_session);
     } catch (error) {
       console.error("Failed to save edited message:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save edited message. Please try again.",
+        variant: "destructive",
+        className: "text-xs"
+      });
     }
-  };
+  }, [messagesState, character, chat_session, toast]);
 
-  const handleOnGoBackRegenerate = async (index: number) => {
+  const handleOnGoBackRegenerate = useCallback(async (index: number) => {
+    if (index < 0 || index >= regenerations.length) return; // Boundary check
+
     const wantMessage = regenerations[index];
     const newMessages = [...messagesState];
-    
+    let updated = false;
+
     // Find the last assistant message and replace its content
     for (let i = newMessages.length - 1; i >= 0; i--) {
       if (newMessages[i].role === "assistant") {
-        newMessages[i].content = wantMessage;
+        newMessages[i] = { ...newMessages[i], content: wantMessage };
+        updated = true;
         break;
       }
     }
-    
-    setMessagesState(newMessages);
-    await saveChat(newMessages, character, chat_session)
-    setCurrentRegenerationIndex(index);
-  };
 
-  const handleDelete = async (index: number) => {
+    if (updated) {
+      setMessagesState(newMessages);
+      setCurrentRegenerationIndex(index);
+      try {
+        // Map before saving
+        await saveChat(mapToDbMessageArray(newMessages), character, chat_session);
+      } catch (error) {
+        console.error("Failed to save regenerated message:", error);
+        // Optionally revert state or show toast
+      }
+    }
+  }, [regenerations, messagesState, character, chat_session]);
+
+  const handleDelete = useCallback(async (index: number) => {
     const newMessages = messagesState.filter((_, i) => i !== index);
+    const originalMessages = [...messagesState]; // For potential revert
 
     setMessagesState(newMessages);
 
     try {
-      await saveChat(newMessages, character, chat_session);
+       // Map before saving
+      await saveChat(mapToDbMessageArray(newMessages), character, chat_session);
       toast({
         title: "Deleted Message",
         className: "text-xs"
       })
     } catch (error) {
       console.error("Failed to save after deleting message:", error);
+      setMessagesState(originalMessages); // Revert on error
+      toast({ /* error toast */ });
     }
-  };
+  }, [messagesState, character, chat_session, toast]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "instant" });
@@ -526,96 +858,167 @@ export default function MessageAndInput({
     error: boolean = false,
     regenerate: boolean = false,
   ) => {
+    // Ensure user is signed in
     if (!user) {
       setIsSignInDialogOpen(true);
       return;
     }
 
-    // Clear message recommendations when sending a new message
+    // Do nothing if loading or if there's no input and no image selected
+    if (isLoading || (!input.trim() && !selectedImage)) {
+      return;
+    }
+
+    // Clear message recommendations
     setMessageRecommendations([]);
 
-    let newMessages: CoreMessage[];
+    let currentUserMessageContent: string | MultimodalContent = input;
+
+    // --- Construct multimodal content if image is selected ---
+    if (selectedImage) {
+      currentUserMessageContent = [
+        { type: "text", text: input },
+        {
+          type: "image_url",
+          image_url: {
+            url: selectedImage,
+          },
+        },
+      ];
+      // TODO: Add check for model compatibility with images here?
+      // e.g., if (!selectedModelSupportsImages(selectedModel)) { showToast('Model doesn't support images'); return; }
+    }
+    // --- End multimodal content construction ---
+
+    let newMessages: CustomChatMessage[];
 
     if (regenerate && !error) {
-      // Remove the last assistant message
       newMessages = messagesState.slice(0, -1);
     } else if (error) {
       newMessages = [...messagesState];
-    } else if (input) {
-      newMessages = [...messagesState, { content: input, role: "user" }];
     } else {
-      // if !input, 
-      newMessages = [...messagesState];
+      // Ensure new user message has an ID for state consistency (though optional in type)
+      newMessages = [...messagesState, { content: currentUserMessageContent, role: "user", id: crypto.randomUUID() }];
     }
 
     setMessagesState(newMessages);
     setInput("");
     resetTextareaHeight();
+    setSelectedImage(null);
     setIsLoading(true);
     setError(false);
+    setErrorMessage("");
 
     try {
+      // --- Map to expected format for continueConversation --- 
+      // Assuming continueConversation also expects the DB format now
+      const messagesForApi = mapToDbMessageArray(newMessages);
+
       const result = await continueConversation(
-        newMessages as ChatMessageArray,
+        messagesForApi, // Pass mapped array
         selectedModel,
         character,
         chat_session,
         localStorage.getItem('openai_base_url') ?? undefined,
         localStorage.getItem('openai_api_key') ?? undefined,
       );
+
+      // --- Handle result (streaming, saving, recommendations) ---
       if ("error" in result) {
         setError(true);
-        console.log(result.error)
-        setErrorMessage(result.message)
+        console.log(result.error);
+        setErrorMessage(result.message);
+        setIsLoading(false); // Stop loading on error
+        // Important: Consider how to handle potential state mismatch if API call fails
+        // Maybe revert messagesState? setMessagesState(messagesState.slice(0, -1)) if not regenerating?
         return;
       }
-      
+
       let finalContent = '';
+      let assistantMessageId = crypto.randomUUID(); // Pre-generate ID for the assistant message
+
+      // Add placeholder for streaming assistant message
+      setMessagesState(prev => [...prev, { role: "assistant", content: "", id: assistantMessageId }]);
+
       for await (const content of readStreamableValue(result)) {
-        const processedContent = replacePlaceholders(content) as string;
-        finalContent = processedContent;
-        
-        setMessagesState([
-          ...newMessages,
-          {
-            role: "assistant",
-            content: processedContent,
-          },
-        ]);
-        
-        setRegenerations([
-          ...regenerations,
-          processedContent,
-        ]);
-        
+        // Ensure replacePlaceholders handles potential non-string content robustly,
+        // although stream deltas are expected to be strings.
+        const processedContent = replacePlaceholders(content as string) as string; // Cast input and expect string output here
+        finalContent = processedContent; // Keep track of the full content
+
+        // Update the placeholder assistant message content
+        setMessagesState(prevMessages => prevMessages.map(msg =>
+            msg.id === assistantMessageId ? { ...msg, content: processedContent } : msg
+        ));
+
+        // Update regenerations array during stream
+        // Ensure this handles the case where the initial regeneration state was empty
+        setRegenerations(prevRegens => {
+            const updatedRegens = [...prevRegens];
+            const lastRegenIndex = updatedRegens.length - 1;
+            if (lastRegenIndex >= 0 && currentRegenerationIndex === lastRegenIndex) {
+                // Update the content of the current regeneration being streamed
+                updatedRegens[lastRegenIndex] = processedContent;
+            } else if (currentRegenerationIndex >= updatedRegens.length) {
+                 // If it's a new generation beyond the current array, add it
+                 updatedRegens.push(processedContent);
+            }
+            // If currentRegenerationIndex points to an older message being overwritten,
+            // we might need different logic depending on desired behavior.
+            // For now, only update/append based on the latest stream.
+            return updatedRegens;
+        });
+
+        // Reset regeneration index only if it's a new message (not a regeneration/retry)
         if (!regenerate && !error) {
-          setCurrentRegenerationIndex(0)
-          setRegenerations([processedContent])
+          setCurrentRegenerationIndex(0); // Point to the first item
+          setRegenerations([processedContent]); // Reset array with only the new content
         }
       }
 
-      // Save the complete conversation after stream ends
-      const finalMessages = [
-        ...newMessages,
-        {
-          role: "assistant" as const,
-          content: finalContent,
-          id: crypto.randomUUID()
-        }
-      ];
+      // Final state update with complete assistant message (already done in stream)
+      // Ensure finalMessages reflects the true state for saving
+      const finalMessagesWithIds = messagesState.map(msg =>
+           msg.id === assistantMessageId ? { ...msg, content: finalContent } : msg
+       );
+       // If streaming somehow failed, ensure last message has final content
+       if (finalMessagesWithIds.length > 0 && finalMessagesWithIds[finalMessagesWithIds.length -1].id === assistantMessageId) {
+           finalMessagesWithIds[finalMessagesWithIds.length -1].content = finalContent;
+       } else {
+            // Fallback if placeholder wasn't added correctly (shouldn't happen)
+            finalMessagesWithIds.push({ role: "assistant", content: finalContent, id: assistantMessageId });
+       }
 
-      await saveChat(finalMessages, character, chat_session);
-      
-      // Set loading to false immediately after AI response is complete
+      // ---- REVISED LOGIC FOR FINAL SAVE ----
+      // Construct the final array explicitly to ensure correctness
+      // Start with the state *before* adding the assistant placeholder
+      const messagesBeforeAssistantResponse = newMessages; 
+      // Create the final assistant message object
+      const finalAssistantMessage: CustomChatMessage = { 
+          role: "assistant", 
+          content: finalContent, // Use the fully streamed content
+          id: assistantMessageId 
+      };
+
+      // Combine them to get the array that should be saved
+      const finalMessagesToSaveState = [...messagesBeforeAssistantResponse, finalAssistantMessage];
+      console.log(`[handleSubmit] Preparing to save ${finalMessagesToSaveState.length} messages.`);
+      // ---- End Revised Logic ----
+
+      // --- Map to ChatMessageArray before saving --- 
+      const messagesToSaveDb = mapToDbMessageArray(finalMessagesToSaveState); // Use the explicitly constructed array
+
+      await saveChat(messagesToSaveDb, character, chat_session);
+
       setIsLoading(false);
-      
-      // Get message recommendations after AI response is complete
-      if (finalMessages.length > 2 && finalMessages.length % 12 === 0) {
-        try {
-          // Only fetch recommendations if enabled in settings
+
+      // Fetch recommendations (using the correct final state)
+      if (finalMessagesToSaveState.length > 2 && finalMessagesToSaveState.length % 12 === 0) {
+         try {
           if (areRecommendationsEnabled()) {
             setIsLoadingRecommendations(true);
-            const recommendationsResult = await createChatRecommendations(finalMessages as ChatMessageArray);
+            const messagesForRecs = mapToDbMessageArray(finalMessagesToSaveState);
+            const recommendationsResult = await createChatRecommendations(messagesForRecs);
             console.log("Recommendations result:", recommendationsResult);
             if (!recommendationsResult.error && recommendationsResult.recommendations) {
               setMessageRecommendations(recommendationsResult.recommendations);
@@ -631,14 +1034,18 @@ export default function MessageAndInput({
       }
 
     } catch (err) {
-      console.log(err)
+      console.error("Error during conversation:", err);
       setError(true);
-      setErrorMessage((err as any).message)
+      setErrorMessage((err as any).message || "An unexpected error occurred.");
       setIsLoading(false);
       setIsLoadingRecommendations(false);
+       // Revert message state on general catch error?
+       // setMessagesState(messagesState.slice(0, -1)); // If not regenerating
     } finally {
+      // Update regeneration index if it was a regeneration action
       if (regenerate) {
-        setCurrentRegenerationIndex(prev => prev + 1)
+        // Ensure index doesn't go out of bounds of the potentially updated regenerations array
+        setCurrentRegenerationIndex(prev => Math.min(prev + 1, regenerations.length > 0 ? regenerations.length -1 : 0));
       }
     }
   };
@@ -648,36 +1055,54 @@ export default function MessageAndInput({
     localStorage.setItem("selectedModel", modelId);
   };
 
-  const handleRetry = () => {
+  const handleRetry = useCallback(() => {
     console.log("Attempting to retry the last message.");
-    if (messagesState.length > 1) {
+    if (messagesState.length > 0) {
       const lastMessage = messagesState[messagesState.length - 1];
-      const lastUserMessage = messagesState[messagesState.length - 2];
-  
-      if (lastMessage.role === "user") {
-        console.log("Retrying the user's message due to an error.");
+      const secondLastMessage = messagesState.length > 1 ? messagesState[messagesState.length - 2] : null;
+
+      if (error && lastMessage.role === "assistant" && secondLastMessage?.role === "user") {
+        console.log("Retrying the last user message to get a new assistant response after an error.");
+        handleSubmit(secondLastMessage.content as string, false, true);
+      } else if (lastMessage.role === "assistant" && secondLastMessage?.role === "user") {
+        console.log("Regenerating the last assistant response.");
+        handleSubmit(secondLastMessage.content as string, false, true);
+      } else if (lastMessage.role === "user") {
+        console.log("Retrying the user's message submission.");
         handleSubmit(lastMessage.content as string, true);
-      } else if (lastMessage.role === "assistant") {
-        console.log("Retrying the last user message to get a new assistant response.");
-        // Store the current assistant message before regenerating
-        handleSubmit(lastUserMessage.content as string, false, true);
+      } else {
+        console.log("Cannot determine how to retry based on the last message(s).");
       }
     } else {
       console.log("Not enough messages to retry.");
     }
-  };
+  }, [messagesState, error, handleSubmit]);
 
-  const handleNewChatFromHere = async (index: number) => {
+  const handleNewChatFromHere = useCallback(async (index: number) => {
     try {
-      const sessionId = await createChatSession(character, messages.slice(0, index + 1));
+      // Map before creating session
+      const messagesForNewSession = mapToDbMessageArray(messagesState.slice(0, index + 1));
+      const sessionId = await createChatSession(character, messagesForNewSession);
       router.push(`/chat/${character.id}?session=${sessionId}`);
-      window.location.reload()
+      window.location.reload();
     } catch (error) {
       console.error('Failed to create chat session:', error);
-    } 
-  };
+      toast({
+        title: "Error",
+        description: "Failed to create chat session. Please try again later.",
+        variant: "destructive",
+        className: "text-xs"
+      });
+    }
+  }, [character, messagesState, router, toast]);
 
-  const handleRateMessage = async (index: number, rating: number) => {
+  const handleRateMessage = useCallback(async (index: number, rating: number) => {
+    if (index >= messagesState.length) {
+      console.warn("Attempted to rate a non-existent message index:", index);
+      return;
+    }
+
+    const originalMessages = [...messagesState];
     const newMessages = messagesState.map((msg, i) =>
       i === index ? { ...msg, rating } : msg
     );
@@ -685,9 +1110,11 @@ export default function MessageAndInput({
     setMessagesState(newMessages);
 
     try {
-      await saveChat(newMessages, character, chat_session);
+      // Map before saving
+      await saveChat(mapToDbMessageArray(newMessages), character, chat_session);
     } catch (error) {
       console.error("Failed to save message rating:", error);
+      setMessagesState(originalMessages);
       toast({
         title: "Error",
         description: "Failed to save message rating. Please try again.",
@@ -695,7 +1122,7 @@ export default function MessageAndInput({
         className: "text-xs"
       });
     }
-  };
+  }, [messagesState, character, chat_session, toast]);
 
   const handleRecommendationClick = (recommendedMessage: string) => {
     if (textareaRef.current) {
@@ -704,6 +1131,56 @@ export default function MessageAndInput({
       textareaRef.current.focus();
       adjustTextareaHeight();
     }
+  };
+
+  const handleImageUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    const MAX_FILE_SIZE_MB = 1;
+    const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
+
+    // Reset file input value immediately to allow re-selecting the same file
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+
+    if (file && file.type.startsWith("image/")) {
+      // Check file size
+      if (file.size > MAX_FILE_SIZE_BYTES) {
+        setSelectedImage(null);
+        toast({
+          title: "Image Too Large",
+          description: `Please select an image smaller than ${MAX_FILE_SIZE_MB}MB.`,
+          variant: "destructive",
+        });
+        return; // Stop processing
+      }
+
+      // File is valid, proceed with reading
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setSelectedImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    } else if (file) {
+      // Handle invalid file type (if a file was selected)
+      setSelectedImage(null);
+      toast({
+        title: "Invalid File Type",
+        description: "Please select an image file (e.g., JPG, PNG, GIF).",
+        variant: "destructive",
+      });
+    } else {
+      // No file selected (e.g., user cancelled the dialog)
+      setSelectedImage(null);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setSelectedImage(null);
   };
 
   const memoizedMessageList = useMemo(() => {
@@ -716,7 +1193,7 @@ export default function MessageAndInput({
         showRetries={i === messagesState.length - 2}      
         key={`${m.role}-${i}`}
         userImage={persona?.image || user?.image}
-        message={m as ChatMessage}
+        message={m as CustomChatMessage}
         index={i + 1}
         isUser={m.role === "user"}
         userName={persona?.displayName ?? user?.name ?? "Guest"}
@@ -726,7 +1203,6 @@ export default function MessageAndInput({
         onRetry={
           m.role === "assistant" &&
           i === messagesState.length - 2 &&
-          messagesState.length > 2 &&
           !isLoading
             ? handleRetry
             : undefined
@@ -736,7 +1212,6 @@ export default function MessageAndInput({
         regenerations={
           m.role === "assistant" &&
           i === messagesState.length - 2 &&
-          messagesState.length > 2 &&
           !isLoading
             ? regenerations
             : []
@@ -748,13 +1223,18 @@ export default function MessageAndInput({
     ));
   }, [
     messagesState,
-    persona,
-    user,
-    character,
+    character.id,
+    character.name,
+    character.avatar_image_url,
+    persona?.image,
+    persona?.displayName,
+    user?.image,
+    user?.name,
     error,
     isLoading,
-    regenerations.length,
+    regenerations,
     currentRegenerationIndex,
+    handleRateMessage,
     handleRetry,
     handleEdit,
     handleDelete,
@@ -777,7 +1257,7 @@ export default function MessageAndInput({
     const processedMessages = messagesState.map((message, index) => ({
       ...message,
       id: index.toString(), // Use index as the id
-      content: replacePlaceholders(message.content as string) as string,
+      content: replacePlaceholders(message.content as string | MultimodalContent | undefined) as string,
     })) // Ensure type includes 'id'
     setProcessedMessages(processedMessages);
   }, [messagesState]);
@@ -977,9 +1457,46 @@ export default function MessageAndInput({
               </div>
             )}
             <div className="relative flex-grow">
+              {/* Image Preview */}
+              {selectedImage && (
+                <div className="absolute bottom-full left-2 mb-1 z-20 p-1 bg-slate-700/50 rounded-md backdrop-blur-sm border border-slate-600">
+                  <div className="relative">
+                    <img
+                      src={selectedImage}
+                      alt="Image preview"
+                      className="max-h-24 max-w-full h-auto rounded"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleRemoveImage}
+                      className="absolute top-0 right-0 -mt-1 -mr-1 bg-red-600/80 hover:bg-red-500 text-white rounded-full p-0.5 z-30"
+                      aria-label="Remove image"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                </div>
+              )}
               <div className="absolute inset-0 bg-slate-600 bg-opacity-20 backdrop-blur-md rounded-t-xl border-neutral-700"></div>
-              <div className="absolute left-3 top-1/2 transform -translate-y-1/2 z-20">
-                <ModelSelector 
+              <div className="absolute left-3 top-1/2 transform -translate-y-1/2 z-20 flex items-center space-x-2">
+                {/* Hidden File Input */}
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleImageChange}
+                  accept="image/*"
+                  className="hidden"
+                />
+                {/* Image Upload Button */}
+                <button
+                  type="button"
+                  onClick={handleImageUploadClick}
+                  className="p-1 rounded-full hover:bg-slate-700/50 transition-colors text-slate-400 hover:text-slate-200"
+                  aria-label="Upload image"
+                >
+                  <ImageIcon className="w-4 h-4" />
+                </button>
+                <ModelSelector
                   selectedModel={selectedModel}
                   onModelSelect={handleModelSelect}
                 />
@@ -993,9 +1510,9 @@ export default function MessageAndInput({
                 onKeyDown={handleKeyDown}
                 onFocus={handleInputFocus}
                 placeholder={`Message ${character.name}...`}
-                className="w-full py-4 pl-14 pr-12 bg-transparent relative z-10 outline-none text-white text-xl rounded-t-3xl resize-none overflow-hidden "
+                className="w-full py-4 pl-[calc(2.5rem+3.5rem)] pr-12 bg-transparent relative z-10 outline-none text-white text-xl rounded-t-3xl resize-none overflow-hidden"
                 style={{
-                  minHeight: "50px",
+                  minHeight: "60px",
                   maxHeight: `${MAX_TEXTAREA_HEIGHT}px`,
                   overflowY: "auto",
                 }}
@@ -1024,9 +1541,7 @@ export default function MessageAndInput({
                   <Loader2 className="w-8 h-8 animate-spin" />
                 }
               </button>
-
             </div>
-            
           </form>
 
           <Dialog

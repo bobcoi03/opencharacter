@@ -584,8 +584,12 @@ export default function EllipsisButton({ character, made_by_username, chat_sessi
                   />
 
                   <p className="text-sm font-medium text-white mt-1">
-                    {latestMessage.role === 'assistant' ? character.name : 'You'}: {latestMessage.content && latestMessage.content.slice(0, 200)}
-                    {latestMessage.content && latestMessage.content.length > 200 && "..."}
+                    {latestMessage.role === 'assistant' ? character.name : 'You'}: 
+                    {typeof latestMessage.content === 'string' 
+                      ? latestMessage.content.slice(0, 200) 
+                      : latestMessage.content?.find(part => part.type === 'text')?.text?.slice(0, 200) || '[Image content]'}
+                    {typeof latestMessage.content === 'string' && latestMessage.content.length > 200 && "..."}
+                    {Array.isArray(latestMessage.content) && (latestMessage.content.find(part => part.type === 'text')?.text?.length ?? 0) > 200 && "..."}
                   </p>
 
                   <div className='flex items-center justify-between gap-2'>
