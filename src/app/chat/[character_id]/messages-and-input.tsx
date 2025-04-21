@@ -657,7 +657,6 @@ export default function MessageAndInput({
        return [lastContentText || ""]; // Initialize with extracted text or empty string
    });
 
-  const [input, setInput] = useState("");
   const [selectedModel, setSelectedModel] = useState("mistralai/mistral-nemo");
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingRecommendations, setIsLoadingRecommendations] = useState(false);
@@ -703,11 +702,6 @@ export default function MessageAndInput({
     checkSubscription();
   }, [user?.id]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setInput(e.target.value);
-    adjustTextareaHeight();
-  };
-
   const adjustTextareaHeight = () => {
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
@@ -737,8 +731,8 @@ export default function MessageAndInput({
       } else if (e.key === "Escape") {
         e.preventDefault();
         resetTextareaHeight();
-        if (input.trim() === "") {
-          setInput("");
+        if (textareaRef.current?.value.trim() === "") {
+          if (textareaRef.current) textareaRef.current.value = "";
         }
       }
     }
@@ -856,6 +850,7 @@ export default function MessageAndInput({
     input: string,
     error: boolean = false,
     regenerate: boolean = false,
+    userMessageContentOverride?: string | MultimodalContent
   ) => {
     // Ensure user is signed in
     if (!user) {
@@ -863,58 +858,92 @@ export default function MessageAndInput({
       return;
     }
 
-    // Do nothing if loading or if there's no input and no image selected
-    if (isLoading || (!input.trim() && !selectedImage)) {
+    // Determine the input content: Use override if provided during regeneration, otherwise use ref.
+    const currentInput = (regenerate && userMessageContentOverride !== undefined)
+      ? "" // If regenerating with override, the 'input' param isn't the source user message
+      : textareaRef.current?.value ?? "";
+    const effectiveUserContent = (regenerate && userMessageContentOverride !== undefined)
+      ? userMessageContentOverride
+      : currentInput; // For new messages, effective content is from the textarea
+
+    // Do nothing if loading or if there's no effective content and no image selected
+    // Check based on effectiveUserContent for text, OR selectedImage
+    const hasTextContent = typeof effectiveUserContent === 'string' ? effectiveUserContent.trim() : true; // Assume array content is valid
+    if (isLoading || (!hasTextContent && !selectedImage)) {
       return;
     }
 
     // Clear message recommendations
     setMessageRecommendations([]);
 
-    let currentUserMessageContent: string | MultimodalContent = input;
+    // --- Construct message content for the NEW user message OR the one being regenerated ---
+    let currentUserMessageContent: string | MultimodalContent;
 
-    // --- Construct multimodal content if image is selected ---
-    if (selectedImage) {
-      currentUserMessageContent = [
-        { type: "text", text: input },
-        {
-          type: "image_url",
-          image_url: {
-            url: selectedImage,
-          },
-        },
-      ];
-      // TODO: Add check for model compatibility with images here?
-      // e.g., if (!selectedModelSupportsImages(selectedModel)) { showToast('Model doesn't support images'); return; }
-    }
-    // --- End multimodal content construction ---
-
-    let newMessages: CustomChatMessage[];
-
-    if (regenerate && !error) {
-      newMessages = messagesState.slice(0, -1);
-    } else if (error) {
-      newMessages = [...messagesState];
+    if (regenerate && userMessageContentOverride !== undefined) {
+        // If regenerating, use the provided override content directly.
+        // Assume image was part of the original message if override is an array.
+        currentUserMessageContent = userMessageContentOverride;
+    } else if (selectedImage) {
+        // If it's a new message with an image
+        currentUserMessageContent = [
+            { type: "text", text: currentInput }, // Use currentInput from ref for text part
+            {
+                type: "image_url",
+                image_url: {
+                    url: selectedImage,
+                },
+            },
+        ];
     } else {
-      // Ensure new user message has an ID for state consistency (though optional in type)
-      newMessages = [...messagesState, { content: currentUserMessageContent, role: "user", id: crypto.randomUUID() }];
+        // If it's a new message with only text
+        currentUserMessageContent = currentInput; // Use currentInput from ref
+    }
+    // --- End message content construction ---
+
+    // Determine the next state based on action type
+    let nextState: CustomChatMessage[];
+    let messagesForApi: ChatMessage[];
+    const isRegeneratingAction = (regenerate && !error) || (error && messagesState.length > 0 && messagesState[messagesState.length - 1].role === 'assistant');
+
+    if (isRegeneratingAction) {
+      // For regeneration or retrying an assistant error, remove the last assistant message
+      nextState = messagesState.slice(0, -1);
+    } else {
+      // For new message or retrying a user message error, add the new user message
+      // Note: currentUserMessageContent was constructed earlier based on input/image/override
+      const newUserMessage: CustomChatMessage = { content: currentUserMessageContent, role: "user", id: crypto.randomUUID() };
+      // If retrying a user error, the user message might already be in messagesState. Avoid duplication.
+      if (error && messagesState.length > 0 && messagesState[messagesState.length - 1].role === 'user') {
+        nextState = [...messagesState]; // Use existing state if last was user and error occurred
+      } else {
+        nextState = [...messagesState, newUserMessage];
+      }
     }
 
-    setMessagesState(newMessages);
-    setInput("");
-    resetTextareaHeight();
-    setSelectedImage(null);
+    // Set the state immediately before the API call
+    setMessagesState(nextState);
+
+    // Prepare message history for the API call from the updated state
+    messagesForApi = mapToDbMessageArray(nextState);
+
+    // Clear the input fields ONLY for new, non-error submissions
+    if (!regenerate && !error) {
+        if (textareaRef.current) {
+            textareaRef.current.value = "";
+        }
+        resetTextareaHeight();
+        setSelectedImage(null);
+    }
+
+    // Set loading and clear errors
     setIsLoading(true);
     setError(false);
     setErrorMessage("");
 
     try {
-      // --- Map to expected format for continueConversation --- 
-      // Assuming continueConversation also expects the DB format now
-      const messagesForApi = mapToDbMessageArray(newMessages);
-
+      // API Call uses messagesForApi prepared above
       const result = await continueConversation(
-        messagesForApi, // Pass mapped array
+        messagesForApi,
         selectedModel,
         character,
         chat_session,
@@ -936,7 +965,7 @@ export default function MessageAndInput({
       let finalContent = '';
       let assistantMessageId = crypto.randomUUID(); // Pre-generate ID for the assistant message
 
-      // Add placeholder for streaming assistant message
+      // Add placeholder for streaming assistant message to the *current* state
       setMessagesState(prev => [...prev, { role: "assistant", content: "", id: assistantMessageId }]);
 
       for await (const content of readStreamableValue(result)) {
@@ -951,13 +980,10 @@ export default function MessageAndInput({
         ));
       }
 
-      // --- Regeneration State Update Logic (Moved After Stream) ---
-      if (regenerate) {
-          // Append the newly generated final content to the existing regenerations
+      // --- Regeneration State Update Logic ---
+      if (regenerate) { // This 'regenerate' flag comes from the initial call
           setRegenerations(prevRegens => {
-              // Ensure we don't exceed the max limit (e.g., 30)
-              const newRegens = [...prevRegens, finalContent].slice(-30); 
-              // Update the index to point to the newly added regeneration
+              const newRegens = [...prevRegens, finalContent].slice(-30);
               setCurrentRegenerationIndex(newRegens.length - 1);
               return newRegens;
           });
@@ -968,49 +994,41 @@ export default function MessageAndInput({
       }
       // --- End Regeneration State Update ---
 
-      // Final state update with complete assistant message (already done in stream)
-      // Ensure finalMessages reflects the true state for saving
-       const finalMessagesWithIds = messagesState.map(msg => // Use current messagesState which includes the streamed update
-            msg.id === assistantMessageId ? { ...msg, content: finalContent } : msg
+      // ---- Logic for Final Save ----
+      // The state should be correct after streaming updates. Use it directly.
+      // We need a stable reference to the state *after* streaming for saving.
+      let finalStateToSave: CustomChatMessage[] = [];
+      setMessagesState(currentState => {
+        finalStateToSave = currentState.map(msg =>
+          msg.id === assistantMessageId ? { ...msg, content: finalContent } : msg
         );
-       // If streaming somehow failed, ensure last message has final content (redundant check)
-       if (finalMessagesWithIds.length > 0 && finalMessagesWithIds[finalMessagesWithIds.length - 1].id === assistantMessageId) {
-            finalMessagesWithIds[finalMessagesWithIds.length - 1].content = finalContent;
-        } else if (!finalMessagesWithIds.some(msg => msg.id === assistantMessageId)) {
-             // Fallback if placeholder wasn't added correctly (shouldn't happen)
-             finalMessagesWithIds.push({ role: "assistant", content: finalContent, id: assistantMessageId });
+        // Ensure the last message actually has the final content if mapping missed it (shouldn't happen)
+        if (finalStateToSave.length > 0 && finalStateToSave[finalStateToSave.length - 1].id === assistantMessageId) {
+             finalStateToSave[finalStateToSave.length - 1].content = finalContent;
         }
+        return finalStateToSave; // Return the updated state
+      });
 
-      // ---- REVISED LOGIC FOR FINAL SAVE ----
-      // Explicitly construct the final state for saving
-      // Start with `newMessages` (which includes the latest user message)
-      // Add the final assistant message object.
-      const finalAssistantMessageObject: CustomChatMessage = {
-          role: "assistant",
-          content: finalContent, // Use the fully streamed content
-          id: assistantMessageId
-      };
-      // Ensure the correct list is saved, including the user message from `newMessages`
-      const finalMessagesToSaveState = regenerate 
-          ? [...newMessages, finalAssistantMessageObject] // newMessages excludes last AI msg if regenerating
-          : [...newMessages, finalAssistantMessageObject]; // newMessages includes user msg if not regenerating
-
-      console.log(`[handleSubmit] Preparing to save ${finalMessagesToSaveState.length} messages. Final state for saving:`, JSON.stringify(finalMessagesToSaveState, null, 2));
-      // ---- End Revised Logic ----
-
-      // --- Map to ChatMessageArray before saving ---
-      const messagesToSaveDb = mapToDbMessageArray(finalMessagesToSaveState); // Use the explicitly constructed array
-
-      await saveChat(messagesToSaveDb, character, chat_session);
+      // Now use the captured finalStateToSave for mapping and saving
+      // Add a small delay or use useEffect to ensure state update completes? Or trust capture? Let's trust capture for now.
+      if (finalStateToSave.length > 0) { 
+         console.log(`[handleSubmit] Preparing to save ${finalStateToSave.length} messages. Final state for saving:`, JSON.stringify(finalStateToSave, null, 2));
+         const messagesToSaveDb = mapToDbMessageArray(finalStateToSave);
+         await saveChat(messagesToSaveDb, character, chat_session);
+      } else {
+         console.warn("[handleSubmit] finalStateToSave was empty, skipping save.");
+         // This case indicates a potential issue with state update logic earlier.
+      }
+      // ---- End Logic for Final Save ----
 
       setIsLoading(false);
 
       // Fetch recommendations (using the correct final state)
-      if (finalMessagesToSaveState.length > 2 && finalMessagesToSaveState.length % 12 === 0) {
+      if (finalStateToSave.length > 2 && finalStateToSave.length % 12 === 0) {
          try {
           if (areRecommendationsEnabled()) {
             setIsLoadingRecommendations(true);
-            const messagesForRecs = mapToDbMessageArray(finalMessagesToSaveState);
+            const messagesForRecs = mapToDbMessageArray(finalStateToSave);
             const recommendationsResult = await createChatRecommendations(messagesForRecs);
             console.log("Recommendations result:", recommendationsResult);
             if (!recommendationsResult.error && recommendationsResult.recommendations) {
@@ -1050,13 +1068,17 @@ export default function MessageAndInput({
 
       if (error && lastMessage.role === "assistant" && secondLastMessage?.role === "user") {
         console.log("Retrying the last user message to get a new assistant response after an error.");
-        handleSubmit(secondLastMessage.content as string, false, true);
+        // Pass the original user message content as the override
+        handleSubmit("", true, true, secondLastMessage.content);
       } else if (lastMessage.role === "assistant" && secondLastMessage?.role === "user") {
         console.log("Regenerating the last assistant response.");
-        handleSubmit(secondLastMessage.content as string, false, true);
+        // Pass the original user message content as the override
+        handleSubmit("", false, true, secondLastMessage.content);
       } else if (lastMessage.role === "user") {
-        console.log("Retrying the user's message submission.");
-        handleSubmit(lastMessage.content as string, true);
+        console.log("Retrying the user's message submission (error case).");
+        // This case might indicate an error submitting the user message itself.
+        // We use the last message's content, pass error=true, no regeneration override needed.
+        handleSubmit(lastMessage.content as string, true, false);
       } else {
         console.log("Cannot determine how to retry based on the last message(s).");
       }
@@ -1113,9 +1135,10 @@ export default function MessageAndInput({
 
   const handleRecommendationClick = (recommendedMessage: string) => {
     if (textareaRef.current) {
-      setInput(recommendedMessage);
+      // Set the textarea value directly
       textareaRef.current.value = recommendedMessage;
       textareaRef.current.focus();
+      // Manually trigger height adjustment as onChange isn't fired
       adjustTextareaHeight();
     }
   };
@@ -1231,11 +1254,22 @@ export default function MessageAndInput({
 
   const handleFormSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (formRef.current) {
-      const formData = new FormData(formRef.current);
-      const inputValue = formData.get('message') as string;
-      handleSubmit(inputValue, false, false);
-      formRef.current.reset();
+    if (formRef.current && textareaRef.current) {
+      // Get the value directly from the ref
+      const inputValue = textareaRef.current.value;
+      // Check if there's input or an image before submitting
+      if (inputValue.trim() || selectedImage) {
+         // Pass the obtained value to handleSubmit
+        handleSubmit(inputValue, false, false);
+        // Clear the uncontrolled textarea manually after successful submission logic starts in handleSubmit
+        // Note: handleSubmit clears the ref now, so maybe redundant here unless handleSubmit fails early
+        // textareaRef.current.value = ''; // This is now done inside handleSubmit
+        // resetTextareaHeight(); // This is now done inside handleSubmit
+        // setSelectedImage(null); // This is now done inside handleSubmit
+      } else {
+        // Optionally provide feedback if there's nothing to send
+        console.log("Input is empty and no image selected.");
+      }
     }
   };
 
@@ -1492,8 +1526,6 @@ export default function MessageAndInput({
                 autoFocus
                 ref={textareaRef}
                 name="message"
-                value={input}
-                onChange={handleInputChange}
                 onKeyDown={handleKeyDown}
                 onFocus={handleInputFocus}
                 placeholder={`Message ${character.name}...`}
