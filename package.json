@@ -71,6 +71,8 @@
     "next-auth": "5.0.0-beta.20",
     "openai": "^4.58.2",
     "pako": "^2.1.0",
+    "posthog-js": "^1.236.3",
+    "posthog-node": "^4.12.0",
     "react": "^18",
     "react-colorful": "^5.6.1",
     "react-dom": "^18",

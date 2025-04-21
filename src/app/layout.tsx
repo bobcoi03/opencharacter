@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeScript } from "@/lib/theme/theme-script";
-import { Toaster } from "@/components/ui/toaster"
-import { GoogleAnalytics } from '@next/third-parties/google'
+import { Toaster } from "@/components/ui/toaster";
+import { GoogleAnalytics } from '@next/third-parties/google';
 import { searchCharacters } from "./actions";
 import NewSidebar from "@/components/new-sidebar";
 import IconStyleInitializer from "@/components/icon-style-onmount";
@@ -11,6 +11,7 @@ import AuthProvider from "@/components/auth-provider";
 import { ConditionalAdsense } from "@/components/conditional-adsense";
 import { auth } from "@/server/auth";
 import { isUserPro } from "@/lib/subscription";
+import { PostHogProvider } from "@/components/PostHogProvider";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -24,7 +25,7 @@ export const metadata: Metadata = {
     siteName: "OpenCharacter.org",
     images: [
       {
-        url: "https://opencharacter.org/OpenCharacterCard.png", 
+        url: "https://opencharacter.org/OpenCharacterCard.png",
         width: 1200,
         height: 630,
         alt: "OpenCharacter.org Logo",
@@ -44,9 +45,7 @@ export const metadata: Metadata = {
 
 export default async function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: Readonly<{ children: React.ReactNode }>) {
   const session = await auth();
   const isPro = await isUserPro(session?.user?.id);
 
@@ -60,18 +59,20 @@ export default async function RootLayout({
     <AuthProvider>
       <html lang="en" className="dark">
         <head>
-          <ThemeScript/>
+          <ThemeScript />
           <link rel="icon" href="/opencharacter_icon.png" sizes="any" />
           <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
         </head>
         <body className={`${inter.className} bg-neutral-900`}>
-          <IconStyleInitializer />
-          <NewSidebar search={search} />
-          <div className="flex flex-col min-h-screen pt-12">
-            <main className="flex-1">
-              {children}
-            </main>
-          </div>
+          <PostHogProvider>
+            <IconStyleInitializer />
+            <NewSidebar search={search} />
+            <div className="flex flex-col min-h-screen pt-12">
+              <main className="flex-1">
+                {children}
+              </main>
+            </div>
+          </PostHogProvider>
           <Toaster />
           <GoogleAnalytics gaId={process.env.GOOGLE_ANALYTICS_ID ?? ""} />
         </body>

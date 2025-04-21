@@ -50,3 +50,4 @@ bun.lockb
 /.vscode/
 ./.vscode
 /.vscode
+.env.local
