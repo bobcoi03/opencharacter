@@ -72,6 +72,9 @@ export async function POST(request: Request) {
             userEmail: user.email || '',
             userName: user.name || ''
         },
+        subscription_data: {
+            trial_period_days: 3
+        },
         expires_at: Math.floor(Date.now() / 1000) + (60 * 30), // Configured to expire after 30 minutes
     });
     return NextResponse.json({ url: checkoutSession.url });

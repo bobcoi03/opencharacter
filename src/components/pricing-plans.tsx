@@ -140,6 +140,9 @@ const PlanCard: React.FC<PlanCardProps> = ({
               <span className="text-zinc-400 ml-2 text-xs">{billingCycle === "yearly" ? "/user/month" : "/month"}</span>
             )}
           </div>
+          {isPro && (
+            <p className="text-xs text-green-400 mt-1 mb-3">3-day free trial included</p>
+          )}
         </div>
 
         <h2 className="text-sm text-zinc-400 mb-3">{isPro ? "Everything in Hobby, plus" : "Includes"}</h2>
