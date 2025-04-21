@@ -722,19 +722,34 @@ export default function MessageAndInput({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // --- Actions that PREVENT default behavior or have specific logic ---
     if (window.innerWidth > 768) {
-      // Desktop
+      // Desktop: Submit on Enter (without Shift)
       if (e.key === "Enter" && !e.shiftKey) {
-        // submit form
         e.preventDefault();
         formRef.current?.requestSubmit();
-      } else if (e.key === "Escape") {
+        return; // Stop further processing for this specific case
+      }
+      // Desktop: Reset on Escape
+      if (e.key === "Escape") {
         e.preventDefault();
         resetTextareaHeight();
         if (textareaRef.current?.value.trim() === "") {
           if (textareaRef.current) textareaRef.current.value = "";
         }
+        return; // Stop further processing
       }
+    }
+
+    // --- Default behavior + Height Adjustment ---
+    // For any key press (including Enter+Shift, Backspace, typing, mobile Enter)
+    // that isn't a modifier key, schedule a height adjustment.
+    const isModifierKey = ['Shift', 'Control', 'Alt', 'Meta'].includes(e.key);
+
+    if (!isModifierKey) {
+       // Let the default action happen (insert char, delete char, insert newline)
+       // Then, adjust height shortly after to account for the DOM update
+       setTimeout(adjustTextareaHeight, 0);
     }
   };
 
@@ -1528,6 +1543,7 @@ export default function MessageAndInput({
                 name="message"
                 onKeyDown={handleKeyDown}
                 onFocus={handleInputFocus}
+                onInput={adjustTextareaHeight}
                 placeholder={`Message ${character.name}...`}
                 className="w-full py-4 pl-[calc(2.5rem+3.5rem)] pr-12 bg-transparent relative z-10 outline-none text-white text-xl rounded-t-3xl resize-none overflow-hidden"
                 style={{
