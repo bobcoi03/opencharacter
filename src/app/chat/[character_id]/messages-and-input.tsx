@@ -972,8 +972,10 @@ export default function MessageAndInput({
         console.log(result.error);
         setErrorMessage(result.message);
         setIsLoading(false); // Stop loading on error
-        // Important: Consider how to handle potential state mismatch if API call fails
-        // Maybe revert messagesState? setMessagesState(messagesState.slice(0, -1)) if not regenerating?
+        // Consider reverting state if API call failed
+        if (!isRegeneratingAction) { // Don't revert user message if regenerating/retrying assistant
+            setMessagesState(messagesState); // Revert back to state before adding user message
+        }
         return;
       }
 
@@ -981,7 +983,8 @@ export default function MessageAndInput({
       let assistantMessageId = crypto.randomUUID(); // Pre-generate ID for the assistant message
 
       // Add placeholder for streaming assistant message to the *current* state
-      setMessagesState(prev => [...prev, { role: "assistant", content: "", id: assistantMessageId }]);
+      // Use functional update to ensure it's based on the latest state
+      setMessagesState(prev => [...prev, { role: "assistant", content: "", id: assistantMessageId, rating: undefined }]);
 
       for await (const content of readStreamableValue(result)) {
         // Ensure replacePlaceholders handles potential non-string content robustly,
@@ -989,13 +992,20 @@ export default function MessageAndInput({
         const processedContent = replacePlaceholders(content as string) as string; // Cast input and expect string output here
         finalContent = processedContent; // Keep track of the full content
 
-        // Update the placeholder assistant message content
+        // Update the placeholder assistant message content using functional update
         setMessagesState(prevMessages => prevMessages.map(msg =>
             msg.id === assistantMessageId ? { ...msg, content: processedContent } : msg
         ));
       }
 
-      // --- Regeneration State Update Logic ---
+      // --- Streaming Finished ---
+
+      // Ensure the final content is set definitively in the state
+      setMessagesState(prevMessages => prevMessages.map(msg =>
+          msg.id === assistantMessageId ? { ...msg, content: finalContent } : msg
+      ));
+
+      // --- Update Regeneration State ---
       if (regenerate) { // This 'regenerate' flag comes from the initial call
           setRegenerations(prevRegens => {
               const newRegens = [...prevRegens, finalContent].slice(-30);
@@ -1010,63 +1020,66 @@ export default function MessageAndInput({
       // --- End Regeneration State Update ---
 
       // ---- Logic for Final Save ----
-      // The state should be correct after streaming updates. Use it directly.
-      // We need a stable reference to the state *after* streaming for saving.
-      let finalStateToSave: CustomChatMessage[] = [];
-      setMessagesState(currentState => {
-        finalStateToSave = currentState.map(msg =>
-          msg.id === assistantMessageId ? { ...msg, content: finalContent } : msg
-        );
-        // Ensure the last message actually has the final content if mapping missed it (shouldn't happen)
-        if (finalStateToSave.length > 0 && finalStateToSave[finalStateToSave.length - 1].id === assistantMessageId) {
-             finalStateToSave[finalStateToSave.length - 1].content = finalContent;
-        }
-        return finalStateToSave; // Return the updated state
-      });
+      // Use a functional update to get the *guaranteed latest state* after all updates.
+      let finalStateForRecommendations: CustomChatMessage[] = [];
+      setMessagesState(currentStateAfterStreaming => {
+        finalStateForRecommendations = currentStateAfterStreaming; // Capture for later use
+        console.log(`[handleSubmit Save] Saving ${currentStateAfterStreaming.length} messages. Final state:`, JSON.stringify(currentStateAfterStreaming, null, 2));
+        const messagesToSaveDb = mapToDbMessageArray(currentStateAfterStreaming);
 
-      // Now use the captured finalStateToSave for mapping and saving
-      // Add a small delay or use useEffect to ensure state update completes? Or trust capture? Let's trust capture for now.
-      if (finalStateToSave.length > 0) { 
-         console.log(`[handleSubmit] Preparing to save ${finalStateToSave.length} messages. Final state for saving:`, JSON.stringify(finalStateToSave, null, 2));
-         const messagesToSaveDb = mapToDbMessageArray(finalStateToSave);
-         await saveChat(messagesToSaveDb, character, chat_session);
-      } else {
-         console.warn("[handleSubmit] finalStateToSave was empty, skipping save.");
-         // This case indicates a potential issue with state update logic earlier.
-      }
+        // Call saveChat asynchronously, handle potential errors
+        saveChat(messagesToSaveDb, character, chat_session)
+          .catch(saveError => {
+            console.error("Failed to save chat after streaming:", saveError);
+            toast({
+              title: "Save Error",
+              description: "Could not save the latest messages.",
+              variant: "destructive",
+              className: "text-xs"
+            });
+            // Note: We don't revert the UI state here, as the messages are already displayed.
+          });
+
+        return currentStateAfterStreaming; // Return the state unchanged
+      });
       // ---- End Logic for Final Save ----
 
-      setIsLoading(false);
 
-      // Fetch recommendations (using the correct final state)
-      if (finalStateToSave.length > 2 && finalStateToSave.length % 12 === 0) {
+      setIsLoading(false); // Set loading false *after* initiating the save
+
+      // Fetch recommendations (using the state captured right before save)
+      if (finalStateForRecommendations.length > 2 && finalStateForRecommendations.length % 12 === 0) {
          try {
           if (areRecommendationsEnabled()) {
             setIsLoadingRecommendations(true);
-            const messagesForRecs = mapToDbMessageArray(finalStateToSave);
+            // Use the captured state 'finalStateForRecommendations'
+            const messagesForRecs = mapToDbMessageArray(finalStateForRecommendations);
             const recommendationsResult = await createChatRecommendations(messagesForRecs);
             console.log("Recommendations result:", recommendationsResult);
             if (!recommendationsResult.error && recommendationsResult.recommendations) {
               setMessageRecommendations(recommendationsResult.recommendations);
             }
-            setIsLoadingRecommendations(false);
           }
         } catch (recError) {
           console.error("Failed to get message recommendations:", recError);
-          setIsLoadingRecommendations(false);
+          // Handle recommendation errors silently or with a toast
+        } finally {
+          setIsLoadingRecommendations(false); // Ensure this resets
         }
       } else {
-        setIsLoadingRecommendations(false);
+        setIsLoadingRecommendations(false); // Reset if condition not met
       }
 
     } catch (err) {
-      console.error("Error during conversation:", err);
+      console.error("Error during conversation API call or streaming:", err);
       setError(true);
       setErrorMessage((err as any).message || "An unexpected error occurred.");
       setIsLoading(false);
       setIsLoadingRecommendations(false);
-       // Revert message state on general catch error?
-       // setMessagesState(messagesState.slice(0, -1)); // If not regenerating
+       // Revert message state more robustly on general catch error
+       if (!isRegeneratingAction) {
+           setMessagesState(messagesState); // Revert back to state before adding user message
+       }
     }
   };
 
