@@ -21,6 +21,7 @@ import { getPayAsYouGo } from "./user";
 import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { v4 as uuidv4 } from 'uuid';
+import { checkAndIncrementRequestCount } from "@/lib/request-limits";
 
 type ErrorResponse = {
   error: {
@@ -522,10 +523,19 @@ export async function continueConversation(
     }
     // Apply standard free tier checks (if any active)
     else if (!isSubscribed && !api_key) {
-      // ... (free tier limits, currently commented out) ...
+      try {
+        const { remainingRequests } = await checkAndIncrementRequestCount(userId);
+        console.log(`Free tier user ${userId} request OK. Remaining: ${remainingRequests}`);
+      } catch (error) {
+        console.error(`Free tier user ${userId} request limit exceeded:`, error);
+        if (error instanceof Error) {
+          return { error: true, message: error.message };
+        }
+        return { error: true, message: "Daily request limit potentially exceeded." };
+      }
     }
   } else {
-      console.log("Skipping top-level paid/subscription check because request is multimodal.");
+      console.log("Skipping top-level paid/subscription/limit check because request is multimodal.");
   }
   // --- End conditional paid check ---
 

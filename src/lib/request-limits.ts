@@ -2,7 +2,7 @@ import { db } from "@/server/db";
 import { user_daily_requests } from "@/server/db/schema";
 import { and, eq, sql } from "drizzle-orm";
 
-const FREE_TIER_DAILY_LIMIT = 300;
+const FREE_TIER_DAILY_LIMIT = 200;
 
 export async function checkAndIncrementRequestCount(userId: string) {
   const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
