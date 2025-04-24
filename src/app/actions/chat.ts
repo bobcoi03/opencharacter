@@ -727,36 +727,12 @@ export async function continueConversation(
       // --- OpenRouter Path (using llmApiMessages) ---
       console.log("Using OpenRouter with effective model:", effectiveModelName);
 
-      // --- Apply standard metered check ONLY if NOT multimodal ---
-      if (!isMultimodal) {
-         if (isMeteredModel(effectiveModelName)) {
-           const payAsYouGo = await getPayAsYouGo();
-           if (!payAsYouGo.pay_as_you_go) {
-              return { error: true, message: `You must toggle on pay-as-you-go in subscriptions to use the metered ${effectiveModelName} model` };
-           } else {
-              const userCredits = userId ? await db.select().from(user_credits).where(eq(user_credits.userId, userId)).limit(1).then(rows => rows[0]) : null;
-              if (!userCredits) return { error: true, message: "No credit record found." };
-              if (userCredits.balance <= 0) return { error: true, message: "Insufficient credits." };
-              const minimumRequiredBalance = 0.10;
-              const modelCostEstimates: Record<string, number> = {
-                  "anthropic/claude-3.7-sonnet": 0.15,
-                  "anthropic/claude-3.7-sonnet:thinking": 0.15,
-                  "anthropic/claude-3-opus": 0.25,
-                  "openai/gpt-4o-2024-11-20": 0.15,
-                  "openai/o1": 0.3,
-                  "x-ai/grok-2-1212": 0.15,
-                  "mistralai/mistral-small-3.1-24b-instruct": 0.05 // Keep estimate for potential future use
-              };
-              const modelSpecificThreshold = modelCostEstimates[effectiveModelName] || minimumRequiredBalance;
-              if (userCredits.balance < modelSpecificThreshold) {
-                  return { error: true, message: `Credit balance ($${userCredits.balance.toFixed(2)}) too low for ${effectiveModelName}. Need $${modelSpecificThreshold.toFixed(2)}.` };
-              }
-           }
-         }
-      } else {
-          console.log("Skipping metered credit check because request is multimodal.");
+      // --- Block Metered Models --- 
+      if (isMeteredModel(effectiveModelName) && !isMultimodal) {
+        console.warn(`Attempted to use disabled metered model: ${effectiveModelName}`);
+        return { error: true, message: "Metered models are currently disabled. Please choose another model." };
       }
-      // --- End standard metered check ---
+      // --- End Block Metered Models ---
 
       // --- Prepare messages for OpenRouter (using llmApiMessages) --- 
       const openRouterMessages = llmApiMessages.map(msg => {
@@ -844,12 +820,7 @@ export async function continueConversation(
                   if (done) {
                        console.log("Stream finished. Full response text:", accumulatedText);
                        // --- Metering Check on Finish - Skip if multimodal ---
-                      if (!isMultimodal && isSubscribed && isMeteredModel(effectiveModelName) && responseId) {
-                          console.log("Recording metered model usage (stream end):", responseId, "Model:", effectiveModelName);
-                          recordMeteredModels(responseId, effectiveModelName).catch(err => console.error("Error recording metered model:", err));
-                      } else if (isMultimodal) {
-                          console.log("Skipping metering record (stream end) because request is multimodal.");
-                      }
+                       // Metered model recording disabled.
                       break;
                   }
                    buffer += decoder.decode(value, { stream: true });
@@ -872,20 +843,15 @@ export async function continueConversation(
                            if (choice.finish_reason) {
                                console.log("Received finish_reason:", choice.finish_reason, "with responseId:", responseId || json.id);
                                // --- Metering Check on Finish Reason - Skip if multimodal ---
-                               if (!isMultimodal && responseId && isSubscribed && isMeteredModel(effectiveModelName)) {
-                                   console.log("Recording metered model usage (finish_reason):", responseId, "Model:", effectiveModelName);
-                                   recordMeteredModels(responseId, effectiveModelName).catch(err => console.error("Error recording metered model:", err));
-                               } else if (isMultimodal) {
-                                    console.log("Skipping metering record (finish_reason) because request is multimodal.");
-                               }
+                               // Metered model recording disabled.
                            }
                        } catch (e) { console.error('Error parsing SSE JSON:', e); console.log('Problematic line:', line); }
                    }
-              }
+               }
                controller.close();
-          } catch (error) { console.error("Stream processing error:", error); controller.error(error); }
-      },
-   });
+           } catch (error) { console.error("Stream processing error:", error); controller.error(error); }
+       },
+    });
 
     const [stream1, stream2] = textStream.tee();
     const streamValue = createStreamableValue(stream1);
@@ -1390,78 +1356,6 @@ export async function getChatSessionShareStatus(
       character_name: character.name
     }
   };
-}
-
-async function recordMeteredModels(gen_id: string, effectiveModelName: string) {
-  console.log("Recording metered model with ID:", gen_id, "Effective Model:", effectiveModelName);
-  if (!gen_id) { console.error("Invalid generation ID"); return; }
-  const currentSession = await auth();
-  if (!currentSession?.user?.id) { console.log("No user session for metering"); return; }
-
-  // This check remains important inside recordMeteredModels itself as a safeguard
-  if (!isMeteredModel(effectiveModelName)) {
-    console.log(`Model ${effectiveModelName} is not metered. Skipping recording.`);
-    return;
-  }
-
-  try {
-    // Fetch generation data...
-     let generationData = await pollForGenerationData(gen_id); // Abstracted polling logic
-     if (!generationData) {
-         console.error("Failed to retrieve valid generation data for ID:", gen_id);
-         generationData = { total_cost: 0.001, tokens_prompt: 0, tokens_completion: 0 }; // Fallback
-         console.log("Using fallback minimum cost.");
-     }
-     const baseCost = generationData.total_cost;
-     const premiumRate = 2; // 100% premium
-     const finalCost = baseCost * premiumRate;
-     // Get user credits...
-     const userCredits = await db.select().from(user_credits).where(eq(user_credits.userId, currentSession.user.id)).limit(1).then(rows => rows[0]);
-     if (!userCredits) { console.error("No credit record found for user:", currentSession.user.id); return; }
-     // Update balance...
-     const newBalance = Math.max(0, userCredits.balance - finalCost);
-     const actualDeduction = userCredits.balance - newBalance;
-     if (finalCost > userCredits.balance) { console.warn(`Warning: Cost (${finalCost.toFixed(6)}) exceeds balance (${userCredits.balance.toFixed(6)}). Deducting ${actualDeduction.toFixed(6)}.`); }
-     await db.update(user_credits).set({ balance: newBalance, lastUpdated: new Date() }).where(eq(user_credits.userId, currentSession.user.id));
-     console.log(`Deducted ${actualDeduction.toFixed(6)} from user ${currentSession.user.id}. New balance: ${newBalance.toFixed(6)}`);
-
-  } catch (error) {
-    console.error("Error in recordMeteredModels:", error);
-  }
-}
-
-// Helper function for polling (example structure)
-async function pollForGenerationData(gen_id: string): Promise<{ total_cost: number; tokens_prompt?: number; tokens_completion?: number; } | null> {
-    const maxRetries = 5;
-    const initialBackoff = 500;
-    for (let attempt = 0; attempt < maxRetries; attempt++) {
-        const backoffTime = initialBackoff * Math.pow(2, attempt);
-        console.log(`Polling attempt ${attempt + 1} for gen ID ${gen_id}, waiting ${backoffTime}ms`);
-        await new Promise(resolve => setTimeout(resolve, backoffTime));
-        try {
-            const response = await fetch(`https://openrouter.ai/api/v1/generation?id=${gen_id}`, {
-                 headers: {
-                   "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
-                   "HTTP-Referer": "https://opencharacter.org", // Add required headers if needed
-                   "X-Title": "OpenCharacter",
-                 }
-             });
-            if (response.ok) {
-                // Add type assertion for the expected response structure
-                const stats = await response.json() as { data?: { total_cost: number; tokens_prompt?: number; tokens_completion?: number; } };
-                // Ensure cost is defined and positive before returning
-                if (stats.data?.total_cost !== undefined && stats.data.total_cost > 0) {
-                    console.log(`Polling success for ${gen_id} on attempt ${attempt + 1}`);
-                    return stats.data;
-                }
-                console.log(`Polling attempt ${attempt + 1} for ${gen_id}: Data not ready or cost is zero. Response data:`, stats?.data); // Access safely
-            } else {
-                 console.log(`Polling attempt ${attempt + 1} for ${gen_id} failed with status: ${response.status}`);
-            }
-        } catch (e) { console.error(`Polling attempt ${attempt + 1} for ${gen_id} threw error:`, e); }
-    }
-    console.error(`Polling failed for gen ID ${gen_id} after ${maxRetries} attempts.`);
-    return null;
 }
 
 export async function updateChatSessionTitle(conversationId: string, title: string) {
