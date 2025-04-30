@@ -154,6 +154,7 @@ interface MessageContentProps {
   currentRegenerationIndex: number;
   onNewChatFromHere: (index: number) => void;
   onRateMessage: (index: number, rating: number) => void;
+  isSubscribed: boolean;
 }
 
 const MessageContent: React.FC<MessageContentProps> = React.memo(({
@@ -175,6 +176,7 @@ const MessageContent: React.FC<MessageContentProps> = React.memo(({
   currentRegenerationIndex,
   onNewChatFromHere,
   onRateMessage,
+  isSubscribed,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(message.content as string);
@@ -414,6 +416,7 @@ const MessageContent: React.FC<MessageContentProps> = React.memo(({
             </button>
             <span className="text-sm text-gray-400">
               {currentRegenerationIndex + 1} / {regenerations.length}
+              {!isSubscribed && regenerations.length >= 5 && " (Max)"}
             </span>
             <button 
               className="p-1 rounded-full"
@@ -421,14 +424,26 @@ const MessageContent: React.FC<MessageContentProps> = React.memo(({
                 if (currentRegenerationIndex < regenerations.length - 1) {
                   onGoBackRegenerate && onGoBackRegenerate(currentRegenerationIndex + 1);
                 } else {
-                  if (regenerations.length < 30) {
+                  // For non-Pro users, limit to 5 regenerations
+                  if ((isSubscribed && regenerations.length < 30) || 
+                      (!isSubscribed && regenerations.length < 5)) {
                     onRetry && onRetry();
                   }
                 }
               }}
-              disabled={(currentRegenerationIndex >= regenerations.length - 1 && regenerations.length >= 30) || regenerations.length === 0}
+              disabled={
+                (currentRegenerationIndex >= regenerations.length - 1 && 
+                 ((isSubscribed && regenerations.length >= 30) || 
+                  (!isSubscribed && regenerations.length >= 5))) || 
+                regenerations.length === 0
+              }
             >
-              <ChevronRight className={`w-4 h-4 ${(currentRegenerationIndex >= regenerations.length - 1 && regenerations.length >= 30) || regenerations.length === 0 ? "text-slate-700" : ""}`} />
+              <ChevronRight className={`w-4 h-4 ${
+                (currentRegenerationIndex >= regenerations.length - 1 && 
+                 ((isSubscribed && regenerations.length >= 30) || 
+                  (!isSubscribed && regenerations.length >= 5))) || 
+                regenerations.length === 0 ? "text-slate-700" : ""
+              }`} />
             </button>
           </div>
         </div>
@@ -1257,6 +1272,7 @@ export default function MessageAndInput({
         currentRegenerationIndex={currentRegenerationIndex}
         onGoBackRegenerate={handleOnGoBackRegenerate}
         onNewChatFromHere={handleNewChatFromHere}
+        isSubscribed={isSubscribed}
       />
     ));
   }, [
@@ -1277,7 +1293,8 @@ export default function MessageAndInput({
     handleEdit,
     handleDelete,
     handleOnGoBackRegenerate,
-    handleNewChatFromHere
+    handleNewChatFromHere,
+    isSubscribed
   ]);
 
   const handleFormSubmit = (e: FormEvent<HTMLFormElement>) => {
