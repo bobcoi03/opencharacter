@@ -248,8 +248,6 @@ export function CreateCharacterForm({
                 character length: {descriptionCharCount}
               </p>
 
-              <ButtonDialogs />
-
             </div>
 
             <div>
