@@ -657,7 +657,7 @@ export default function MessageAndInput({
        return [lastContentText || ""]; // Initialize with extracted text or empty string
    });
 
-  const [selectedModel, setSelectedModel] = useState("mistralai/mistral-nemo");
+  const [selectedModel, setSelectedModel] = useState("google/gemini-flash-1.5-8b");
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingRecommendations, setIsLoadingRecommendations] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
