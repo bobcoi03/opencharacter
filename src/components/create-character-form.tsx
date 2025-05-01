@@ -317,25 +317,7 @@ export function CreateCharacterForm({
               ))}
             </div>
           </div>
-
-          <div>
-            <label className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                checked={isNSFW}
-                onChange={(e) => handleNSFWToggle(e.target.checked)}
-                className="form-checkbox h-5 w-5 text-blue-600"
-              />
-              <span className="text-sm font-medium flex items-center">
-                <AlertTriangle size={16} className="mr-1 text-yellow-500" />
-                NSFW Content
-              </span>
-            </label>
-            <p className="text-xs text-gray-500 mt-1 ml-7">
-              If your character contains adult content or is not suitable for all audiences, please tick this box.
-            </p>
-          </div>
-
+          
           <div>
               <label className="block mb-1 text-sm font-medium">
                 Max Tokens

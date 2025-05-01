@@ -43,11 +43,6 @@ export const CharacterTags = {
     // Additional requested tags
     MALE: 'male',
     FEMALE: 'female',
-    DOMINANT: 'dominant',
-    SUBMISSIVE: 'submissive',
-    ROBOT: 'robot',
-    SMUT: 'smut',
-    NSFW: 'nsfw',
   } as const;
   
 export type CharacterTag = typeof CharacterTags[keyof typeof CharacterTags];
