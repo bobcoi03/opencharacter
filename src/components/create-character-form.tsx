@@ -40,7 +40,6 @@ export function CreateCharacterForm({
     }
     return [];
   });
-  const [isNSFW, setIsNSFW] = useState<boolean>(selectedTags.includes(CharacterTags.NSFW));
   const [bannerPreviewUrl, setBannerPreviewUrl] = useState<string | null>(character?.banner_image_url ?? null);
   const [bannerFileError, setBannerFileError] = useState<string | null>(null);
 
@@ -63,22 +62,9 @@ export function CreateCharacterForm({
   };
 
   const handleTagToggle = (tag: CharacterTag) => {
-    if (tag === CharacterTags.NSFW) return; // Ignore NSFW tag in this function
-
     setSelectedTags(prev => 
       prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
     );
-  };
-
-  const handleNSFWToggle = (checked: boolean) => {
-    setIsNSFW(checked);
-    setSelectedTags(prev => {
-      if (checked) {
-        return [...prev.filter(tag => tag !== CharacterTags.NSFW), CharacterTags.NSFW];
-      } else {
-        return prev.filter(tag => tag !== CharacterTags.NSFW);
-      }
-    });
   };
 
   useEffect(() => {
@@ -317,7 +303,7 @@ export function CreateCharacterForm({
               ))}
             </div>
           </div>
-          
+
           <div>
               <label className="block mb-1 text-sm font-medium">
                 Max Tokens
