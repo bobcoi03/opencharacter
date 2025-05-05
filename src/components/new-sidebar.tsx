@@ -256,6 +256,13 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
             >
               Persona
             </Button>
+            <Link
+              className="w-full justify-start rounded-none text-left px-4 py-2 text-sm text-gray-300 hover:bg-neutral-700"
+              href="https://openimage.art"
+              target="_blank"
+            >
+              Images
+            </Link>
           </div>
         </PopoverContent>
       </Popover>
