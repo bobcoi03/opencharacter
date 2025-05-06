@@ -1192,7 +1192,7 @@ export default function MessageAndInput({
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    const MAX_FILE_SIZE_MB = 1;
+    const MAX_FILE_SIZE_MB = 10;
     const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 
     // Reset file input value immediately to allow re-selecting the same file
