@@ -672,7 +672,7 @@ export default function MessageAndInput({
        return [lastContentText || ""]; // Initialize with extracted text or empty string
    });
 
-  const [selectedModel, setSelectedModel] = useState("google/gemini-flash-1.5-8b");
+  const [selectedModel, setSelectedModel] = useState("mistralai/mistral-nemo");
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingRecommendations, setIsLoadingRecommendations] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -702,8 +702,8 @@ export default function MessageAndInput({
           if (data.subscribed) {
             const savedModel = localStorage.getItem("selectedModel");
             if (!savedModel) {
-              setSelectedModel("google/gemma-2-27b-it");
-              localStorage.setItem("selectedModel", "google/gemma-2-27b-it");
+              setSelectedModel("meta-llama/llama-3.1-70b-instruct");
+              localStorage.setItem("selectedModel", "meta-llama/llama-3.1-70b-instruct");
             } else {
               setSelectedModel(savedModel);
             }
@@ -1481,14 +1481,6 @@ export default function MessageAndInput({
                 className="w-5 h-5 text-red-500 cursor-pointer hover:text-red-600 ml-2"
                 onClick={handleRetry}
               />
-            </div>
-          )}
-
-          {!isSubscribed && (
-            <div className="flex flex-col items-center justify-center mb-1">
-              <Link href="/plans" className="text-center justify-center text-[9px] text-blue-500 underline ">
-                Upgrade to Pro
-              </Link>
             </div>
           )}
 

@@ -60,8 +60,6 @@ export async function Footer() {
   return (
     <footer className="">
       <div className="mx-auto w-full max-w-screen-xl lg:py-12">
-        {/* CTA Card - Only shown for non-subscribers and non-authenticated users */}
-        <CTACard />
 
         {/* Footer Links */}
         <div className="grid grid-cols-2 gap-8 md:grid-cols-3 lg:gap-12 p-4">

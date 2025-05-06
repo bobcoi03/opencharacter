@@ -248,6 +248,8 @@ export function CreateCharacterForm({
               />
             </div>
 
+            <ButtonDialogs />
+
             <div>
               <label className="block mb-1 text-sm font-medium">
                 Visibility
