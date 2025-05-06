@@ -304,6 +304,10 @@ export function CreateCharacterForm({
                 </button>
               ))}
             </div>
+            <div className="mt-2 flex items-center text-amber-500 text-sm">
+              <AlertTriangle size={14} className="mr-1" />
+              <span>If your character contains nudity, sexually explicit content, or other NSFW elements, please make sure to tag it as NSFW.</span>
+            </div>
           </div>
 
           <div>
