@@ -211,6 +211,11 @@ export const models: Models = {
         name: "nvidia/llama-3.1-nemotron-70b-instruct",
         paid: true,
     },
+    "deepseek/deepseek-chat-v3-0324": {
+        id: "deepseek/deepseek-chat-v3-0324",
+        name: "deepseek/deepseek-chat-v3-0324",
+        paid: true
+    },
     "thedrummer/rocinante-12b": {
         id: "thedrummer/rocinante-12b",
         name: "thedrummer/rocinante-12b",
