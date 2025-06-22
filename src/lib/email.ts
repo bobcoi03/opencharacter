@@ -141,7 +141,7 @@ export async function sendCharacterReportEmail({
   characterName,
   reason,
 }: CharacterReportEmailProps) {
-  const characterUrl = `${process.env.NEXT_PUBLIC_APP_URL}/character/${characterId}`;
+  const characterUrl = `${process.env.NEXT_PUBLIC_APP_URL}/character/${characterId}/profile`;
   const recipientEmail = process.env.REPORT_RECIPIENT_EMAIL || "minh@everythingcompany.co"; // Use env variable or default
 
   const params = {
