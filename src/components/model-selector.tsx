@@ -23,7 +23,7 @@ interface StripeResponse {
 }
 
 interface SubscriptionCheckResponse {
-  subscribed: boolean;
+  hasActiveSubscription: boolean;
   subscription: any | null;
 }
 
@@ -36,13 +36,19 @@ export function ModelSelector({ selectedModel, onModelSelect }: ModelSelectorPro
   useEffect(() => {
     async function checkSubscription() {
       if (session?.user) {
+        console.log("[ModelSelector] Checking subscription for user:", session.user.id);
         try {
           const response = await fetch("/api/subscriptions/check");
+          console.log("[ModelSelector] API response status:", response.status);
           const data = await response.json() as SubscriptionCheckResponse;
-          setIsSubscribed(data.subscribed);
+          console.log("[ModelSelector] API response data:", JSON.stringify(data, null, 2));
+          console.log("[ModelSelector] Setting isSubscribed to:", data.hasActiveSubscription);
+          setIsSubscribed(data.hasActiveSubscription);
         } catch (error) {
-          console.error("Error checking subscription:", error);
+          console.error("[ModelSelector] Error checking subscription:", error);
         }
+      } else {
+        console.log("[ModelSelector] No user session available");
       }
     }
 
@@ -65,7 +71,9 @@ export function ModelSelector({ selectedModel, onModelSelect }: ModelSelectorPro
             <DropdownMenuItem
               key={model.id}
               onClick={() => {
+                console.log("[ModelSelector] Clicked model:", model.id, "isPaid:", model.paid, "isSubscribed:", isSubscribed);
                 if (model.paid && !isSubscribed) {
+                  console.log("[ModelSelector] Blocking access to paid model - user not subscribed");
                   toast({
                     title: "Pro Model",
                     description: "This model is only available to Pro users",
@@ -73,6 +81,7 @@ export function ModelSelector({ selectedModel, onModelSelect }: ModelSelectorPro
                   });
                   return;
                 }
+                console.log("[ModelSelector] Allowing model selection");
                 onModelSelect(model.id);
               }}
               className={`flex items-center justify-between rounded-md p-2 text-xs hover:bg-neutral-700 transition-colors`}

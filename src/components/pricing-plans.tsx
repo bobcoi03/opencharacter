@@ -65,23 +65,49 @@ const PlanCard: React.FC<PlanCardProps> = ({
     }
 
     setIsLoading(true)
-    const selectedPriceId = pricingOptions.find((option) => option.value === billingCycle)?.priceId
+    
+    // Use Stripe API route
+    try {
+      const selectedOption = pricingOptions.find((option) => option.value === billingCycle)
+      
+      if (!selectedOption?.priceId) {
+        console.error("No price ID found for billing cycle:", billingCycle)
+        alert("Something went wrong. Please try again later.")
+        setIsLoading(false)
+        return
+      }
 
-    const response = await fetch("/api/subscriptions/create", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ priceId: selectedPriceId }),
-    })
+      const response = await fetch("/api/subscriptions/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ 
+          priceId: selectedOption.priceId
+        }),
+      })
 
-    if (response.ok) {
-      const { url } = (await response.json()) as any
-      window.location.href = url
-    } else {
-      console.error("Failed to create subscription")
+      const data = await response.json() as { url?: string; error?: string }
+
+      if (!response.ok) {
+        console.error("Failed to create subscription:", data.error || "Unknown error")
+        alert("Failed to create subscription. Please try again later.")
+        setIsLoading(false)
+        return
+      }
+
+      if (data.url) {
+        window.location.href = data.url
+      } else {
+        console.error("No checkout URL returned")
+        alert("Something went wrong. Please try again later.")
+        setIsLoading(false)
+      }
+    } catch (error) {
+      console.error("Error creating checkout session:", error)
+      alert("An error occurred. Please try again later.")
+      setIsLoading(false)
     }
-    setIsLoading(false)
   }
 
   // Don't show button for free tier if user is signed in
@@ -137,7 +163,7 @@ const PlanCard: React.FC<PlanCardProps> = ({
           <div className="flex items-baseline">
             <span className="text-5xl font-bold">{price}</span>
             {price !== "Free" && (
-              <span className="text-zinc-400 ml-2 text-xs">{billingCycle === "yearly" ? "/user/month" : "/month"}</span>
+              <span className="text-zinc-400 ml-2 text-xs">/month</span>
             )}
           </div>
           {isPro && (
@@ -173,18 +199,21 @@ const PlanCard: React.FC<PlanCardProps> = ({
 const Plans: React.FC = () => {
   const [billingCycle, setBillingCycle] = useState<string>("monthly")
 
+  // Updated with Stripe price IDs from environment variables
+  console.log("monthly", process.env.NEXT_PUBLIC_STRIPE_MONTHLY_PRICE_ID)
+  console.log("yearly", process.env.NEXT_PUBLIC_STRIPE_YEARLY_PRICE_ID)
   const pricingOptions: PricingOption[] = [
     {
       label: "Monthly",
       value: "monthly",
-      price: 15,
-      priceId: "price_1QpzDAAT8u0C5FCyLTyBSZQg",
+      price: 12,
+      priceId: process.env.NEXT_PUBLIC_STRIPE_MONTHLY_PRICE_ID!,
     },
     {
       label: "Yearly",
       value: "yearly",
-      price: 10,
-      priceId: "price_1QpzEKAT8u0C5FCyUP29l0SV",
+      price: 7,
+      priceId: process.env.NEXT_PUBLIC_STRIPE_YEARLY_PRICE_ID!,
     },
   ]
 

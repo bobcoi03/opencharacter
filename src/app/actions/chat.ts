@@ -54,8 +54,6 @@ export async function saveChat(
     throw new Error("User not authenticated");
   }
 
-  console.log(`[saveChat] Received ${incomingMessages.length} messages to process.`); // Log initial count
-
   // --- Process incoming messages for potential Data URIs before saving ---
   let messagesToSave: ChatMessageArray;
   try {
@@ -90,14 +88,12 @@ export async function saveChat(
                   const fileExtension = match[1].split('+')[0] || 'png'; // Handle things like svg+xml, default png
                   const imageKey = `${userId}/${uuidv4()}.${fileExtension}`;
 
-                  console.log(`[saveChat Process Msg ${index}] Uploading image to R2: ${imageKey}`);
                   await s3Client.send(new PutObjectCommand({
                     Bucket: R2_BUCKET_NAME,
                     Key: imageKey,
                     Body: imageBuffer,
                     ContentType: mimeType,
                   }));
-                  console.log(`[saveChat Process Msg ${index}] Successfully uploaded image. Replacing URL with key: ${imageKey}`);
                   return { ...part, image_url: { url: imageKey } };
                 } catch (uploadError) {
                   console.error(`[saveChat Process Msg ${index}] Error uploading image to R2:`, uploadError);
@@ -110,14 +106,11 @@ export async function saveChat(
 
             if (needsUpdate) {
               const updatedContentString = JSON.stringify(updatedParts);
-              console.log(`[saveChat Process Msg ${index}] Message content updated with R2 keys.`);
               return { ...msg, content: updatedContentString };
             } else {
-               console.log(`[saveChat Process Msg ${index}] User message content parsed, but no data URIs found.`);
                return msg; // Return original if no update needed
             }
           } else {
-             console.log(`[saveChat Process Msg ${index}] User message content parsed, but was not an array.`);
              return msg; // Return original if parse results in non-array
           }
         } catch (e) {
@@ -129,8 +122,6 @@ export async function saveChat(
       // Return original message if not user or content not string
       return msg;
     }));
-
-    console.log(`[saveChat] Finished processing. Resulting messages count: ${messagesToSave.length}`); // Log count after processing
 
     // Sanity check: Compare counts
     if (messagesToSave.length !== incomingMessages.length) {
@@ -149,9 +140,8 @@ export async function saveChat(
   // Log size before saving
   try {
     const messagesString = JSON.stringify(messagesToSave);
-    console.log(`[saveChat] Size of messages JSON string before saving: ${messagesString.length} characters.`);
     // Add a check for potentially problematic size
-    const MAX_SIZE_BYTES = 1 * 1024 * 1024; // Example: 1MB limit for D1 text field? Check D1 limits.
+    const MAX_SIZE_BYTES = 10 * 1024 * 1024; // Example: 1MB limit for D1 text field? Check D1 limits.
     if (messagesString.length > MAX_SIZE_BYTES) {
        console.warn(`[saveChat] Processed messages string size (${messagesString.length}) exceeds threshold (${MAX_SIZE_BYTES}). Potential D1 limit issue.`);
        // Optionally truncate or throw error here
@@ -160,19 +150,10 @@ export async function saveChat(
      console.error("[saveChat] Failed to stringify messages for size check:", stringifyError);
   }
 
-
-  console.debug("[saveChat] Starting database operation", { // Renamed log
-    userId: userId,
-    characterId: character.id,
-    chat_session_id,
-    messageCount: messagesToSave.length
-  });
-
   let chatSession;
 
   // --- Find existing or latest session ---
   if (chat_session_id) {
-    console.debug("[saveChat] Fetching existing chat session", { chat_session_id });
     chatSession = await db
       .select()
       .from(chat_sessions)
@@ -190,7 +171,6 @@ export async function saveChat(
       throw new Error("Chat session not found");
     }
   } else {
-    console.debug("[saveChat] Searching for most recent session", { userId, characterId: character.id });
     chatSession = await db
       .select()
       .from(chat_sessions)
@@ -207,11 +187,9 @@ export async function saveChat(
   // --- End session finding ---
 
   const now = new Date();
-  console.debug("[saveChat] Prepared update timestamp", { now: now.toISOString() });
 
   if (chatSession) {
     // --- Update Existing Session ---
-    console.debug("[saveChat] Updating existing chat session", { sessionId: chatSession.id });
     try {
       await db
         .update(chat_sessions)
@@ -222,7 +200,6 @@ export async function saveChat(
           updated_at: now,
         })
         .where(eq(chat_sessions.id, chatSession.id));
-      console.info("[saveChat] Successfully updated chat session", { sessionId: chatSession.id });
     } catch (dbError) {
        console.error("[saveChat] FAILED to update chat session in DB:", dbError);
        console.error("[saveChat] Failed session details:", { sessionId: chatSession.id });
@@ -232,7 +209,6 @@ export async function saveChat(
     // --- End Update ---
   } else {
     // --- Create New Session ---
-    console.debug("[saveChat] Creating new chat session", { userId, characterId: character.id });
     try {
       const inserted = await db
         .insert(chat_sessions)
@@ -253,7 +229,6 @@ export async function saveChat(
          throw new Error("Failed to create new chat session: Insert operation returned no result.");
       }
       chatSession = inserted; // Assign the newly created session
-      console.info("[saveChat] New chat session created successfully", { newSessionId: chatSession.id });
     } catch (dbError) {
        console.error("[saveChat] FAILED to insert new chat session into DB:", dbError);
        // Rethrow or handle error appropriately
@@ -262,7 +237,6 @@ export async function saveChat(
     // --- End Create ---
   }
 
-  console.debug("[saveChat] Save operation completed successfully for session", { sessionId: chatSession.id });
   return chatSession; // Return the final session (either found or created)
 }
 
@@ -522,7 +496,10 @@ export async function continueConversation(
       }
     }
     // Apply standard free tier checks (if any active)
-    else if (!isSubscribed && !api_key) {
+    /**
+     * 
+     * 
+     *     else if (!isSubscribed && !api_key) {
       try {
         const { remainingRequests } = await checkAndIncrementRequestCount(userId);
         console.log(`Free tier user ${userId} request OK. Remaining: ${remainingRequests}`);
@@ -534,6 +511,8 @@ export async function continueConversation(
         return { error: true, message: "Daily request limit potentially exceeded." };
       }
     }
+     */
+
   } else {
       console.log("Skipping top-level paid/subscription/limit check because request is multimodal.");
   }
@@ -1471,10 +1450,7 @@ Generate 3 distinct response options that vary in tone and content. Each should 
         }
       }]
     };
-    console.log("Result:", result);
     const recommendations = JSON.parse(result.choices[0].message.content);
-    console.log("Recommendations:", recommendations);
-    console.log("Generated recommendations:", recommendations);
     
     return { 
       error: false, 

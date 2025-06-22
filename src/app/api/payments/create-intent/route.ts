@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
-import Stripe from 'stripe';
 import { auth } from "@/server/auth";
 import { db } from "@/server/db";
-import { stripe_customer_id, user_credits } from "@/server/db/schema";
+import { user_credits } from "@/server/db/schema";
 import { eq } from "drizzle-orm";
+import { ensureStripeCustomer, stripe } from "@/lib/stripe";
+import Stripe from 'stripe';
 
 export const runtime = "edge";
 
@@ -12,42 +13,38 @@ export async function POST(request: Request) {
     const user = session?.user;
 
     if (!user?.id) {
-        return new NextResponse("Unauthorized", { status: 401 });
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const body = await request.json() as { amount: number };
 
     if (!body.amount || body.amount < 5 || body.amount > 100000) {
-        return new NextResponse("Amount must be between $5 and $100000", { status: 400 });
+        return NextResponse.json({ error: "Amount must be between $5 and $100000" }, { status: 400 });
     }
 
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
-
-    // Check if customer already exists
-    const existingCustomer = await db.query.stripe_customer_id.findFirst({
-        where: eq(stripe_customer_id.userId, user.id)
-    });
-
-    if (!existingCustomer?.stripeCustomerId) {
-        return new NextResponse("No payment method on file", { status: 400 });
-    }
-
-    // Get customer's payment methods
-    const paymentMethods = await stripe.paymentMethods.list({
-        customer: existingCustomer.stripeCustomerId,
-        type: 'card',
-    });
-
-    if (paymentMethods.data.length === 0) {
-        return new NextResponse("No payment method on file", { status: 400 });
-    }
-
-    // Create a payment intent
     try {
+        // Ensure a valid Stripe customer exists
+        const stripeCustomerId = await ensureStripeCustomer(
+            user.id,
+            user.email || undefined,
+            user.name || undefined
+        );
+
+        // Get customer's payment methods
+        const paymentMethods = await stripe.paymentMethods.list({
+            customer: stripeCustomerId,
+            type: 'card',
+        });
+        
+        if (paymentMethods.data.length === 0) {
+            return NextResponse.json({ error: "No payment method on file" }, { status: 400 });
+        }
+
+        // Create a payment intent
         const paymentIntent = await stripe.paymentIntents.create({
             amount: Math.round(body.amount * 100), // Convert to cents
             currency: 'usd',
-            customer: existingCustomer.stripeCustomerId,
+            customer: stripeCustomerId,
             payment_method: paymentMethods.data[0].id, // Use the first payment method
             off_session: true,
             confirm: true, // Confirm the payment immediately
@@ -91,8 +88,8 @@ export async function POST(request: Request) {
     } catch (error) {
         console.error('Error creating payment intent:', error);
         if (error instanceof Stripe.errors.StripeError) {
-            return new NextResponse(error.message, { status: 400 });
+            return NextResponse.json({ error: error.message }, { status: 400 });
         }
-        return new NextResponse("Failed to process payment", { status: 500 });
+        return NextResponse.json({ error: "Failed to process payment" }, { status: 500 });
     }
 } 

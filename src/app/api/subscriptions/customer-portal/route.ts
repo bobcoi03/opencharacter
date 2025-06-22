@@ -1,36 +1,34 @@
 import { NextResponse } from 'next/server';
-import Stripe from 'stripe'
 import { auth } from "@/server/auth";
-import { db } from "@/server/db";
-import { stripe_customer_id } from "@/server/db/schema";
-import { eq } from "drizzle-orm";
+import { ensureStripeCustomer, stripe } from "@/lib/stripe";
 
-export const runtime = "edge"
+export const runtime = "edge";
 
 export async function POST() {
     const session = await auth();
     const user = session?.user;
 
     if (!user?.id) {
-        return new NextResponse("Unauthorized", { status: 401 });
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
+    try {
+        // Ensure a valid Stripe customer exists
+        const stripeCustomerId = await ensureStripeCustomer(
+            user.id,
+            user.email || undefined,
+            user.name || undefined
+        );
 
-    // Check if customer exists in our database
-    const customerData = await db.query.stripe_customer_id.findFirst({
-        where: eq(stripe_customer_id.userId, user.id)
-    });
+        // Create customer portal session
+        const portalSession = await stripe.billingPortal.sessions.create({
+            customer: stripeCustomerId,
+            return_url: `https://opencharacter.org/subscription`,
+        });
 
-    if (!customerData?.stripeCustomerId) {
-        return new NextResponse("No Stripe customer found", { status: 404 });
+        return NextResponse.json({ url: portalSession.url });
+    } catch (error) {
+        console.error('Error creating customer portal session:', error);
+        return NextResponse.json({ error: "Failed to create portal session" }, { status: 500 });
     }
-
-    // Create customer portal session
-    const portalSession = await stripe.billingPortal.sessions.create({
-        customer: customerData.stripeCustomerId,
-        return_url: `https://opencharacter.org/subscription`,
-    });
-
-    return NextResponse.json({ url: portalSession.url });
 }

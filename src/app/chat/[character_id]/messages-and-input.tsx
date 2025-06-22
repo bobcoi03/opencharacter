@@ -58,25 +58,21 @@ const R2Image: React.FC<R2ImageProps> = ({ imageKeyOrUrl, messageIndex, partInde
   const [error, setError] = useState<string | null>(null);
   const hasFetched = useRef(false); // Prevent refetching on re-renders
 
-  console.log(`[R2Image M:${messageIndex} P:${partIndex}] Received prop imageKeyOrUrl:`, imageKeyOrUrl);
 
   useEffect(() => {
-    console.log(`[R2Image M:${messageIndex} P:${partIndex}] useEffect running. Current imageKeyOrUrl:`, imageKeyOrUrl, `HasFetched: ${hasFetched.current}`);
 
     // Check if it's a key (not data URI or http/https) and hasn't been fetched yet
     const isKey = !imageKeyOrUrl.startsWith('data:') && !imageKeyOrUrl.startsWith('http');
-    console.log(`[R2Image M:${messageIndex} P:${partIndex}] Is R2 Key check:`, isKey);
 
     if (isKey && !hasFetched.current) {
       hasFetched.current = true; // Mark as fetched
       setIsLoading(true);
       setError(null);
       setImageUrl(null); // Reset previous URL if key changes
-      console.log(`[R2Image M:${messageIndex} P:${partIndex}] Detected key. Initiating fetch for presigned URL...`);
 
       getPresignedUrlForImageKey(imageKeyOrUrl)
         .then(result => {
-          console.log(`[R2Image M:${messageIndex} P:${partIndex}] Fetched presigned URL result:`, result);
+
           if (result.url) {
             setImageUrl(result.url);
           } else {
@@ -88,22 +84,18 @@ const R2Image: React.FC<R2ImageProps> = ({ imageKeyOrUrl, messageIndex, partInde
           setError("Failed to load image.");
         })
         .finally(() => {
-          console.log(`[R2Image M:${messageIndex} P:${partIndex}] Fetch finished. Setting isLoading to false.`);
           setIsLoading(false);
         });
     } else if (!isKey) {
-      console.log(`[R2Image M:${messageIndex} P:${partIndex}] Prop is not an R2 key (likely data URI or existing URL). Using directly.`);
       // If it's already a valid URL (data or http), use it directly
       setImageUrl(imageKeyOrUrl);
       setIsLoading(false);
       setError(null);
       hasFetched.current = true; // Mark as "fetched" since we have the URL
     } else if (isKey && hasFetched.current) {
-       console.log(`[R2Image M:${messageIndex} P:${partIndex}] Is key, but already fetched or fetch in progress.`);
     }
   }, [imageKeyOrUrl, messageIndex, partIndex]); // Re-run effect if the key/URL changes
 
-  console.log(`[R2Image M:${messageIndex} P:${partIndex}] Rendering state: isLoading=${isLoading}, error=${error}, imageUrl=${imageUrl?.substring(0,60)}...`);
 
   if (isLoading) {
     return (
@@ -243,12 +235,10 @@ const MessageContent: React.FC<MessageContentProps> = React.memo(({
   };
 
   const renderContent = () => {
-    console.log(`[MessageContent Render M:${index}] Rendering content:`, message.content);
 
     if (Array.isArray(message.content)) {
       // Handle multimodal content
       return (message.content as MultimodalContent).map((part, partIndex) => {
-        console.log(`[MessageContent Render M:${index} P:${partIndex}] Rendering part:`, part);
         if (part.type === 'text' && part.text) {
           return (
             <ReactMarkdown
@@ -456,7 +446,7 @@ const MessageContent: React.FC<MessageContentProps> = React.memo(({
 MessageContent.displayName = 'MessageContent';
 
 interface SubscriptionCheckResponse {
-  subscribed: boolean;
+  hasActiveSubscription: boolean;
   subscription: any | null;
 }
 
@@ -572,9 +562,7 @@ export default function MessageAndInput({
 
   // Map initial messages from props, PARSING stringified JSON content first
   const parsedAndMappedInitialMessages = useMemo(() => {
-    console.log("[Initial Load] Processing messages from props:", messages.length);
     return messages.map((msg, index) => {
-      console.log(`[Initial Load - Msg ${index}] Processing message:`, { role: msg.role, contentPreview: typeof msg.content === 'string' ? msg.content.substring(0, 100) + '...' : '(Non-string content)' });
 
       let processedContent: string | MultimodalContent | undefined = undefined;
       let parseError: Error | null = null;
@@ -585,9 +573,7 @@ export default function MessageAndInput({
         // Only attempt parse if it's a string that starts with '['
         attemptedParse = true;
         try {
-          console.log(`[Initial Load - Msg ${index}] String starts with '[', attempting JSON.parse...`);
           const parsed = JSON.parse(msg.content);
-          console.log(`[Initial Load - Msg ${index}] JSON.parse successful. Type: ${typeof parsed}, IsArray: ${Array.isArray(parsed)}`);
 
           if (Array.isArray(parsed)) {
             validationPassed = parsed.every(p =>
@@ -595,34 +581,26 @@ export default function MessageAndInput({
               ((p.type === 'text' && typeof p.text === 'string') ||
                (p.type === 'image_url' && p.image_url && typeof p.image_url.url === 'string'))
             );
-            console.log(`[Initial Load - Msg ${index}] Parsed to array. Validation passed: ${validationPassed}`);
 
             if (validationPassed) {
               processedContent = parsed as MultimodalContent;
-              console.log(`[Initial Load - Msg ${index}] Assigned parsed array to processedContent.`);
             } else {
-              console.warn(`[Initial Load - Msg ${index}] Parsed array FAILED validation. Falling back to original string.`);
               processedContent = msg.content; // Fallback
             }
           } else {
-            console.log(`[Initial Load - Msg ${index}] Parsed content is not an array. Treating as original string.`);
             processedContent = msg.content; // Fallback
             validationPassed = false;
           }
         } catch (e) {
           parseError = e as Error;
-          console.warn(`[Initial Load - Msg ${index}] JSON.parse FAILED even though string started with '['. Treating as plain string. Error:`, parseError.message);
           processedContent = msg.content; // Fallback
         }
       } else if (typeof msg.content === 'string'){
         // It's a string, but doesn't start with '[', treat as plain text
-        console.log(`[Initial Load - Msg ${index}] Content is a string but doesn't start with '['. Treating as plain text.`);
         processedContent = msg.content;
       } else {
         // Content is not a string initially
-        console.log(`[Initial Load - Msg ${index}] Initial content type is not string: ${typeof msg.content}. Assigning directly.`);
         if (msg.content === null || msg.content === undefined) {
-          console.warn(`[Initial Load - Msg ${index}] Content is null/undefined.`);
           processedContent = "";
         } else {
           // Assume it's already in the correct format (e.g., MultimodalContent array)
@@ -632,7 +610,6 @@ export default function MessageAndInput({
       }
 
       const finalContent = replacePlaceholders(processedContent);
-      console.log(`[Initial Load - Msg ${index}] Final content type after placeholders: ${typeof finalContent}, AttemptedParse: ${attemptedParse}, ValidationPassed: ${validationPassed ?? 'N/A'}`);
 
       const finalMappedMessage = {
         role: msg.role as 'user' | 'assistant' | 'system',
@@ -640,7 +617,6 @@ export default function MessageAndInput({
         rating: (msg as any).rating,
         content: finalContent,
       } as CustomChatMessage;
-      console.log(`[Initial Load - Msg ${index}] FINAL mapped message object being added to state:`, JSON.stringify(finalMappedMessage));
 
       return finalMappedMessage;
     });
@@ -688,18 +664,21 @@ export default function MessageAndInput({
   const [messageRecommendations, setMessageRecommendations] = useState<{ title: string; message: string }[]>([]);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  console.log("messages", messages)
+  const [adData, setAdData] = useState<{ ad: any; context: any } | null>(null);
 
   useEffect(() => {
     async function checkSubscription() {
       if (user?.id) {
+        console.log("[Frontend] Checking subscription for user:", user.id);
         try {
           const response = await fetch("/api/subscriptions/check");
+          console.log("[Frontend] API response status:", response.status);
           const data = (await response.json()) as SubscriptionCheckResponse;
-          console.log(data)
-          setIsSubscribed(data.subscribed);
-          if (data.subscribed) {
+          console.log("[Frontend] API response data:", JSON.stringify(data, null, 2));
+          console.log("[Frontend] Setting isSubscribed to:", data.hasActiveSubscription);
+          setIsSubscribed(data.hasActiveSubscription);
+          if (data.hasActiveSubscription) {
+            console.log("[Frontend] User has active subscription, setting pro model");
             const savedModel = localStorage.getItem("selectedModel");
             if (!savedModel) {
               setSelectedModel("meta-llama/llama-3.1-70b-instruct");
@@ -707,16 +686,64 @@ export default function MessageAndInput({
             } else {
               setSelectedModel(savedModel);
             }
+          } else {
+            console.log("[Frontend] User does not have active subscription");
           }
         } catch (error) {
-          console.error("Error checking subscription:", error);
+          console.error("[Frontend] Error checking subscription:", error);
           setIsSubscribed(false);
         }
+      } else {
+        console.log("[Frontend] No user ID available");
       }
     }
     checkSubscription();
   }, [user?.id]);
 
+  // Fetch ads when messages change
+  /** useEffect(() => {
+    console.log("fetchAds effect triggered with message length:", messagesState.length);
+    
+    async function fetchAds() {
+      if (!user || messagesState.length < 3 || !chat_session) {
+        console.log("Skipping fetchAds due to conditions not met:", { 
+          hasUser: !!user, 
+          messageCount: messagesState.length, 
+          hasChatSession: !!chat_session 
+        });
+        return;
+      }
+      
+      try {
+        console.log("Executing fetchAds with chat_session:", chat_session);
+        const dbMessages = mapToDbMessageArray(messagesState);
+        const adsResult = await getAds(
+          character, 
+          { id: chat_session } as typeof chat_sessions.$inferSelect, 
+          dbMessages
+        );
+        
+        if (adsResult) {
+          console.log("Received ad data:", adsResult);
+          setAdData(adsResult);
+        } else {
+          console.log("No ad data returned from getAds");
+        }
+      } catch (error) {
+        console.error("Error fetching ads:", error);
+      }
+    }
+
+    // Fetch ads immediately after 3 messages and then periodically every 5 messages
+    if (messagesState.length >= 3) {
+      console.log("Calling fetchAds");
+      fetchAds();
+    }
+  }, [messagesState.length, character, chat_session, user]);
+   * 
+   * 
+   */
+ 
   const adjustTextareaHeight = () => {
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
@@ -984,7 +1011,6 @@ export default function MessageAndInput({
       // --- Handle result (streaming, saving, recommendations) ---
       if ("error" in result) {
         setError(true);
-        console.log(result.error);
         setErrorMessage(result.message);
         setIsLoading(false); // Stop loading on error
         // Consider reverting state if API call failed
@@ -1039,7 +1065,6 @@ export default function MessageAndInput({
       let finalStateForRecommendations: CustomChatMessage[] = [];
       setMessagesState(currentStateAfterStreaming => {
         finalStateForRecommendations = currentStateAfterStreaming; // Capture for later use
-        console.log(`[handleSubmit Save] Saving ${currentStateAfterStreaming.length} messages. Final state:`, JSON.stringify(currentStateAfterStreaming, null, 2));
         const messagesToSaveDb = mapToDbMessageArray(currentStateAfterStreaming);
 
         // Call saveChat asynchronously, handle potential errors
@@ -1070,7 +1095,6 @@ export default function MessageAndInput({
             // Use the captured state 'finalStateForRecommendations'
             const messagesForRecs = mapToDbMessageArray(finalStateForRecommendations);
             const recommendationsResult = await createChatRecommendations(messagesForRecs);
-            console.log("Recommendations result:", recommendationsResult);
             if (!recommendationsResult.error && recommendationsResult.recommendations) {
               setMessageRecommendations(recommendationsResult.recommendations);
             }
@@ -1104,29 +1128,23 @@ export default function MessageAndInput({
   };
 
   const handleRetry = useCallback(() => {
-    console.log("Attempting to retry the last message.");
     if (messagesState.length > 0) {
       const lastMessage = messagesState[messagesState.length - 1];
       const secondLastMessage = messagesState.length > 1 ? messagesState[messagesState.length - 2] : null;
 
       if (error && lastMessage.role === "assistant" && secondLastMessage?.role === "user") {
-        console.log("Retrying the last user message to get a new assistant response after an error.");
         // Pass the original user message content as the override
         handleSubmit("", true, true, secondLastMessage.content);
       } else if (lastMessage.role === "assistant" && secondLastMessage?.role === "user") {
-        console.log("Regenerating the last assistant response.");
         // Pass the original user message content as the override
         handleSubmit("", false, true, secondLastMessage.content);
       } else if (lastMessage.role === "user") {
-        console.log("Retrying the user's message submission (error case).");
         // This case might indicate an error submitting the user message itself.
         // We use the last message's content, pass error=true, no regeneration override needed.
         handleSubmit(lastMessage.content as string, true, false);
       } else {
-        console.log("Cannot determine how to retry based on the last message(s).");
       }
     } else {
-      console.log("Not enough messages to retry.");
     }
   }, [messagesState, error, handleSubmit]);
 
@@ -1313,7 +1331,6 @@ export default function MessageAndInput({
         // setSelectedImage(null); // This is now done inside handleSubmit
       } else {
         // Optionally provide feedback if there's nothing to send
-        console.log("Input is empty and no image selected.");
       }
     }
   };
@@ -1444,6 +1461,23 @@ export default function MessageAndInput({
                 <InlineAd code="inlineAd" messageId={String(processedMessages.length - 1)}/>              
               </div>
             </div>
+            
+            {/* Display custom ads from our server action */}
+            {adData && (
+              <div className="w-full mx-auto my-4 p-4 bg-slate-800/70 rounded-lg border border-slate-700">
+                <div className="text-sm font-medium mb-2 text-slate-300">Sponsored</div>
+                <a 
+                  href={adData.ad.link || "#"} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="block hover:bg-slate-700/50 p-3 rounded transition-colors"
+                >
+                  <h3 className="text-base font-semibold text-blue-400">{adData.ad.ad_title}</h3>
+                  <p className="text-sm text-slate-300 mt-1">{adData.ad.ad_description}</p>
+                </a>
+              </div>
+            )}
+            
             <div ref={messagesEndRef} />
           </div>
         </div>
@@ -1487,7 +1521,7 @@ export default function MessageAndInput({
           <form
             ref={formRef}
             onSubmit={handleFormSubmit}
-            className="pointer-events-auto flex items-center space-x-2 max-w-full px-2"
+            className="pointer-events-auto flex items-center space-x-2 w-full px-2 flex-col"
           >
             {(messageRecommendations.length > 0 || isLoadingRecommendations) && !isLoading && areRecommendationsEnabled() && (
               <div className="absolute bottom-full left-2 right-2 mb-2 z-20 flex flex-wrap gap-2 justify-center animate-fade-in">
@@ -1514,7 +1548,19 @@ export default function MessageAndInput({
                 )}
               </div>
             )}
-            <div className="relative flex-grow">
+
+            {!isSubscribed && 
+              <Link 
+                className="left-2 mb-1 z-20 p-1 bg-slate-700/50 rounded-md backdrop-blur-sm border border-slate-600"
+                href={'/plans'}  
+              >
+                <p className="text-[8px] text-slate-400">
+                  Upgrade to Pro
+                </p>
+              </Link>
+            } 
+
+            <div className="relative flex-grow w-full">
               {/* Image Preview */}
               {selectedImage && (
                 <div className="absolute bottom-full left-2 mb-1 z-20 p-1 bg-slate-700/50 rounded-md backdrop-blur-sm border border-slate-600">
@@ -1535,8 +1581,9 @@ export default function MessageAndInput({
                   </div>
                 </div>
               )}
+            
               <div className="absolute inset-0 bg-slate-600 bg-opacity-20 backdrop-blur-md rounded-t-xl border-neutral-700"></div>
-              <div className="absolute left-3 top-1/2 transform -translate-y-1/2 z-20 flex items-center space-x-2">
+              <div className="absolute left-3 top-1/2 transform -translate-y-1/2 z-20 flex items-center space-x-2 w-full">
                 {/* Hidden File Input */}
                 <input
                   type="file"

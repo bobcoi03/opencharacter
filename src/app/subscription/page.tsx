@@ -8,8 +8,6 @@ import { format } from "date-fns";
 import { ManageSubscriptionButton } from "@/components/manage-subscription-button";
 import { Separator } from "@/components/ui/separator";
 import { SubscriptionBadge } from "@/components/subscription-badge";
-import PayAsYouGoToggle from "@/components/pay-as-you-go-toggle";
-import BuyCreditsDialog from "@/components/buy-credits-dialog";
 
 export const runtime = "edge";
 
@@ -112,11 +110,15 @@ export default async function SubscriptionPage() {
 
                     <ManageSubscriptionButton />
                     
-                    <div className="mt-2">
-                      <BuyCreditsDialog className="mb-4" />
+                    <div className="p-4 bg-neutral-800/50 border border-neutral-700 rounded-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <InfoCircledIcon className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm font-medium">Pay-as-you-go</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        Pay-as-you-go models are currently disabled. Will be available soon.
+                      </p>
                     </div>
-
-                    <PayAsYouGoToggle />
 
                     </div>
                   )}
