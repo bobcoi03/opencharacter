@@ -5,9 +5,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
-import { MessageCircle, ChevronLeft, ChevronRight } from "lucide-react";
-import { AllCharacterTags, CharacterTag, CharacterTags, NSFWCharacterTags, SFWCharacterTags } from "@/types/character-tags";
-import { searchCharactersByTags } from "@/app/actions/index";
+import { MessageCircle } from "lucide-react";
+import { AllCharacterTags, CharacterTag, NSFWCharacterTags } from "@/types/character-tags";
 import {
   Pagination,
   PaginationContent,
@@ -62,6 +61,53 @@ const safeTruncate = (str: string, n: number) => {
     (subString.match(/[\uD800-\uDBFF]$/) ? subString.slice(0, -1) : subString) +
     "…"
   );
+};
+
+// Local emoji mapping for character tags (frontend display only)
+const tagEmojiMap: Record<string, string> = {
+  'friendly': '😊',
+  'mysterious': '🔮',
+  'funny': '😄',
+  'serious': '🎯',
+  'intellectual': '🧠',
+  'adventurous': '🗺️',
+  'romantic': '💕',
+  'philosophical': '🤔',
+  'historical': '📜',
+  'futuristic': '🚀',
+  'fantasy': '🧙‍♂️',
+  'science-fiction': '🛸',
+  'horror': '👻',
+  'drama': '🎭',
+  'action': '⚡',
+  'mentor': '👨‍🏫',
+  'villain': '😈',
+  'hero': '🦸‍♂️',
+  'antihero': '🦹‍♂️',
+  'magical': '✨',
+  'realistic': '🌍',
+  'sarcastic': '😏',
+  'optimistic': '🌟',
+  'pessimistic': '😔',
+  'artistic': '🎨',
+  'scientific': '🔬',
+  'assistants': '🤖',
+  'anime': '🎌',
+  'creativity-and-writing': '✍️',
+  'entertainment': '🎪',
+  'gaming': '🎮',
+  'history': '🏛️',
+  'humor': '😂',
+  'learning': '📚',
+  'lifestyle': '🌱',
+  'parody': '🎭',
+  'rpg-and-puzzles': '🎲',
+  'male': '♂️',
+  'female': '♀️',
+  'dominant': '👑',
+  'submissive': '🙇‍♂️',
+  'smut': '🔥',
+  'nsfw': '🔞',
 };
 
 export const AICharacterCard: React.FC<{ character: Character }> = ({ character }) => {
@@ -326,14 +372,18 @@ const AICharacterGrid: React.FC<AICharacterGridProps> = ({
       updateUrlWithFilters(1, sortOption, newTags);
     };
 
+    const emoji = tagEmojiMap[tag] || '';
+    const displayName = tag.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+
     return (
       <div
-        className={`text-sm font-semibold text-white rounded-lg p-2 text-center hover:cursor-pointer transition-colors duration-200 ${
-          isActive ? "bg-black" : "bg-neutral-800 hover:bg-gray-700"
+        className={`text-sm font-semibold text-white rounded-lg p-2 text-center hover:cursor-pointer transition-colors duration-200 border-2 bg-transparent ${
+          isActive ? "border-white" : "border-neutral-600 hover:border-neutral-400"
         }`}
         onClick={handleClick}
       >
-        {tag.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+        {emoji && <span className="mr-1">{emoji}</span>}
+        {displayName}
       </div>
     );
   };

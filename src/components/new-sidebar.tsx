@@ -60,7 +60,7 @@ const NewSidebarContent: React.FC<NewSidebarProps> = ({ search }) => {
   const pathname = usePathname();
 
   const isChatRoute = pathname.startsWith("/chat/");
-  const isPlansRoute = pathname === "/plans";
+  const isPlansRoute = pathname === "/plans" || pathname === "/pricing";
   const isSearchRoute = pathname === "/search";
 
   return (
@@ -186,7 +186,7 @@ const NewSidebarContent: React.FC<NewSidebarProps> = ({ search }) => {
               !pathname.startsWith("/signin") && (
                 <Button
                   onClick={() => router.push("/signin")}
-                  className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
+                  className="bg-white text-black px-3 text-xs rounded-full hover:bg-gray-300"
                 >
                   Sign In
                 </Button>

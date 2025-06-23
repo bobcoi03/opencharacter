@@ -748,7 +748,71 @@ export default function MessageAndInput({
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
       const scrollHeight = textareaRef.current.scrollHeight;
-      textareaRef.current.style.height = `${Math.min(scrollHeight, MAX_TEXTAREA_HEIGHT)}px`;
+      const finalHeight = Math.min(scrollHeight, MAX_TEXTAREA_HEIGHT);
+      textareaRef.current.style.height = `${finalHeight}px`;
+
+            // Simple detection: check for line breaks or height increase
+      const textContent = textareaRef.current.value;
+      const hasLineBreaks = textContent.includes('\n');
+      const isMultiLine = hasLineBreaks || finalHeight > 80; // Simple height threshold
+      
+      console.log('=== TEXTAREA DEBUG ===');
+      console.log('Height:', finalHeight, 'HasLineBreaks:', hasLineBreaks, 'IsMultiLine:', isMultiLine);
+      console.log('Text content length:', textContent.length);
+      console.log('Textarea element:', textareaRef.current);
+      console.log('Textarea current border-radius before:', getComputedStyle(textareaRef.current).borderRadius);
+      
+      // Try multiple ways to find the backdrop div
+      let backdropDiv = textareaRef.current.parentElement?.querySelector('.textarea-backdrop') as HTMLElement;
+      if (!backdropDiv) {
+        // Try going up one more level
+        backdropDiv = textareaRef.current.parentElement?.parentElement?.querySelector('.textarea-backdrop') as HTMLElement;
+      }
+      if (!backdropDiv) {
+        // Try finding by searching the form container
+        const formContainer = textareaRef.current.closest('form');
+        if (formContainer) {
+          backdropDiv = formContainer.querySelector('.textarea-backdrop') as HTMLElement;
+        }
+      }
+      
+      console.log('Backdrop div found:', !!backdropDiv);
+      console.log('Textarea parent element:', textareaRef.current.parentElement);
+      console.log('All elements with textarea-backdrop class:', document.querySelectorAll('.textarea-backdrop'));
+      
+      if (backdropDiv) {
+        console.log('Backdrop current border-radius before:', getComputedStyle(backdropDiv).borderRadius);
+      }
+      
+      if (isMultiLine) {
+        // Multi-line: rounded-xl style with !important
+        console.log('Setting MULTILINE styles (12px border-radius)');
+        textareaRef.current.style.setProperty('border-radius', '12px', 'important');
+        if (backdropDiv) {
+          backdropDiv.style.setProperty('border-radius', '12px', 'important');
+        }
+      } else {
+        // Single line: fully rounded
+        console.log('Setting SINGLE LINE styles (9999px border-radius)');
+        textareaRef.current.style.setProperty('border-radius', '9999px', 'important');
+        if (backdropDiv) {
+          backdropDiv.style.setProperty('border-radius', '9999px', 'important');
+        }
+      }
+      
+             // Check what was actually applied
+       setTimeout(() => {
+         if (textareaRef.current) {
+           console.log('Textarea border-radius AFTER:', getComputedStyle(textareaRef.current).borderRadius);
+           console.log('All textarea styles:', textareaRef.current.style.cssText);
+         }
+         if (backdropDiv) {
+           console.log('Backdrop border-radius AFTER:', getComputedStyle(backdropDiv).borderRadius);
+           console.log('All backdrop styles:', backdropDiv.style.cssText);
+         }
+       }, 100);
+      
+      console.log('=== END DEBUG ===');
 
       // Add scrollbar if content exceeds max height
       textareaRef.current.style.overflowY =
@@ -760,6 +824,14 @@ export default function MessageAndInput({
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
       textareaRef.current.style.overflowY = "hidden";
+      // Reset to fully rounded (single line appearance)
+      textareaRef.current.style.borderRadius = "9999px";
+      
+      // Reset backdrop border radius too
+      const backdropDiv = textareaRef.current.parentElement?.querySelector('.textarea-backdrop') as HTMLElement;
+      if (backdropDiv) {
+        backdropDiv.style.borderRadius = "9999px";
+      }
     }
   };
 
@@ -1493,7 +1565,7 @@ export default function MessageAndInput({
         </Link>
       }
       {!share && 
-        <div className="fixed bottom-0 left-0 right-0 py-0 w-full max-w-full">
+        <div className="fixed bottom-4 left-0 right-0 py-0 w-full max-w-full">
         <div className="max-w-2xl mx-auto w-full">
           {error && (
             <div className="mb-2 p-2 bg-red-900 border border-red-800 rounded-lg text-red-200 text-sm pointer-events-auto flex justify-between items-center">
@@ -1582,7 +1654,7 @@ export default function MessageAndInput({
                 </div>
               )}
             
-              <div className="absolute inset-0 bg-slate-600 bg-opacity-20 backdrop-blur-md rounded-t-xl border-neutral-700"></div>
+              <div className="textarea-backdrop absolute inset-0 bg-slate-600 bg-opacity-20 backdrop-blur-md border-neutral-700" style={{ borderRadius: "9999px" }}></div>
               <div className="absolute left-3 top-1/2 transform -translate-y-1/2 z-20 flex items-center space-x-2">
                 {/* Hidden File Input */}
                 <input
@@ -1617,11 +1689,12 @@ export default function MessageAndInput({
                   onFocus={handleInputFocus}
                   onInput={adjustTextareaHeight}
                   placeholder={`Message ${character.name}...`}
-                  className="w-full py-4 pl-[calc(2.5rem+3.5rem)] pr-3 bg-transparent relative z-10 outline-none text-white text-xl rounded-t-3xl resize-none overflow-hidden pointer-events-auto"
+                  className="w-full py-4 pl-[calc(2.5rem+3.5rem)] pr-3 bg-transparent relative z-10 outline-none text-white text-xl resize-none overflow-hidden pointer-events-auto"
                   style={{
                     minHeight: "60px",
                     maxHeight: `${MAX_TEXTAREA_HEIGHT}px`,
                     overflowY: "auto",
+                    borderRadius: "9999px", // Initial border radius (rounded-full), will be dynamically adjusted
                   }}
                   rows={1}
                 />
@@ -1631,13 +1704,13 @@ export default function MessageAndInput({
               <div className="flex items-center justify-center w-16 relative">
                 <button
                   type="submit"
-                  className="bg-blue-700 rounded-full p-2 z-40 transition-opacity opacity-70 hover:opacity-100 focus:opacity-100 hover:cursor-pointer pointer-events-auto"
+                  className="bg-white rounded-full p-2 z-40 transition-opacity opacity-70 hover:opacity-100 focus:opacity-100 hover:cursor-pointer pointer-events-auto"
                   disabled={isLoading}
                 >
                   {!isLoading ?
                       <svg
                         viewBox="0 0 24 24"
-                        className="w-8 h-8 text-white"
+                        className="w-6 h-6 text-black"
                         fill="none"
                         stroke="currentColor"
                         >
@@ -1649,7 +1722,7 @@ export default function MessageAndInput({
                         />
                       </svg>
                     :
-                    <Loader2 className="w-8 h-8 animate-spin" />
+                    <Loader2 className="w-8 h-8 animate-spin text-black" />
                   }
                 </button>
               </div>
