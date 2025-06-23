@@ -1560,7 +1560,7 @@ export default function MessageAndInput({
               </Link>
             } 
 
-            <div className="relative flex-grow w-full">
+            <div className="relative flex-grow w-full flex">
               {/* Image Preview */}
               {selectedImage && (
                 <div className="absolute bottom-full left-2 mb-1 z-20 p-1 bg-slate-700/50 rounded-md backdrop-blur-sm border border-slate-600">
@@ -1583,7 +1583,7 @@ export default function MessageAndInput({
               )}
             
               <div className="absolute inset-0 bg-slate-600 bg-opacity-20 backdrop-blur-md rounded-t-xl border-neutral-700"></div>
-              <div className="absolute left-3 top-1/2 transform -translate-y-1/2 z-20 flex items-center space-x-2 w-full">
+              <div className="absolute left-3 top-1/2 transform -translate-y-1/2 z-20 flex items-center space-x-2">
                 {/* Hidden File Input */}
                 <input
                   type="file"
@@ -1606,45 +1606,53 @@ export default function MessageAndInput({
                   onModelSelect={handleModelSelect}
                 />
               </div>
-              <textarea
-                autoFocus
-                ref={textareaRef}
-                name="message"
-                onKeyDown={handleKeyDown}
-                onFocus={handleInputFocus}
-                onInput={adjustTextareaHeight}
-                placeholder={`Message ${character.name}...`}
-                className="w-full py-4 pl-[calc(2.5rem+3.5rem)] pr-12 bg-transparent relative z-10 outline-none text-white text-xl rounded-t-3xl resize-none overflow-hidden"
-                style={{
-                  minHeight: "60px",
-                  maxHeight: `${MAX_TEXTAREA_HEIGHT}px`,
-                  overflowY: "auto",
-                }}
-                rows={1}
-              />
-              <button
-                type="submit"
-                className="absolute right-3 top-1/2 transform bg-blue-700 rounded-full -translate-y-1/2 p-2 z-20 transition-opacity opacity-70 hover:opacity-100 focus:opacity-100 hover:cursor-pointer"
-                disabled={isLoading}
-              >
-                {!isLoading ?
-                    <svg
-                      viewBox="0 0 24 24"
-                      className="w-8 h-8 text-white"
-                      fill="none"
-                      stroke="currentColor"
-                      >
-                      <path
-                        d="M5 12h14M12 5l7 7-7 7"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  :
-                  <Loader2 className="w-8 h-8 animate-spin" />
-                }
-              </button>
+              
+              {/* Textarea Container - takes up available space minus button width */}
+              <div className="flex-1 relative">
+                <textarea
+                  autoFocus
+                  ref={textareaRef}
+                  name="message"
+                  onKeyDown={handleKeyDown}
+                  onFocus={handleInputFocus}
+                  onInput={adjustTextareaHeight}
+                  placeholder={`Message ${character.name}...`}
+                  className="w-full py-4 pl-[calc(2.5rem+3.5rem)] pr-3 bg-transparent relative z-10 outline-none text-white text-xl rounded-t-3xl resize-none overflow-hidden pointer-events-auto"
+                  style={{
+                    minHeight: "60px",
+                    maxHeight: `${MAX_TEXTAREA_HEIGHT}px`,
+                    overflowY: "auto",
+                  }}
+                  rows={1}
+                />
+              </div>
+              
+              {/* Submit Button Container - fixed width */}
+              <div className="flex items-center justify-center w-16 relative">
+                <button
+                  type="submit"
+                  className="bg-blue-700 rounded-full p-2 z-40 transition-opacity opacity-70 hover:opacity-100 focus:opacity-100 hover:cursor-pointer pointer-events-auto"
+                  disabled={isLoading}
+                >
+                  {!isLoading ?
+                      <svg
+                        viewBox="0 0 24 24"
+                        className="w-8 h-8 text-white"
+                        fill="none"
+                        stroke="currentColor"
+                        >
+                        <path
+                          d="M5 12h14M12 5l7 7-7 7"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    :
+                    <Loader2 className="w-8 h-8 animate-spin" />
+                  }
+                </button>
+              </div>
             </div>
           </form>
 
