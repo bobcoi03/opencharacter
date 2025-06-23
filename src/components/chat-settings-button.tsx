@@ -9,7 +9,7 @@ import { characters, chat_sessions, ChatMessageArray } from '@/server/db/schema'
 import { format } from 'date-fns';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { createChatSession, getAllConversationsByCharacter, getAllUserPersonas, getDefaultPersona, setDefaultPersona } from '@/app/actions/index';
+import { createChatSession, getAllConversationsByCharacter, getAllUserPersonas, getDefaultPersona, setDefaultPersona, clearDefaultPersona } from '@/app/actions/index';
 import {
   Dialog,
   DialogContent,
@@ -185,23 +185,57 @@ export default function EllipsisButton({ character, made_by_username, chat_sessi
   const handleSetDefaultPersona = async (persona: typeof PersonaType.$inferSelect) => {
     setIsSettingDefault(true);
     try {
-      const result = await setDefaultPersona(persona.id);
-      if (result.success) {
-        // Update the local state to reflect the change
-        setDefaultPersonaState(persona);
-        setPersonas(prevPersonas => prevPersonas.map(p => ({
-          ...p,
-          isDefault: p.id === persona.id
-        })));
-        toast({
-          title: `Set ${persona.displayName} as default character`,
-        })
-        setTimeout(() => window.location.reload(), 1000)
+      // If clicking on the current default persona, deselect it
+      if (defaultPersona && defaultPersona.id === persona.id) {
+        const result = await clearDefaultPersona();
+        if (result.success) {
+          setDefaultPersonaState(null);
+          setPersonas(prevPersonas => prevPersonas.map(p => ({
+            ...p,
+            isDefault: false
+          })));
+          toast({
+            title: `Removed ${persona.displayName} as default persona`,
+          })
+          setTimeout(() => window.location.reload(), 1000)
+        } else {
+          console.error(result.error);
+          toast({
+            title: "Error",
+            description: result.error || "Failed to remove default persona",
+            variant: "destructive",
+          });
+        }
       } else {
-        console.error(result.error);
+        // Normal behavior - set as default
+        const result = await setDefaultPersona(persona.id);
+        if (result.success) {
+          // Update the local state to reflect the change
+          setDefaultPersonaState(persona);
+          setPersonas(prevPersonas => prevPersonas.map(p => ({
+            ...p,
+            isDefault: p.id === persona.id
+          })));
+          toast({
+            title: `Set ${persona.displayName} as default persona`,
+          })
+          setTimeout(() => window.location.reload(), 1000)
+        } else {
+          console.error(result.error);
+          toast({
+            title: "Error",
+            description: result.error || "Failed to set default persona",
+            variant: "destructive",
+          });
+        }
       }
     } catch (error) {
       console.error("Failed to set default persona:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update persona settings. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setIsSettingDefault(false);
     }
@@ -584,7 +618,7 @@ export default function EllipsisButton({ character, made_by_username, chat_sessi
                 <DialogHeader>
                   <DialogTitle>Personas</DialogTitle>
                   <DialogDescription>
-                    Select a default persona
+                    Select a default persona or click your current persona to turn off personas
                   </DialogDescription>
                 </DialogHeader>
                 <div className="mt-4">

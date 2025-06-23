@@ -227,6 +227,25 @@ export async function setDefaultPersona(personaId: string): Promise<SetDefaultPe
     }
 }
 
+export async function clearDefaultPersona(): Promise<SetDefaultPersonaResult> {
+    const session = await auth();
+    if (!session?.user) {
+        return { success: false, error: "You must be logged in to clear the default persona." };
+    }
+
+    try {
+        // Unset all default personas for the user
+        await db.update(personas)
+            .set({ isDefault: false })
+            .where(eq(personas.userId, session.user.id!));
+
+        return { success: true, message: "Default persona cleared successfully." };
+    } catch (error) {
+        console.error("Failed to clear default persona:", error);
+        return { success: false, error: "Failed to clear default persona. Please try again." };
+    }
+}
+
 export async function deletePersona(personaId: string) {
     // Step 1: Authenticate the user
     const session = await auth();
