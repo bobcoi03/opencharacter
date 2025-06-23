@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { Search, Globe2, Lock, MessageSquare, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { searchCharacters } from '@/app/actions';
@@ -23,7 +23,6 @@ export default function SearchPage() {
   const [isSearching, setIsSearching] = useState(false);
   const [characters, setCharacters] = useState<Character[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
-  const router = useRouter();
 
   const handleSearch = useCallback(async (searchQuery: string) => {
     if (searchQuery.trim().length === 0) {
@@ -39,6 +38,13 @@ export default function SearchPage() {
       console.error('Search error:', error);
     } finally {
       setIsSearching(false);
+    }
+  }, []);
+
+  // Auto-focus the search input when component mounts
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.focus();
     }
   }, []);
 

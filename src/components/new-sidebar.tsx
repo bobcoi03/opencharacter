@@ -55,15 +55,13 @@ interface NewSidebarProps {
 
 const NewSidebarContent: React.FC<NewSidebarProps> = ({ search }) => {
   const [isCreateOpen, setIsCreateOpen] = useState<boolean>(false);
-  const [isSearchExpanded, setIsSearchExpanded] = useState<boolean>(false);
-  const [searchQuery, setSearchQuery] = useState<string>("");
-  const [suggestions, setSuggestions] = useState<Character[]>([]);
   const { data: session, status } = useSession();
   const router = useRouter();
   const pathname = usePathname();
 
   const isChatRoute = pathname.startsWith("/chat/");
   const isPlansRoute = pathname === "/plans";
+  const isSearchRoute = pathname === "/search";
 
   return (
     <>
@@ -81,13 +79,40 @@ const NewSidebarContent: React.FC<NewSidebarProps> = ({ search }) => {
             </Link>
           </div>
           <div className="flex items-center space-x-4">
-            <div className="relative">
-              <Search
-                className="text-gray-600 dark:text-gray-300 cursor-pointer"
-                size={20}
-                onClick={() => router.push('/search')}
-              />
-            </div>
+            {/* Desktop Search Bar - Hidden on search page */}
+            {!isSearchRoute && (
+              <div className="hidden md:block relative">
+                <div className="relative">
+                  <Search
+                    className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                    size={16}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Search characters..."
+                    className="w-64 pl-10 pr-4 py-1 bg-neutral-800 text-white placeholder-gray-400 border border-gray-600 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    onClick={() => router.push('/search')}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        router.push('/search');
+                      }
+                    }}
+                    readOnly
+                  />
+                </div>
+              </div>
+            )}
+            
+            {/* Mobile Search Icon - Hidden on search page */}
+            {!isSearchRoute && (
+              <div className="md:hidden relative">
+                <Search
+                  className="text-gray-600 dark:text-gray-300 cursor-pointer"
+                  size={20}
+                  onClick={() => router.push('/search')}
+                />
+              </div>
+            )}
             {status === "authenticated" ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
