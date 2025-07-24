@@ -41,7 +41,7 @@ import {
 } from "@/components/ui/dialog";  
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
-import { AdsProvider, InlineAd } from '@kontextso/sdk';
+import { AdsProvider, InlineAd } from '@kontextso/sdk-react';
 import { ModelSelector } from "@/components/model-selector";
 
 const MAX_TEXTAREA_HEIGHT = 450; // maximum height in pixels
@@ -1420,7 +1420,7 @@ export default function MessageAndInput({
   return (
     <AdsProvider
       publisherToken='opencharacter-jh56hf9cl'
-      isLoading={isLoading}
+      enabledPlacementCodes={['inlineAd']}
       messages={processedMessages}
       userId={user?.id ?? "guest"}
       conversationId={`${character.id.slice(24)}-${user?.id?.slice(24)}`}
