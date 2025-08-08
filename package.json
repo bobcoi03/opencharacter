@@ -70,7 +70,7 @@
     "lucide-react": "^0.475.0",
     "motion": "^12.23.12",
     "next": "14.2.31",
-    "next-auth": "5.0.0-beta.20",
+    "next-auth": "5.0.0-beta.29",
     "openai": "^4.104.0",
     "pako": "^2.1.0",
     "posthog-js": "^1.259.0",
