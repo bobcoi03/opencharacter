@@ -83,7 +83,7 @@
     "react-virtualized-auto-sizer": "^1.0.26",
     "react-window": "^1.8.11",
     "recharts": "^2.15.4",
-    "rettiwt-api": "^4.2.0",
+    "rettiwt-api": "^6.0.5",
     "server-only": "^0.0.1",
     "stream-browserify": "^3.0.0",
     "stream-http": "^3.2.0",
