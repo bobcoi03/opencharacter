@@ -95,6 +95,8 @@ export default class FileStorage {
 
     return fetch(signed.url, {
       method: "PUT",
+      // eslint-disable-next-line
+      // @ts-expect-error: Allow Buffer/Uint8Array as fetch body in Node runtime
       body,
       headers: {
         "Content-Encoding": "deflate",
