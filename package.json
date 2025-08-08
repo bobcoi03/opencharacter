@@ -46,7 +46,7 @@
     "@radix-ui/react-tooltip": "^1.2.7",
     "@t3-oss/env-nextjs": "^0.11.1",
     "@tailwindcss/typography": "^0.5.16",
-    "@the-convocation/twitter-scraper": "^0.15.1",
+    "@the-convocation/twitter-scraper": "^0.17.2",
     "@types/lodash": "^4.17.20",
     "@types/react-window": "^1.8.8",
     "@use-gesture/react": "^10.3.1",
