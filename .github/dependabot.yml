@@ -1,0 +1,115 @@
+# Dependabot configuration: updates for npm packages and GitHub Actions
+# Docs: https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+
+version: 2
+updates:
+  # Keep npm dependencies up to date
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 20
+    versioning-strategy: increase-if-necessary
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    ignore:
+      # Avoid surprise majors on core frameworks unless explicitly opted in
+      - dependency-name: "next"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react-dom"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "next-auth"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "drizzle-orm"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "drizzle-kit"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "wrangler"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "eslint"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "eslint-config-next"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "tailwindcss"
+        update-types: ["version-update:semver-major"]
+    groups:
+      radix-ui:
+        applies-to: version-updates
+        patterns:
+          - "@radix-ui/*"
+      next-react:
+        applies-to: version-updates
+        patterns:
+          - "next"
+          - "react"
+          - "react-dom"
+          - "eslint-config-next"
+          - "@types/react"
+          - "@types/react-dom"
+          - "@next/*"
+      drizzle:
+        applies-to: version-updates
+        patterns:
+          - "drizzle-orm"
+          - "drizzle-kit"
+          - "@libsql/*"
+          - "better-sqlite3"
+      aws-sdk:
+        applies-to: version-updates
+        patterns:
+          - "@aws-sdk/*"
+          - "aws-sdk"
+      cloudflare:
+        applies-to: version-updates
+        patterns:
+          - "wrangler"
+          - "@cloudflare/*"
+      tailwind:
+        applies-to: version-updates
+        patterns:
+          - "tailwindcss"
+          - "@tailwindcss/*"
+          - "tailwindcss-animate"
+          - "tailwind-merge"
+      types:
+        applies-to: version-updates
+        patterns:
+          - "@types/*"
+      eslint:
+        applies-to: version-updates
+        patterns:
+          - "eslint"
+          - "eslint-*"
+      ui-misc:
+        applies-to: version-updates
+        patterns:
+          - "lucide-react"
+          - "class-variance-authority"
+          - "clsx"
+      analytics:
+        applies-to: version-updates
+        patterns:
+          - "posthog-js"
+          - "posthog-node"
+      payments:
+        applies-to: version-updates
+        patterns:
+          - "stripe"
+
+  # Keep GitHub Actions up to date
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 10
