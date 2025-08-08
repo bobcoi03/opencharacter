@@ -71,7 +71,7 @@
     "motion": "^12.23.12",
     "next": "14.2.31",
     "next-auth": "5.0.0-beta.20",
-    "openai": "^4.104.0",
+    "openai": "^5.12.2",
     "pako": "^2.1.0",
     "posthog-js": "^1.259.0",
     "posthog-node": "^4.18.0",
