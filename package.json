@@ -87,7 +87,7 @@
     "server-only": "^0.0.1",
     "stream-browserify": "^3.0.0",
     "stream-http": "^3.2.0",
-    "stripe": "^17.7.0",
+    "stripe": "^18.4.0",
     "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7",
     "util": "^0.12.5",
